@@ -1,0 +1,50 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "auth-api-requests": ["libs/auth/api-requests/src/index.ts"],
+      "auth-features": ["libs/auth/features/src/index.ts"],
+      "auth-models": ["libs/auth/models/src/index.ts"],
+      "coordinators-api-requests": [
+        "libs/coordinators/api-requests/src/index.ts"
+      ],
+      "coordinators-features": ["libs/coordinators/features/src/index.ts"],
+      "coordinators-mapping-and-utils": [
+        "libs/coordinators/mapping-and-utils/src/index.ts"
+      ],
+      "coordinators-models": ["libs/coordinators/models/src/index.ts"],
+      "coordinators-ui": ["libs/coordinators/ui/src/index.ts"],
+      "hotels-api-requests": ["libs/hotels/api-requests/src/index.ts"],
+      "hotels-features": ["libs/hotels/features/src/index.ts"],
+      "hotels-mapping-and-utils": [
+        "libs/hotels/mapping-and-utils/src/index.ts"
+      ],
+      "hotels-models": ["libs/hotels/models/src/index.ts"],
+      "hotels-ui": ["libs/hotels/ui/src/index.ts"],
+      "shared-mapping-and-utils": [
+        "libs/shared/mapping-and-utils/src/index.ts"
+      ],
+      "shared-models": ["libs/shared/models/src/index.ts"],
+      "shared-ui": ["libs/shared/ui/src/index.ts"],
+      "trips-api-requests": ["libs/trips/api-requests/src/index.ts"],
+      "trips-features": ["libs/trips/features/src/index.ts"],
+      "trips-mapping-and-utils": ["libs/trips/mapping-and-utils/src/index.ts"],
+      "trips-models": ["libs/trips/models/src/index.ts"],
+      "trips-ui": ["libs/trips/ui/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

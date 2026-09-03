@@ -1,0 +1,94 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────
+    // Helper Functions
+    // ─────────────────────────────────────────────
+
+    /** Returns true if the request is authenticated via Firebase Auth. */
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true only if the authenticated user's UID corresponds to a
+     * document in the read-only `admins` collection.
+     *
+     * CRITICAL: The `admins` collection is NEVER writable from the web app.
+     * It can only be modified directly via the Firebase Console / Admin SDK.
+     */
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ─────────────────────────────────────────────
+    // ADMINS collection — STRICTLY READ-ONLY from the app
+    // ─────────────────────────────────────────────
+    // Each admin document uses the Firebase Auth UID as the document ID.
+    // The app reads ONLY the authenticated user's own record to verify access.
+    // WRITE is permanently blocked from all clients.
+    match /admins/{adminId} {
+      // Allow a user to read only their own admin record (for auth verification)
+      allow read: if isAuthenticated() && request.auth.uid == adminId;
+      // NEVER allow writes from the client — use Firebase Console only
+      allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────
+    // TRIPS collection
+    // ─────────────────────────────────────────────
+    // Public read: coordinators need to browse trips for candidacy
+    // Admin write: only verified admins can mutate trip data
+    match /trips/{tripId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // HOTELS collection
+    // ─────────────────────────────────────────────
+    // Full admin access only
+    match /hotels/{hotelId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // COORDINATORS collection
+    // ─────────────────────────────────────────────
+    // Public: anyone can create (candidacy form)
+    // Admin: full access to read/update/delete
+    match /coordinators/{coordinatorId} {
+      allow read: if isAdmin();
+      allow create: if true; // Public candidacy form
+      allow update: if isAdmin(); // Upsert handled by service logic
+      allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // CANDIDACIES collection
+    // ─────────────────────────────────────────────
+    // Public can create candidacies (the public-facing application form)
+    // Admins manage all candidacies
+    match /candidacies/{candidacyId} {
+      allow create: if true; // Public candidacy submission
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // TRIP ASSIGNMENTS sub-collection
+    // ─────────────────────────────────────────────
+    match /trips/{tripId}/assignments/{assignmentId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // Default: deny everything not explicitly covered above
+    // ─────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
