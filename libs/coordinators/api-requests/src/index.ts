@@ -1,1 +1,2 @@
-export * from './lib/coordinators-api-requests/coordinators-api-requests.component';
+// Coordinator API Service — import from 'coordinators-api-requests'
+export * from './lib/coordinator-api.service';

@@ -1,1 +1,2 @@
-export * from './lib/shared-ui/shared-ui.component';
+// Theme Service — import from 'shared-ui'
+export * from './lib/theme.service';

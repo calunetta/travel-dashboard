@@ -1,1 +1,2 @@
-export * from './lib/hotels-api-requests/hotels-api-requests.component';
+// Hotel API Service — import from 'hotels-api-requests'
+export * from './lib/hotel-api.service';

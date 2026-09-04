@@ -206,9 +206,65 @@ apps/travel-admin/src/styles.scss                      [MODIFIED]
 ```
 
 
-### ⏳ Step 3 — External API & Firebase Services
+### ✅ Step 3 — External API & Firebase Services
 
-**Status:** PENDING
+**Status:** COMPLETED  
+**Completed At:** 2026-09-04
+
+#### What was done:
+
+**3A — Firebase Injection Tokens**
+- Created `libs/shared/models/src/lib/firebase.tokens.ts` — `FIREBASE_APP_TOKEN`, `FIRESTORE_TOKEN`, `FIREBASE_AUTH_TOKEN` as Angular InjectionTokens for DI and test mocking
+
+**3B — ThemeService**
+- Created `libs/shared/ui/src/lib/theme.service.ts` — Signal-based light/dark mode manager; toggles `.dark-theme` class on `<body>`; persists to localStorage; respects OS `prefers-color-scheme` as fallback
+
+**3C — FirebaseAuthService**
+- Created `libs/auth/api-requests/src/lib/firebase-auth.service.ts` — Google Sign-In (popup), Sign-Out, auth state via Signals (`currentUser`, `isLoading`, `isAuthenticated`, `isAdmin`), admin verification via READ-ONLY Firestore `admins` collection
+
+**3D — Auth Guard**
+- Created `libs/auth/features/src/lib/auth.guard.ts` — Functional `canActivateFn`, checks loading state → auth → admin, redirects to `/login` or `/unauthorized`
+
+**3E — TripApiService**
+- Created `libs/trips/api-requests/src/lib/trip-api.service.ts` — `getAll$()` (real-time), `getById$(id)` (real-time), `create()`, `update()`, `delete()`, `assignCoordinator()`, `assignHotel()`, `syncFacebookGroupUrl()`
+
+**3F — HotelApiService**
+- Created `libs/hotels/api-requests/src/lib/hotel-api.service.ts` — `getAll$()` (real-time), `getById$(id)` (real-time), `create()`, `update()` (partial, handles nested billingData/pricingRanges), `delete()`
+
+**3G — CoordinatorApiService**
+- Created `libs/coordinators/api-requests/src/lib/coordinator-api.service.ts`:
+  - Coordinator CRUD: `getAll$()`, `getById$()`, `update()`, `delete()`
+  - Candidacy ops: `getAllCandidacies$()`, `getCandidaciesForTrip$()`, `submitCandidacy()` (UPSERT by email), `updateCandidacyStatus()`
+  - Assignment: `assignCoordinatorToTrip()` (AUTOMATIC → marks accepted, withdraws others; MANUAL → assigns without cascade), `getAssignmentsForTrip$()`
+  - Private helpers: `#upsertCoordinatorFromCandidacy()`, `#withdrawOtherCandidacies()`
+
+**3H — WeRoadApiService**
+- Created `libs/trips/api-requests/src/lib/weroad-api.service.ts` — HttpClient-based; `getToursForTravel()` (paginated), `getAllToursForTravel()`, `getTourByStartDate()`; response validated against runtime type guard
+
+**3I — App Configuration**
+- Updated `apps/travel-admin/src/app/app.config.ts` — Wires Firebase InjectionToken providers; `provideRouter`, `provideHttpClient(withFetch())`, `provideAnimationsAsync()`
+- Created `apps/travel-admin/src/app/app.routes.ts` — Full lazy-loaded route map: public area, login, unauthorized, admin area (dashboard, trips CRUD, hotels CRUD, coordinators, candidacies, calendar) all protected by `authGuard`
+
+#### Files Created/Modified in Step 3:
+```
+libs/shared/models/src/lib/firebase.tokens.ts                [NEW]
+libs/shared/models/src/index.ts                              [MODIFIED]
+libs/shared/ui/src/lib/theme.service.ts                     [NEW]
+libs/shared/ui/src/index.ts                                  [MODIFIED]
+libs/auth/api-requests/src/lib/firebase-auth.service.ts     [NEW]
+libs/auth/api-requests/src/index.ts                         [MODIFIED]
+libs/auth/features/src/lib/auth.guard.ts                    [NEW]
+libs/auth/features/src/index.ts                             [MODIFIED]
+libs/trips/api-requests/src/lib/trip-api.service.ts         [NEW]
+libs/trips/api-requests/src/lib/weroad-api.service.ts       [NEW]
+libs/trips/api-requests/src/index.ts                        [MODIFIED]
+libs/hotels/api-requests/src/lib/hotel-api.service.ts       [NEW]
+libs/hotels/api-requests/src/index.ts                       [MODIFIED]
+libs/coordinators/api-requests/src/lib/coordinator-api.service.ts [NEW]
+libs/coordinators/api-requests/src/index.ts                 [MODIFIED]
+apps/travel-admin/src/app/app.config.ts                     [MODIFIED]
+apps/travel-admin/src/app/app.routes.ts                     [MODIFIED]
+```
 
 ---
 

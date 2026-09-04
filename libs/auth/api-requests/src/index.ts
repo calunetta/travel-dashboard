@@ -1,1 +1,2 @@
-export * from './lib/auth-api-requests/auth-api-requests.component';
+// Firebase Auth Service — import from 'auth-api-requests'
+export * from './lib/firebase-auth.service';

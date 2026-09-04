@@ -1,1 +1,2 @@
-export * from './lib/auth-features/auth-features.component';
+// Auth Guard — import from 'auth-features'
+export * from './lib/auth.guard';

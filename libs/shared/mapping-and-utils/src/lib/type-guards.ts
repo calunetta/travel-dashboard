@@ -6,7 +6,7 @@
 import { RoomType, TripStatus } from 'trips-models';
 import { AgePreference, AssignmentType, CandidacyStatus } from 'coordinators-models';
 import { CountryCode } from 'hotels-models';
-import type { WeRoadTour, WeRoadPaginatedToursResponse } from 'shared-models';
+import type { WeRoadTour, WeRoadPaginatedToursResponse, FirestoreId } from 'shared-models';
 
 // ─── Primitive Guards ─────────────────────────────────────────────────────────
 
