@@ -1,0 +1,134 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// DESIGN TOKENS — CSS Custom Properties
+//
+// All values are defined here as SCSS variables and exported as CSS custom
+// properties. Use var(--tha-*) throughout all component styles.
+// "tha" prefix = Travel Handling App
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Brand Palette ─────────────────────────────────────────────────────────────
+// Primary: Deep Ocean Blue
+$tha-primary-50:  #e8f1fb;
+$tha-primary-100: #c6d9f5;
+$tha-primary-200: #9fbeed;
+$tha-primary-300: #78a3e5;
+$tha-primary-400: #5c8fdf;
+$tha-primary-500: #3f7bd9; // Base
+$tha-primary-600: #3370cd;
+$tha-primary-700: #2562be;
+$tha-primary-800: #1855ae;
+$tha-primary-900: #003c91;
+
+// Accent: Sunset Gold
+$tha-accent-50:  #fff8e1;
+$tha-accent-100: #ffecb3;
+$tha-accent-200: #ffe082;
+$tha-accent-300: #ffd54f;
+$tha-accent-400: #ffca28;
+$tha-accent-500: #ffc107; // Base
+$tha-accent-600: #ffb300;
+$tha-accent-700: #ffa000;
+$tha-accent-800: #ff8f00;
+$tha-accent-900: #ff6f00;
+
+// Semantic
+$tha-success-500: #2e7d32;
+$tha-success-100: #c8e6c9;
+$tha-warning-500: #f57c00;
+$tha-warning-100: #ffe0b2;
+$tha-error-500:   #c62828;
+$tha-error-100:   #ffcdd2;
+$tha-info-500:    #0277bd;
+$tha-info-100:    #b3e5fc;
+
+// ── Surface / Background ──────────────────────────────────────────────────────
+// Light theme
+$tha-bg-light:        #f5f7fa;
+$tha-surface-light:   #ffffff;
+$tha-surface-variant-light: #eef2f7;
+$tha-on-surface-light: #1a2035;
+$tha-on-surface-variant-light: #546e8a;
+
+// Dark theme
+$tha-bg-dark:         #0f1523;
+$tha-surface-dark:    #1a2035;
+$tha-surface-variant-dark: #243050;
+$tha-on-surface-dark: #e8ecf2;
+$tha-on-surface-variant-dark: #8fa8c8;
+
+// ── Typography ────────────────────────────────────────────────────────────────
+$tha-font-family-base: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;
+$tha-font-family-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+
+$tha-font-size-xs:   0.75rem;   // 12px
+$tha-font-size-sm:   0.875rem;  // 14px
+$tha-font-size-base: 1rem;      // 16px
+$tha-font-size-lg:   1.125rem;  // 18px
+$tha-font-size-xl:   1.25rem;   // 20px
+$tha-font-size-2xl:  1.5rem;    // 24px
+$tha-font-size-3xl:  1.875rem;  // 30px
+$tha-font-size-4xl:  2.25rem;   // 36px
+
+$tha-font-weight-regular: 400;
+$tha-font-weight-medium:  500;
+$tha-font-weight-semibold: 600;
+$tha-font-weight-bold:    700;
+
+$tha-line-height-tight:   1.2;
+$tha-line-height-snug:    1.375;
+$tha-line-height-normal:  1.5;
+$tha-line-height-relaxed: 1.75;
+
+// ── Spacing ───────────────────────────────────────────────────────────────────
+$tha-spacing-0:  0;
+$tha-spacing-1:  0.25rem;  // 4px
+$tha-spacing-2:  0.5rem;   // 8px
+$tha-spacing-3:  0.75rem;  // 12px
+$tha-spacing-4:  1rem;     // 16px
+$tha-spacing-5:  1.25rem;  // 20px
+$tha-spacing-6:  1.5rem;   // 24px
+$tha-spacing-8:  2rem;     // 32px
+$tha-spacing-10: 2.5rem;   // 40px
+$tha-spacing-12: 3rem;     // 48px
+$tha-spacing-16: 4rem;     // 64px
+$tha-spacing-20: 5rem;     // 80px
+$tha-spacing-24: 6rem;     // 96px
+
+// ── Border Radius ─────────────────────────────────────────────────────────────
+$tha-radius-sm:   4px;
+$tha-radius-md:   8px;
+$tha-radius-lg:   12px;
+$tha-radius-xl:   16px;
+$tha-radius-2xl:  24px;
+$tha-radius-full: 9999px;
+
+// ── Elevation / Box Shadows ───────────────────────────────────────────────────
+$tha-shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.05);
+$tha-shadow-sm:  0 2px 4px rgba(0, 0, 0, 0.08);
+$tha-shadow-md:  0 4px 12px rgba(0, 0, 0, 0.1);
+$tha-shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.12);
+$tha-shadow-xl:  0 16px 48px rgba(0, 0, 0, 0.16);
+
+// ── Transitions ───────────────────────────────────────────────────────────────
+$tha-transition-fast:   150ms ease;
+$tha-transition-normal: 250ms ease;
+$tha-transition-slow:   400ms ease;
+
+// ── Breakpoints ───────────────────────────────────────────────────────────────
+$tha-breakpoint-xs: 480px;
+$tha-breakpoint-sm: 640px;
+$tha-breakpoint-md: 768px;
+$tha-breakpoint-lg: 1024px;
+$tha-breakpoint-xl: 1280px;
+$tha-breakpoint-2xl: 1536px;
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+$tha-sidebar-width:          260px;
+$tha-sidebar-collapsed-width: 68px;
+
+// ── Z-Index Scale ─────────────────────────────────────────────────────────────
+$tha-z-dropdown: 100;
+$tha-z-sticky:   200;
+$tha-z-overlay:  300;
+$tha-z-modal:    400;
+$tha-z-toast:    500;

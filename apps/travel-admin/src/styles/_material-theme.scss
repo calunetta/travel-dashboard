@@ -1,0 +1,128 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// ANGULAR MATERIAL THEME CONFIGURATION — Angular Material v19 (MDC-based)
+//
+// Uses @use/@forward (Sass module system) as required by Angular Material 15+.
+// Defines custom primary/accent/warn palettes and configures both
+// light and dark themes.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@use '@angular/material' as mat;
+
+// ── Custom Palette Definition ─────────────────────────────────────────────────
+
+$tha-primary-palette: mat.m2-define-palette(
+  (
+    50:   #e8f1fb,
+    100:  #c6d9f5,
+    200:  #9fbeed,
+    300:  #78a3e5,
+    400:  #5c8fdf,
+    500:  #3f7bd9,
+    600:  #3370cd,
+    700:  #2562be,
+    800:  #1855ae,
+    900:  #003c91,
+    A100: #afc8ff,
+    A200: #7ca8ff,
+    A400: #4987ff,
+    A700: #2f76ff,
+    contrast: (
+      50:  rgba(0, 0, 0, 0.87),
+      100: rgba(0, 0, 0, 0.87),
+      200: rgba(0, 0, 0, 0.87),
+      300: rgba(0, 0, 0, 0.87),
+      400: rgba(0, 0, 0, 0.87),
+      500: #ffffff,
+      600: #ffffff,
+      700: #ffffff,
+      800: #ffffff,
+      900: #ffffff,
+      A100: rgba(0, 0, 0, 0.87),
+      A200: rgba(0, 0, 0, 0.87),
+      A400: #ffffff,
+      A700: #ffffff,
+    )
+  )
+);
+
+$tha-accent-palette: mat.m2-define-palette(
+  (
+    50:   #fff8e1,
+    100:  #ffecb3,
+    200:  #ffe082,
+    300:  #ffd54f,
+    400:  #ffca28,
+    500:  #ffc107,
+    600:  #ffb300,
+    700:  #ffa000,
+    800:  #ff8f00,
+    900:  #ff6f00,
+    A100: #ffe57f,
+    A200: #ffd740,
+    A400: #ffc400,
+    A700: #ffab00,
+    contrast: (
+      50:  rgba(0, 0, 0, 0.87),
+      100: rgba(0, 0, 0, 0.87),
+      200: rgba(0, 0, 0, 0.87),
+      300: rgba(0, 0, 0, 0.87),
+      400: rgba(0, 0, 0, 0.87),
+      500: rgba(0, 0, 0, 0.87),
+      600: rgba(0, 0, 0, 0.87),
+      700: rgba(0, 0, 0, 0.87),
+      800: rgba(0, 0, 0, 0.87),
+      900: rgba(0, 0, 0, 0.87),
+      A100: rgba(0, 0, 0, 0.87),
+      A200: rgba(0, 0, 0, 0.87),
+      A400: rgba(0, 0, 0, 0.87),
+      A700: rgba(0, 0, 0, 0.87),
+    )
+  )
+);
+
+$tha-warn-palette: mat.m2-define-palette(mat.$m2-red-palette);
+
+// ── Light Theme ───────────────────────────────────────────────────────────────
+
+$tha-light-theme: mat.m2-define-light-theme(
+  (
+    color: (
+      primary: $tha-primary-palette,
+      accent:  $tha-accent-palette,
+      warn:    $tha-warn-palette,
+    ),
+    typography: mat.m2-define-typography-config(
+      $font-family: 'Inter, Roboto, system-ui, -apple-system, sans-serif',
+    ),
+    density: 0,
+  )
+);
+
+// ── Dark Theme ────────────────────────────────────────────────────────────────
+
+$tha-dark-theme: mat.m2-define-dark-theme(
+  (
+    color: (
+      primary: $tha-primary-palette,
+      accent:  $tha-accent-palette,
+      warn:    $tha-warn-palette,
+    ),
+    typography: mat.m2-define-typography-config(
+      $font-family: 'Inter, Roboto, system-ui, -apple-system, sans-serif',
+    ),
+    density: 0,
+  )
+);
+
+// ── Apply Core Styles (once, globally) ───────────────────────────────────────
+// Required once in styles.scss — applies MDC foundational styles.
+@include mat.core();
+
+// ── Apply Light Theme (default) ──────────────────────────────────────────────
+@include mat.all-component-themes($tha-light-theme);
+
+// ── Apply Dark Theme on .dark-theme class ────────────────────────────────────
+// The ThemeService toggles the `dark-theme` class on <body>.
+.dark-theme {
+  @include mat.all-component-colors($tha-dark-theme);
+}

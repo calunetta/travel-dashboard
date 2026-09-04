@@ -1,1 +1,79 @@
-/* You can add global styles to this file, and also import other style files */
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOBAL STYLES ENTRY POINT
+// Import order matters — Material theme must come first.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 1. Angular Material theming (includes mat.core() + palette + light/dark themes)
+@use './styles/material-theme' as theme;
+
+// 2. CSS Custom Properties (exports all tokens as var(--tha-*))
+@use './styles/custom-properties' as props;
+
+// 3. Typography (Google Fonts + heading/body rules)
+@use './styles/typography' as typography;
+
+// 4. Global utility classes
+@use './styles/utilities' as utils;
+
+// ── Global Box-Sizing Reset ───────────────────────────────────────────────────
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+// ── HTML/Body Base ────────────────────────────────────────────────────────────
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background-color: var(--tha-bg);
+  color: var(--tha-on-surface);
+  transition:
+    background-color var(--tha-transition-normal),
+    color var(--tha-transition-normal);
+}
+
+// ── Focus Visible ─────────────────────────────────────────────────────────────
+// Accessible keyboard focus ring using the brand primary color.
+*:focus-visible {
+  outline: 2px solid var(--tha-primary-500);
+  outline-offset: 2px;
+  border-radius: var(--tha-radius-sm);
+}
+
+// ── Angular Material Overrides ────────────────────────────────────────────────
+// These override MDC base styles to match our design tokens.
+
+// Make mat-card use our surface color and border-radius
+.mat-mdc-card {
+  background-color: var(--tha-surface) !important;
+  border-radius: var(--tha-radius-lg) !important;
+}
+
+// Table rows
+.mat-mdc-row:hover .mat-mdc-cell {
+  background-color: var(--tha-surface-variant) !important;
+}
+
+// Dialog containers
+.mat-mdc-dialog-container {
+  --mdc-dialog-container-color: var(--tha-surface) !important;
+  border-radius: var(--tha-radius-xl) !important;
+}
+
+// Snackbar
+.mat-mdc-snack-bar-container {
+  border-radius: var(--tha-radius-md) !important;
+}
+
+// Remove autofill yellow background
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--tha-surface) inset;
+  -webkit-text-fill-color: var(--tha-on-surface);
+  transition: background-color 5000s ease-in-out 0s;
+}

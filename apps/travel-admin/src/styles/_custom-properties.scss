@@ -1,0 +1,118 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// CSS CUSTOM PROPERTIES — Light & Dark Mode
+//
+// Exports all design tokens as CSS custom properties for use in components.
+// :root = Light mode defaults.
+// .dark-theme (on <body>) = Dark mode overrides.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@use './tokens' as tokens;
+
+:root {
+  // ── Brand Colors ──────────────────────────────────────────────────────────
+  --tha-primary-50:  #{tokens.$tha-primary-50};
+  --tha-primary-100: #{tokens.$tha-primary-100};
+  --tha-primary-200: #{tokens.$tha-primary-200};
+  --tha-primary-300: #{tokens.$tha-primary-300};
+  --tha-primary-400: #{tokens.$tha-primary-400};
+  --tha-primary-500: #{tokens.$tha-primary-500};
+  --tha-primary-600: #{tokens.$tha-primary-600};
+  --tha-primary-700: #{tokens.$tha-primary-700};
+  --tha-primary-800: #{tokens.$tha-primary-800};
+  --tha-primary-900: #{tokens.$tha-primary-900};
+
+  --tha-accent-500: #{tokens.$tha-accent-500};
+  --tha-accent-600: #{tokens.$tha-accent-600};
+  --tha-accent-700: #{tokens.$tha-accent-700};
+
+  // ── Semantic Colors ───────────────────────────────────────────────────────
+  --tha-success:      #{tokens.$tha-success-500};
+  --tha-success-bg:   #{tokens.$tha-success-100};
+  --tha-warning:      #{tokens.$tha-warning-500};
+  --tha-warning-bg:   #{tokens.$tha-warning-100};
+  --tha-error:        #{tokens.$tha-error-500};
+  --tha-error-bg:     #{tokens.$tha-error-100};
+  --tha-info:         #{tokens.$tha-info-500};
+  --tha-info-bg:      #{tokens.$tha-info-100};
+
+  // ── Surface / Background (Light Mode) ────────────────────────────────────
+  --tha-bg:                    #{tokens.$tha-bg-light};
+  --tha-surface:               #{tokens.$tha-surface-light};
+  --tha-surface-variant:       #{tokens.$tha-surface-variant-light};
+  --tha-on-surface:            #{tokens.$tha-on-surface-light};
+  --tha-on-surface-variant:    #{tokens.$tha-on-surface-variant-light};
+
+  // ── Sidebar ───────────────────────────────────────────────────────────────
+  --tha-sidebar-bg:            #{tokens.$tha-primary-900};
+  --tha-sidebar-text:          #{tokens.$tha-primary-100};
+  --tha-sidebar-active:        #{tokens.$tha-primary-500};
+  --tha-sidebar-active-bg:     rgba(63, 123, 217, 0.15);
+  --tha-sidebar-width:         #{tokens.$tha-sidebar-width};
+  --tha-sidebar-collapsed-width: #{tokens.$tha-sidebar-collapsed-width};
+
+  // ── Spacing ───────────────────────────────────────────────────────────────
+  --tha-spacing-1:  #{tokens.$tha-spacing-1};
+  --tha-spacing-2:  #{tokens.$tha-spacing-2};
+  --tha-spacing-3:  #{tokens.$tha-spacing-3};
+  --tha-spacing-4:  #{tokens.$tha-spacing-4};
+  --tha-spacing-5:  #{tokens.$tha-spacing-5};
+  --tha-spacing-6:  #{tokens.$tha-spacing-6};
+  --tha-spacing-8:  #{tokens.$tha-spacing-8};
+  --tha-spacing-10: #{tokens.$tha-spacing-10};
+  --tha-spacing-12: #{tokens.$tha-spacing-12};
+  --tha-spacing-16: #{tokens.$tha-spacing-16};
+
+  // ── Border Radius ─────────────────────────────────────────────────────────
+  --tha-radius-sm:   #{tokens.$tha-radius-sm};
+  --tha-radius-md:   #{tokens.$tha-radius-md};
+  --tha-radius-lg:   #{tokens.$tha-radius-lg};
+  --tha-radius-xl:   #{tokens.$tha-radius-xl};
+  --tha-radius-2xl:  #{tokens.$tha-radius-2xl};
+  --tha-radius-full: #{tokens.$tha-radius-full};
+
+  // ── Shadows ───────────────────────────────────────────────────────────────
+  --tha-shadow-xs: #{tokens.$tha-shadow-xs};
+  --tha-shadow-sm: #{tokens.$tha-shadow-sm};
+  --tha-shadow-md: #{tokens.$tha-shadow-md};
+  --tha-shadow-lg: #{tokens.$tha-shadow-lg};
+  --tha-shadow-xl: #{tokens.$tha-shadow-xl};
+
+  // ── Transition ────────────────────────────────────────────────────────────
+  --tha-transition-fast:   #{tokens.$tha-transition-fast};
+  --tha-transition-normal: #{tokens.$tha-transition-normal};
+  --tha-transition-slow:   #{tokens.$tha-transition-slow};
+
+  // ── Typography ────────────────────────────────────────────────────────────
+  --tha-font-family: #{tokens.$tha-font-family-base};
+  --tha-font-mono:   #{tokens.$tha-font-family-mono};
+  --tha-font-size-xs:   #{tokens.$tha-font-size-xs};
+  --tha-font-size-sm:   #{tokens.$tha-font-size-sm};
+  --tha-font-size-base: #{tokens.$tha-font-size-base};
+  --tha-font-size-lg:   #{tokens.$tha-font-size-lg};
+  --tha-font-size-xl:   #{tokens.$tha-font-size-xl};
+  --tha-font-size-2xl:  #{tokens.$tha-font-size-2xl};
+  --tha-font-size-3xl:  #{tokens.$tha-font-size-3xl};
+  --tha-font-size-4xl:  #{tokens.$tha-font-size-4xl};
+
+  // ── Z-Index ───────────────────────────────────────────────────────────────
+  --tha-z-dropdown: #{tokens.$tha-z-dropdown};
+  --tha-z-sticky:   #{tokens.$tha-z-sticky};
+  --tha-z-overlay:  #{tokens.$tha-z-overlay};
+  --tha-z-modal:    #{tokens.$tha-z-modal};
+  --tha-z-toast:    #{tokens.$tha-z-toast};
+}
+
+// ── Dark Theme Overrides ──────────────────────────────────────────────────────
+// Applied when ThemeService sets `dark-theme` class on <body>
+.dark-theme {
+  --tha-bg:                    #{tokens.$tha-bg-dark};
+  --tha-surface:               #{tokens.$tha-surface-dark};
+  --tha-surface-variant:       #{tokens.$tha-surface-variant-dark};
+  --tha-on-surface:            #{tokens.$tha-on-surface-dark};
+  --tha-on-surface-variant:    #{tokens.$tha-on-surface-variant-dark};
+  --tha-shadow-sm:  0 2px 4px rgba(0, 0, 0, 0.3);
+  --tha-shadow-md:  0 4px 12px rgba(0, 0, 0, 0.4);
+  --tha-shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.5);
+  --tha-shadow-xl:  0 16px 48px rgba(0, 0, 0, 0.6);
+  --tha-sidebar-bg: #{tokens.$tha-bg-dark};
+}

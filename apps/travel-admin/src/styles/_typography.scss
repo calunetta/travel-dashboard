@@ -1,0 +1,79 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPOGRAPHY — Google Fonts Import + Base Typography Rules
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Google Fonts (Inter variable font — covers all weights 100-900)
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@use './tokens' as tokens;
+
+// ── Base Typography Reset ─────────────────────────────────────────────────────
+html {
+  font-family: var(--tha-font-family);
+  font-size: 16px;
+  line-height: tokens.$tha-line-height-normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--tha-font-family);
+  font-size: var(--tha-font-size-base);
+  font-weight: tokens.$tha-font-weight-regular;
+  color: var(--tha-on-surface);
+  background-color: var(--tha-bg);
+}
+
+// ── Headings ──────────────────────────────────────────────────────────────────
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--tha-font-family);
+  font-weight: tokens.$tha-font-weight-bold;
+  line-height: tokens.$tha-line-height-tight;
+  color: var(--tha-on-surface);
+  margin: 0;
+}
+
+h1 { font-size: var(--tha-font-size-4xl); }
+h2 { font-size: var(--tha-font-size-3xl); }
+h3 { font-size: var(--tha-font-size-2xl); }
+h4 { font-size: var(--tha-font-size-xl);  }
+h5 { font-size: var(--tha-font-size-lg);  }
+h6 { font-size: var(--tha-font-size-base);}
+
+// ── Paragraphs ────────────────────────────────────────────────────────────────
+p {
+  margin: 0;
+  line-height: tokens.$tha-line-height-normal;
+}
+
+// ── Links ─────────────────────────────────────────────────────────────────────
+a {
+  color: var(--tha-primary-600);
+  text-decoration: none;
+  transition: color var(--tha-transition-fast);
+
+  &:hover {
+    color: var(--tha-primary-800);
+    text-decoration: underline;
+  }
+}
+
+// ── Utility Typography Classes ────────────────────────────────────────────────
+.tha-text-xs   { font-size: var(--tha-font-size-xs);   }
+.tha-text-sm   { font-size: var(--tha-font-size-sm);   }
+.tha-text-base { font-size: var(--tha-font-size-base); }
+.tha-text-lg   { font-size: var(--tha-font-size-lg);   }
+.tha-text-xl   { font-size: var(--tha-font-size-xl);   }
+.tha-text-2xl  { font-size: var(--tha-font-size-2xl);  }
+.tha-text-muted   { color: var(--tha-on-surface-variant); }
+.tha-text-primary { color: var(--tha-primary-600); }
+.tha-text-accent  { color: var(--tha-accent-700); }
+.tha-text-success { color: var(--tha-success); }
+.tha-text-warning { color: var(--tha-warning); }
+.tha-text-error   { color: var(--tha-error); }
+
+.tha-font-medium   { font-weight: tokens.$tha-font-weight-medium; }
+.tha-font-semibold { font-weight: tokens.$tha-font-weight-semibold; }
+.tha-font-bold     { font-weight: tokens.$tha-font-weight-bold; }
+.tha-font-mono     { font-family: var(--tha-font-mono); }

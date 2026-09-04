@@ -1,1 +1,4 @@
-export * from './lib/shared-mapping-and-utils/shared-mapping-and-utils.component';
+// Type guards — import from 'shared-mapping-and-utils'
+export * from './lib/type-guards';
+// Shared utilities — import from 'shared-mapping-and-utils'
+export * from './lib/utils';

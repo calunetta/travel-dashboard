@@ -1,0 +1,168 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOBAL UTILITY CLASSES
+// ─────────────────────────────────────────────────────────────────────────────
+
+@use './tokens' as tokens;
+
+// ── Layout ────────────────────────────────────────────────────────────────────
+.tha-flex        { display: flex; }
+.tha-flex-col    { display: flex; flex-direction: column; }
+.tha-flex-center { display: flex; align-items: center; justify-content: center; }
+.tha-flex-between{ display: flex; align-items: center; justify-content: space-between; }
+.tha-flex-start  { display: flex; align-items: center; justify-content: flex-start; }
+.tha-flex-end    { display: flex; align-items: center; justify-content: flex-end; }
+.tha-flex-wrap   { flex-wrap: wrap; }
+.tha-flex-1      { flex: 1; }
+.tha-flex-shrink-0 { flex-shrink: 0; }
+
+.tha-grid-auto   { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--tha-spacing-4); }
+.tha-grid-2      { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--tha-spacing-4); }
+.tha-grid-3      { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--tha-spacing-4); }
+
+.tha-full-width  { width: 100%; }
+.tha-full-height { height: 100%; }
+
+// ── Spacing Utilities ─────────────────────────────────────────────────────────
+.tha-gap-1  { gap: var(--tha-spacing-1); }
+.tha-gap-2  { gap: var(--tha-spacing-2); }
+.tha-gap-3  { gap: var(--tha-spacing-3); }
+.tha-gap-4  { gap: var(--tha-spacing-4); }
+.tha-gap-6  { gap: var(--tha-spacing-6); }
+.tha-gap-8  { gap: var(--tha-spacing-8); }
+.tha-p-4    { padding: var(--tha-spacing-4); }
+.tha-p-6    { padding: var(--tha-spacing-6); }
+.tha-p-8    { padding: var(--tha-spacing-8); }
+.tha-mt-2   { margin-top: var(--tha-spacing-2); }
+.tha-mt-4   { margin-top: var(--tha-spacing-4); }
+.tha-mt-6   { margin-top: var(--tha-spacing-6); }
+.tha-mb-2   { margin-bottom: var(--tha-spacing-2); }
+.tha-mb-4   { margin-bottom: var(--tha-spacing-4); }
+.tha-mb-6   { margin-bottom: var(--tha-spacing-6); }
+
+// ── Surface Cards ─────────────────────────────────────────────────────────────
+.tha-card {
+  background: var(--tha-surface);
+  border-radius: var(--tha-radius-lg);
+  box-shadow: var(--tha-shadow-sm);
+  padding: var(--tha-spacing-6);
+  transition: box-shadow var(--tha-transition-normal);
+
+  &:hover { box-shadow: var(--tha-shadow-md); }
+}
+
+.tha-card-flat {
+  background: var(--tha-surface);
+  border-radius: var(--tha-radius-lg);
+  border: 1px solid var(--tha-surface-variant);
+  padding: var(--tha-spacing-6);
+}
+
+// ── Status Badges ─────────────────────────────────────────────────────────────
+.tha-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tha-spacing-1);
+  padding: 2px var(--tha-spacing-2);
+  border-radius: var(--tha-radius-full);
+  font-size: var(--tha-font-size-xs);
+  font-weight: tokens.$tha-font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+
+  &--draft     { background: var(--tha-surface-variant); color: var(--tha-on-surface-variant); }
+  &--published { background: var(--tha-info-bg); color: var(--tha-info); }
+  &--full      { background: var(--tha-success-bg); color: var(--tha-success); }
+  &--completed { background: var(--tha-success-bg); color: var(--tha-success); }
+  &--cancelled { background: var(--tha-error-bg); color: var(--tha-error); }
+  &--pending   { background: var(--tha-warning-bg); color: var(--tha-warning); }
+  &--assigned  { background: var(--tha-success-bg); color: var(--tha-success); }
+  &--rejected  { background: var(--tha-error-bg); color: var(--tha-error); }
+  &--manual    {
+    background: var(--tha-accent-700);
+    color: rgba(0, 0, 0, 0.87);
+    &::before { content: '★ '; }
+  }
+}
+
+// ── Page Layout ───────────────────────────────────────────────────────────────
+.tha-page {
+  padding: var(--tha-spacing-6);
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.tha-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--tha-spacing-6);
+  gap: var(--tha-spacing-4);
+
+  h1, h2 { flex: 1; }
+}
+
+// ── Divider ───────────────────────────────────────────────────────────────────
+.tha-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--tha-surface-variant);
+  margin: var(--tha-spacing-4) 0;
+}
+
+// ── Scrollbar (webkit) ────────────────────────────────────────────────────────
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tha-on-surface-variant);
+  border-radius: var(--tha-radius-full);
+  opacity: 0.5;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tha-primary-500);
+}
+
+// ── Loading State ─────────────────────────────────────────────────────────────
+.tha-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: var(--tha-z-overlay);
+  border-radius: inherit;
+
+  .dark-theme & {
+    background: rgba(15, 21, 35, 0.8);
+  }
+}
+
+// ── Animations ────────────────────────────────────────────────────────────────
+@keyframes tha-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tha-slide-in-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes tha-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.tha-animate-fade-in      { animation: tha-fade-in      var(--tha-transition-normal) ease forwards; }
+.tha-animate-slide-left   { animation: tha-slide-in-left var(--tha-transition-normal) ease forwards; }
+.tha-animate-scale-in     { animation: tha-scale-in     var(--tha-transition-normal) ease forwards; }

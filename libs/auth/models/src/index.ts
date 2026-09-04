@@ -1,1 +1,2 @@
-export * from './lib/auth-models/auth-models.component';
+// Auth/Admin domain models — import from 'auth-models'
+export * from './lib/admin.model';

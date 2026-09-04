@@ -1,1 +1,2 @@
-export * from './lib/coordinators-mapping-and-utils/coordinators-mapping-and-utils.component';
+// Coordinator mapper functions — import from 'coordinators-mapping-and-utils'
+export * from './lib/coordinator.mapper';

@@ -138,18 +138,73 @@ DEVELOPMENT_TRACKER.md                      [NEW] This file
 
 ---
 
-### ⏳ Step 2 — Core Models, Material UI Theming & Mappers
+### ✅ Step 2 — Core Models, Material UI Theming & Mappers
 
-**Status:** PENDING
+**Status:** COMPLETED  
+**Completed At:** 2026-09-04
 
-**Planned tasks:**
-- TypeScript enums, interfaces, type guards for all domains
-- SCSS centralized design system (Dark + Light themes)
-- Angular Material theming setup
-- Data mapper functions
-- Firestore ↔ Domain model mapping utilities
+#### What was done:
 
----
+**2A — Shared Primitive Types**
+- Created `libs/shared/models/src/lib/primitives.types.ts` — `FirestoreTimestamp`, `ISODateString`, `FirestoreId`, `PaginatedResponse<T>`, `OperationResult<T>`, `SortDirection`, `CollectionQuery`
+- Created `libs/shared/models/src/lib/weroad-api.types.ts` — `WeRoadGroupInfo`, `WeRoadCoordinator`, `WeRoadTour`, `WeRoadPaginatedToursResponse`
+
+**2B — Domain Models**
+- Created `libs/auth/models/src/lib/admin.model.ts` — `Admin`, `AdminDocument`, `AuthenticatedUser` (admin collection is READ-ONLY)
+- Created `libs/trips/models/src/lib/trip.model.ts` — `RoomType` enum, `TripStatus` enum, `RoomComposition`, `DEFAULT_ROOM_COMPOSITION`, `Trip`, `TripFirestoreDocument`, `CreateTripPayload`, `UpdateTripPayload`
+- Created `libs/hotels/models/src/lib/hotel.model.ts` — `CountryCode` enum, `HotelBillingData`, `DateRangePricing`, `RoomPriceEntry`, `Hotel`, `HotelFirestoreDocument`, `HotelCostCalculation`, `CreateHotelPayload`, `UpdateHotelPayload`
+- Created `libs/coordinators/models/src/lib/coordinator.model.ts` — `AgePreference` enum, `AssignmentType` enum (AUTOMATIC/MANUAL with auto-cleanup logic), `CandidacyStatus` enum, `Coordinator`, `Candidacy`, `TripAssignment`, `CandidacyFormPayload`, `UpdateCoordinatorPayload`
+
+**2C — Type Guards & Mappers**
+- Created `libs/shared/mapping-and-utils/src/lib/type-guards.ts` — Runtime guards for all enums, Firestore documents, WeRoad API responses
+- Created `libs/shared/mapping-and-utils/src/lib/utils.ts` — `timestampToIso`, `buildWhatsAppUrl`, `centsToEurString`, `eurToCents`, `calculateNights`, `isDateInRange`, `getInitials`, `capitalize`
+- Created `libs/trips/mapping-and-utils/src/lib/trip.mapper.ts` — `mapSnapshotToTrip`, `mapCreatePayloadToFirestore`, `mapUpdatePayloadToFirestore`, `createDefaultTripPayload`
+- Created `libs/hotels/mapping-and-utils/src/lib/hotel.mapper.ts` — `mapSnapshotToHotel`, `mapCreateHotelToFirestore`
+- Created `libs/hotels/mapping-and-utils/src/lib/hotel-cost.calculator.ts` — `calculateHotelCost` (pricing range matching → per-room breakdown → grand total)
+- Created `libs/coordinators/mapping-and-utils/src/lib/coordinator.mapper.ts` — `mapSnapshotToCoordinator`, `mapSnapshotToCandidacy`, `mapCandidacyFormToFirestore`, `mapCandidacyToCoordinatorFirestore`
+
+**2D — SCSS Design System & Angular Material Theming**
+- Created `apps/travel-admin/src/styles/_tokens.scss` — SCSS variables: brand palette (Primary Blue #3f7bd9, Accent Gold #ffc107), semantic colors, surface colors, typography scale, spacing, radius, shadows, transitions, breakpoints
+- Created `apps/travel-admin/src/styles/_material-theme.scss` — Angular Material v19 MDC theme with custom m2 palettes; light theme (default) + dark theme (`.dark-theme` class on body)
+- Created `apps/travel-admin/src/styles/_custom-properties.scss` — Exports all tokens as `var(--tha-*)` CSS custom properties; dark mode overrides under `.dark-theme`
+- Created `apps/travel-admin/src/styles/_typography.scss` — Google Fonts Inter import, heading scale, utility typography classes
+- Created `apps/travel-admin/src/styles/_utilities.scss` — Layout utilities (flex/grid), spacing, `.tha-card`, `.tha-badge` for all statuses, page layout, scrollbar styling, CSS animations
+- Updated `apps/travel-admin/src/styles.scss` — Entry point imports all partials in correct order; global box-sizing reset, Angular Material MDC overrides, autofill fix
+
+**2E — Barrel Export Updates (index.ts)**
+Updated all library `src/index.ts` files to export new domain models and utility functions.
+
+#### Files Created/Modified in Step 2:
+```
+libs/shared/models/src/lib/primitives.types.ts          [NEW]
+libs/shared/models/src/lib/weroad-api.types.ts          [NEW]
+libs/shared/models/src/index.ts                         [MODIFIED]
+libs/shared/mapping-and-utils/src/lib/type-guards.ts   [NEW]
+libs/shared/mapping-and-utils/src/lib/utils.ts         [NEW]
+libs/shared/mapping-and-utils/src/index.ts             [MODIFIED]
+libs/auth/models/src/lib/admin.model.ts                 [NEW]
+libs/auth/models/src/index.ts                           [MODIFIED]
+libs/trips/models/src/lib/trip.model.ts                 [NEW]
+libs/trips/models/src/index.ts                          [MODIFIED]
+libs/trips/mapping-and-utils/src/lib/trip.mapper.ts    [NEW]
+libs/trips/mapping-and-utils/src/index.ts              [MODIFIED]
+libs/hotels/models/src/lib/hotel.model.ts               [NEW]
+libs/hotels/models/src/index.ts                         [MODIFIED]
+libs/hotels/mapping-and-utils/src/lib/hotel.mapper.ts  [NEW]
+libs/hotels/mapping-and-utils/src/lib/hotel-cost.calculator.ts [NEW]
+libs/hotels/mapping-and-utils/src/index.ts             [MODIFIED]
+libs/coordinators/models/src/lib/coordinator.model.ts   [NEW]
+libs/coordinators/models/src/index.ts                   [MODIFIED]
+libs/coordinators/mapping-and-utils/src/lib/coordinator.mapper.ts [NEW]
+libs/coordinators/mapping-and-utils/src/index.ts       [MODIFIED]
+apps/travel-admin/src/styles/_tokens.scss              [NEW]
+apps/travel-admin/src/styles/_material-theme.scss      [NEW]
+apps/travel-admin/src/styles/_custom-properties.scss   [NEW]
+apps/travel-admin/src/styles/_typography.scss          [NEW]
+apps/travel-admin/src/styles/_utilities.scss           [NEW]
+apps/travel-admin/src/styles.scss                      [MODIFIED]
+```
+
 
 ### ⏳ Step 3 — External API & Firebase Services
 
