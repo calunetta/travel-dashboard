@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Trip Documents — trips/{tripId}/documents/{fileName}
+    //
+    // CONSTRAINTS:
+    //   - Only authenticated users with an admin record can upload.
+    //   - Only PDF files are accepted (content type enforced by the rule).
+    //   - Maximum file size: 20 MB.
+    // ─────────────────────────────────────────────────────────────────────────
+    match /trips/{tripId}/documents/{fileName} {
+      // Any authenticated user can read (download) trip documents.
+      allow read: if request.auth != null;
+
+      // Admins can write PDFs up to 20 MB.
+      allow create, update: if
+        request.auth != null
+        && request.resource.contentType == 'application/pdf'
+        && request.resource.size <= 20 * 1024 * 1024;
+
+      // Admins can delete their own trip documents.
+      allow delete: if request.auth != null;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Default: deny all other paths
+    // ─────────────────────────────────────────────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -38,12 +38,18 @@ export const DEFAULT_ROOM_COMPOSITION: Readonly<RoomComposition> = {
   [RoomType.EXTRA_BED]: 0,
 } as const;
 
+/** Payment status for a trip document. */
+export type DocumentPaymentStatus = 'TO_BE_PAID' | 'PAID';
+
 /** A document attached to a trip (PDF, contract, etc.). */
 export interface TripDocument {
   readonly id: FirestoreId;
   readonly name: string;
+  /** Firebase Storage download URL. */
   readonly url: string;
   readonly uploadedAt: ISODateString;
+  /** Tracks payment state for this document (e.g., hotel invoices). */
+  readonly paymentStatus: DocumentPaymentStatus;
 }
 
 /**
@@ -103,6 +109,7 @@ export interface TripFirestoreDocument {
     readonly name: string;
     readonly url: string;
     readonly uploadedAt: string;
+    readonly paymentStatus: string;
   }>;
   readonly tourId: string;
   readonly adminIds: ReadonlyArray<string>;
@@ -115,3 +122,9 @@ export type CreateTripPayload = Omit<Trip, 'id' | 'createdAt' | 'updatedAt'>;
 
 /** Payload to update an existing trip. All fields optional except id. */
 export type UpdateTripPayload = Partial<Omit<Trip, 'id' | 'createdAt'>> & { readonly id: FirestoreId };
+
+/** Payload to add a single document to a trip's documents array. */
+export interface AddTripDocumentPayload {
+  readonly tripId: FirestoreId;
+  readonly document: TripDocument;
+}

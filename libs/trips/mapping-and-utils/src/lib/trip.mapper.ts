@@ -9,6 +9,7 @@ import type {
   TripFirestoreDocument,
   CreateTripPayload,
   RoomComposition,
+  DocumentPaymentStatus,
 } from 'trips-models';
 import { RoomType, DEFAULT_ROOM_COMPOSITION } from 'trips-models';
 import type { FirestoreId } from 'shared-models';
@@ -68,6 +69,7 @@ export function mapSnapshotToTrip(
       name: d.name,
       url: d.url,
       uploadedAt: d.uploadedAt,
+      paymentStatus: (d.paymentStatus === 'PAID' ? 'PAID' : 'TO_BE_PAID') as DocumentPaymentStatus,
     })),
     createdAt: timestampToIso(data.createdAt),
     updatedAt: timestampToIso(data.updatedAt),
@@ -112,6 +114,7 @@ export function mapCreatePayloadToFirestore(
       name: d.name,
       url: d.url,
       uploadedAt: d.uploadedAt,
+      paymentStatus: d.paymentStatus,
     })),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -154,6 +157,7 @@ export function mapUpdatePayloadToFirestore(
       name: d.name,
       url: d.url,
       uploadedAt: d.uploadedAt,
+      paymentStatus: d.paymentStatus,
     }));
   }
 

@@ -20,6 +20,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
 // App
 import { appRoutes } from './app.routes';
@@ -28,6 +29,7 @@ import {
   FIREBASE_APP_TOKEN,
   FIRESTORE_TOKEN,
   FIREBASE_AUTH_TOKEN,
+  FIREBASE_STORAGE_TOKEN,
 } from 'shared-models';
 
 export const appConfig: ApplicationConfig = {
@@ -50,6 +52,10 @@ export const appConfig: ApplicationConfig = {
     {
       provide: FIREBASE_AUTH_TOKEN,
       useFactory: () => getAuth(initializeApp(environment.firebase)),
+    },
+    {
+      provide: FIREBASE_STORAGE_TOKEN,
+      useFactory: () => getStorage(initializeApp(environment.firebase)),
     },
   ],
 };

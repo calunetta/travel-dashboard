@@ -18,13 +18,16 @@ import {
   query,
   orderBy,
   where,
+  arrayUnion,
+  arrayRemove,
   type DocumentReference,
 } from 'firebase/firestore';
 import { Observable, shareReplay } from 'rxjs';
+import { serverTimestamp } from 'firebase/firestore';
 import { FirebaseAuthService } from 'auth-api-requests';
 import { FIRESTORE_TOKEN } from 'shared-models';
 import type { FirestoreId } from 'shared-models';
-import type { Trip, CreateTripPayload, UpdateTripPayload } from 'trips-models';
+import type { Trip, CreateTripPayload, UpdateTripPayload, TripDocument } from 'trips-models';
 import {
   mapSnapshotToTrip,
   mapCreatePayloadToFirestore,
@@ -160,6 +163,63 @@ export class TripApiService {
   ): Promise<void> {
     const docRef = doc(this.firestore, TRIPS_COLLECTION, tripId);
     const firestoreData = mapUpdatePayloadToFirestore({ facebookGroupUrl });
-    await updateDoc(docRef, firestoreData as Record<string, any>);
+    await updateDoc(docRef, firestoreData as Record<string, unknown>);
+  }
+
+  // ── Document Management ───────────────────────────────────────────────────
+
+  /**
+   * Appends a document entry to a trip's documents array using arrayUnion.
+   * This is an atomic operation — safe for concurrent writes.
+   */
+  async addDocument(tripId: FirestoreId, document: TripDocument): Promise<void> {
+    const docRef = doc(this.firestore, TRIPS_COLLECTION, tripId);
+    await updateDoc(docRef, {
+      documents: arrayUnion({
+        id: document.id,
+        name: document.name,
+        url: document.url,
+        uploadedAt: document.uploadedAt,
+        paymentStatus: document.paymentStatus,
+      }),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  /**
+   * Removes a document entry from a trip's documents array using arrayRemove.
+   * Matches by the exact object shape — the document must have been fetched
+   * from Firestore to guarantee a match.
+   */
+  async removeDocument(tripId: FirestoreId, document: TripDocument): Promise<void> {
+    const docRef = doc(this.firestore, TRIPS_COLLECTION, tripId);
+    await updateDoc(docRef, {
+      documents: arrayRemove({
+        id: document.id,
+        name: document.name,
+        url: document.url,
+        uploadedAt: document.uploadedAt,
+        paymentStatus: document.paymentStatus,
+      }),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  /**
+   * Toggles the paymentStatus of a specific document within a trip.
+   * Performs a read-then-write: fetches the latest documents array,
+   * replaces the target document's paymentStatus, and writes the full array.
+   */
+  async toggleDocumentPaymentStatus(
+    tripId: FirestoreId,
+    documentId: string,
+    currentDocuments: ReadonlyArray<TripDocument>
+  ): Promise<void> {
+    const updatedDocuments = currentDocuments.map((d) =>
+      d.id === documentId
+        ? { ...d, paymentStatus: d.paymentStatus === 'PAID' ? 'TO_BE_PAID' as const : 'PAID' as const }
+        : d
+    );
+    await this.update({ id: tripId, documents: updatedDocuments });
   }
 }
