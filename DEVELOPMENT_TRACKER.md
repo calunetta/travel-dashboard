@@ -163,6 +163,16 @@ DEVELOPMENT_TRACKER.md                      [NEW] This file
 - Created `libs/hotels/mapping-and-utils/src/lib/hotel-cost.calculator.ts` — `calculateHotelCost` (pricing range matching → per-room breakdown → grand total)
 - Created `libs/coordinators/mapping-and-utils/src/lib/coordinator.mapper.ts` — `mapSnapshotToCoordinator`, `mapSnapshotToCandidacy`, `mapCandidacyFormToFirestore`, `mapCandidacyToCoordinatorFirestore`
 
+### ✅ Step 8 - PART 3: Responsive UI/UX Overhaul
+**Status:** Completed  
+**Date:** 2026-09-04  
+**Commit:** `feat(ui): responsive UI overhaul for admin forms and detail views`
+
+**Key Changes:**
+1. **SCSS Utilities** — Added `@media (max-width: 768px)` breakpoints to `styles/_utilities.scss` to automatically collapse `.tha-grid-2`, `.tha-grid-3`, `.tha-grid-4`, and `.tha-grid-5` into a single column on mobile. Added `.tha-flex-col-sm` utility.
+2. **Trip Detail Component** — Replaced fixed flex-row structures in the header and document list sections with `.tha-flex-col-sm` to ensure proper stacking on smaller screens.
+3. **Trip Form Component** — Updated the main header flexbox to use `.tha-flex-col-sm` to prevent horizontal overflow on mobile devices.
+4. **Hotel Form Component** — Updated the main header and the Dynamic Pricing Configurations nested cards to stack correctly on smaller devices using the new `.tha-flex-col-sm` utility. Pricing ranges and global forms now gracefully adapt to mobile without requiring fixed widths.
 **2D — SCSS Design System & Angular Material Theming**
 - Created `apps/travel-admin/src/styles/_tokens.scss` — SCSS variables: brand palette (Primary Blue #3f7bd9, Accent Gold #ffc107), semantic colors, surface colors, typography scale, spacing, radius, shadows, transitions, breakpoints
 - Created `apps/travel-admin/src/styles/_material-theme.scss` — Angular Material v19 MDC theme with custom m2 palettes; light theme (default) + dark theme (`.dark-theme` class on body)

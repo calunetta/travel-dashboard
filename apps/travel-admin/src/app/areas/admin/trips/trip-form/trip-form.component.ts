@@ -49,7 +49,7 @@ import { startWith } from 'rxjs/operators';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="tha-page tha-animate-fade-in" style="max-width: 800px; margin: 0 auto;">
-      <div class="tha-flex-row tha-flex-center tha-mb-6" style="justify-content: flex-start;">
+      <div class="tha-flex-row tha-flex-col-sm tha-mb-6" style="gap: var(--tha-spacing-4);">
         <button mat-icon-button routerLink="/admin/trips" aria-label="Back to Trips">
           <mat-icon>arrow_back</mat-icon>
         </button>

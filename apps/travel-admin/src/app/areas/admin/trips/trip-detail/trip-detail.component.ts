@@ -57,7 +57,7 @@ import { RoomType } from 'trips-models';
   template: `
     <div class="tha-page tha-animate-fade-in" *ngIf="trip() as t; else loading">
       <!-- Header -->
-      <div class="tha-flex-row tha-mb-6" style="align-items: center; justify-content: space-between;">
+      <div class="tha-flex-row tha-flex-col-sm tha-mb-6" style="justify-content: space-between; gap: var(--tha-spacing-4);">
         <div class="tha-flex-row" style="align-items: center; gap: var(--tha-spacing-4);">
           <button mat-icon-button routerLink="/admin/trips" aria-label="Back to Trips">
             <mat-icon>arrow_back</mat-icon>
@@ -173,12 +173,12 @@ import { RoomType } from 'trips-models';
         <mat-tab label="Documents ({{ t.documents.length }})">
           <div class="tha-p-6">
             <!-- Upload Header -->
-            <div class="tha-flex-row tha-mb-4" style="justify-content: space-between; align-items: center;">
+            <div class="tha-flex-row tha-flex-col-sm tha-mb-4" style="justify-content: space-between; gap: var(--tha-spacing-4);">
               <div>
                 <h3 class="tha-text-lg tha-font-bold tha-mb-1">Trip Documents</h3>
                 <p class="tha-text-xs tha-text-muted">PDF only · Max 20 MB per file</p>
               </div>
-              <div class="tha-flex-row tha-gap-2">
+              <div class="tha-flex-row tha-flex-col-sm tha-gap-2">
                 <!-- Hidden file input -->
                 <input
                   #fileInput
@@ -224,7 +224,7 @@ import { RoomType } from 'trips-models';
                   style="box-shadow: none; border: 1px solid var(--tha-border);"
                 >
                   <mat-card-content style="padding: 12px 16px;">
-                    <div class="tha-flex-row" style="align-items: center; justify-content: space-between; gap: 12px;">
+                    <div class="tha-flex-row tha-flex-col-sm" style="gap: 12px;">
                       <!-- Left: icon + info -->
                       <div class="tha-flex-row" style="align-items: center; gap: 12px; flex: 1; min-width: 0;">
                         <mat-icon style="color: var(--tha-primary); flex-shrink: 0;">picture_as_pdf</mat-icon>

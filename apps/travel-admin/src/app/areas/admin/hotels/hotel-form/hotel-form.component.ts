@@ -45,7 +45,7 @@ import { FirebaseAuthService } from 'auth-api-requests';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="tha-page tha-animate-fade-in" style="max-width: 900px; margin: 0 auto;">
-      <div class="tha-flex-row tha-mb-6" style="align-items: center; gap: var(--tha-spacing-4);">
+      <div class="tha-flex-row tha-flex-col-sm tha-mb-6" style="gap: var(--tha-spacing-4);">
         <button mat-icon-button routerLink="/admin/hotels" aria-label="Back to Hotels">
           <mat-icon>arrow_back</mat-icon>
         </button>
@@ -167,7 +167,7 @@ import { FirebaseAuthService } from 'auth-api-requests';
 
         <!-- Pricing Ranges -->
         <mat-card class="tha-card tha-shadow-sm">
-          <mat-card-header class="tha-flex-row" style="align-items: center; justify-content: space-between; width: 100%;">
+          <mat-card-header class="tha-flex-row tha-flex-col-sm" style="justify-content: space-between; width: 100%; gap: var(--tha-spacing-4);">
             <mat-card-title>Dynamic Pricing Configurations</mat-card-title>
             <button mat-flat-button color="primary" type="button" (click)="addPricingRange()">
               <mat-icon>add</mat-icon> Add Period
