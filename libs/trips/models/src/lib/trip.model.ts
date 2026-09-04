@@ -15,15 +15,6 @@ export enum RoomType {
   EXTRA_BED = 'EXTRA_BED',
 }
 
-/** Trip status lifecycle. */
-export enum TripStatus {
-  DRAFT = 'DRAFT',
-  PUBLISHED = 'PUBLISHED',
-  FULL = 'FULL',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-}
-
 // ── Interfaces ───────────────────────────────────────────────────────────────
 
 /**
@@ -61,14 +52,12 @@ export interface TripDocument {
  */
 export interface Trip {
   readonly id: FirestoreId;
-  readonly title: string;
   readonly destination: string;
   readonly startDate: ISODateString;
   readonly endDate: ISODateString;
   /** Fixed at 8 days per business rule. */
   readonly durationDays: 8;
   readonly notes: string;
-  readonly status: TripStatus;
   readonly roomComposition: RoomComposition;
   readonly coordinatorId: FirestoreId | null;
   readonly hotelId: FirestoreId | null;
@@ -87,13 +76,11 @@ export interface Trip {
  * Field names match exactly what is stored in Firestore.
  */
 export interface TripFirestoreDocument {
-  readonly title: string;
   readonly destination: string;
   readonly startDate: string;
   readonly endDate: string;
   readonly durationDays: 8;
   readonly notes: string;
-  readonly status: string;
   readonly roomComposition: {
     readonly SINGLE: number;
     readonly DOUBLE: number;

@@ -8,7 +8,7 @@
 //   { path: 'admin', canActivate: [authGuard], ... }
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { inject } from '@angular/core';
+import { inject, Injector } from '@angular/core';
 import { type CanActivateFn, Router } from '@angular/router';
 import { FirebaseAuthService } from 'auth-api-requests';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -24,8 +24,9 @@ import { filter, map, take } from 'rxjs/operators';
 export const authGuard: CanActivateFn = () => {
   const authService = inject(FirebaseAuthService);
   const router = inject(Router);
+  const injector = inject(Injector);
 
-  return toObservable(authService.isLoading).pipe(
+  return toObservable(authService.isLoading, { injector }).pipe(
     filter(isLoading => !isLoading),
     take(1),
     map(() => {

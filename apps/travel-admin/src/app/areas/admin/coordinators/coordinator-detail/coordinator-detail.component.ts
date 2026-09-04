@@ -120,7 +120,7 @@ import { shareReplay, switchMap, map } from 'rxjs';
               <mat-card *ngFor="let trip of assignedTrips()" class="tha-shadow-sm" style="border: 1px solid var(--tha-border); box-shadow: none;">
                 <mat-card-header>
                   <mat-icon matCardAvatar color="primary">flight</mat-icon>
-                  <mat-card-title>{{ trip.title }}</mat-card-title>
+                  <mat-card-title>{{ trip.destination }}</mat-card-title>
                   <mat-card-subtitle>{{ trip.startDate }} to {{ trip.endDate }}</mat-card-subtitle>
                 </mat-card-header>
                 <mat-card-actions align="end">

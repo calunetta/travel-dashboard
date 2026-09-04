@@ -31,7 +31,6 @@ interface CandidacyViewModel extends Candidacy {
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,
@@ -176,7 +175,7 @@ export class CandidacyListComponent implements AfterViewInit {
         map(([candidacies, trips]) => {
           return candidacies.map((c) => {
             const tripNames = c.tripIds.map(
-              (tid) => trips.find((t) => t.id === tid)?.title ?? 'Unknown Trip'
+              (tid) => trips.find((t) => t.id === tid)?.destination ?? 'Unknown Trip'
             );
             return {
               ...c,

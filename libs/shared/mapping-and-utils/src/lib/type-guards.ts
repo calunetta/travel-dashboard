@@ -3,7 +3,7 @@
 // Used for defensive programming — validate external data at runtime.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { RoomType, TripStatus } from 'trips-models';
+import { RoomType } from 'trips-models';
 import { AgePreference, AssignmentType, CandidacyStatus } from 'coordinators-models';
 import { CountryCode } from 'hotels-models';
 import type { WeRoadTour, WeRoadPaginatedToursResponse, FirestoreId } from 'shared-models';
@@ -40,10 +40,6 @@ export function isRoomType(value: unknown): value is RoomType {
   return isString(value) && Object.values(RoomType).includes(value as RoomType);
 }
 
-export function isTripStatus(value: unknown): value is TripStatus {
-  return isString(value) && Object.values(TripStatus).includes(value as TripStatus);
-}
-
 export function isAgePreference(value: unknown): value is AgePreference {
   return isString(value) && Object.values(AgePreference).includes(value as AgePreference);
 }
@@ -67,21 +63,17 @@ export function isCountryCode(value: unknown): value is CountryCode {
  * Validates only required structural fields — optional fields are not checked.
  */
 export function isTripFirestoreDocument(value: unknown): value is {
-  title: string;
   destination: string;
   startDate: string;
   endDate: string;
   durationDays: 8;
-  status: string;
   roomComposition: Record<string, number>;
 } {
   if (!isNonNullObject(value)) return false;
-  if (!isNonEmptyString(value['title'])) return false;
   if (!isNonEmptyString(value['destination'])) return false;
   if (!isNonEmptyString(value['startDate'])) return false;
   if (!isNonEmptyString(value['endDate'])) return false;
   if (value['durationDays'] !== 8) return false;
-  if (!isTripStatus(value['status'])) return false;
   if (!isNonNullObject(value['roomComposition'])) return false;
   return true;
 }

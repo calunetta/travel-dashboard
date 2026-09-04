@@ -367,6 +367,52 @@ apps/travel-admin/src/app/areas/public/candidacy-success/candidacy-success.compo
 - [x] Polished Dark Theme by updating surface colors to deep blacks (`#121212` and `#1e1e2e`) in `_tokens.scss`.
 - [x] Polished `DashboardComponent` and `AdminShellComponent` UI with proper stat cards, hover states, and matching sidebar header colors.
 
+### ✅ Bug Fix & Polish 2
+
+**Status:** COMPLETED
+**Completed At:** 2026-09-04
+
+#### What was done:
+- [x] Fixed Angular `NG0203` error by explicitly providing the `Injector` to `toObservable()` inside `auth.guard.ts` and `login.component.ts`.
+- [x] Removed `title` from the `Trip` model, UI forms, and list.
+- [x] Fixed Trip Creation form to allow assigning Hotel and Coordinator during creation by fetching them via the API services.
+- [x] Fixed Global UI Alignment: applied standard flexbox centering to `.mdc-button__label` and list items globally.
+- [x] Futuristic UI Redesign: changed dark theme tokens to deep blacks, applied thin borders and glassmorphism to cards, and replaced emojis/titles with sleek "WeRoadX Operations".
+
+### ✅ Bug Fix & Polish 3 (Build, Login & Tests)
+
+**Status:** COMPLETED
+**Completed At:** 2026-09-04
+
+#### What was done:
+- [x] Fixed all remaining TypeScript compilation errors that arose from the `title` removal in `Trip` model across the admin dashboard, candidacies list, coordinator details, and calendar views.
+- [x] Fixed content projection bug in `login.component.ts` related to the `MatButtonIcon` slot (`NG8011`).
+- [x] Verified and stabilized Login Flow. Checked the wait condition on `authService.isLoading` signal before deciding to redirect to `/admin/dashboard` or `/unauthorized`.
+- [x] Wrote comprehensive Jest tests for `LoginComponent`, `FirebaseAuthService`, and `AuthGuard`.
+
+### ✅ Bug Fix & Polish 4 (Infinite Loading Fix)
+
+**Status:** COMPLETED
+**Completed At:** 2026-09-04
+
+#### What was done:
+- [x] Fixed an infinite loading bug in the Authentication flow caused by `FirebaseAuthService`.
+- [x] Removed the explicit `_isLoading.set(true)` within `signInWithGoogle` to prevent the app from getting stuck if `onAuthStateChanged` does not trigger.
+- [x] Wrapped the Firestore `getDoc` call for the `admins` collection in a `try/catch` block to handle permissions errors or missing documents gracefully.
+- [x] Wrote specific Jest regression tests in `firebase-auth.service.spec.ts` for these scenarios, enforcing the new Zero-Regression Policy.
+
+### ✅ Bug Fix & Polish 5 (Trip Model Cleanup & UI Polish)
+
+**Status:** COMPLETED
+**Completed At:** 2026-09-04
+
+#### What was done:
+- [x] Cleaned up Trip Model by fully removing `status` in favor of deriving assignment from `coordinatorId`.
+- [x] Modernized Dashboard UI with glassmorphism, flexbox alignment, and specific icon colors.
+- [x] Rebuilt Calendar UI utilizing Angular Material Dialog (`TripDialogComponent`) and dynamic hashing colors for trip pills.
+- [x] Updated Candidacy Form to only show trips with `coordinatorId === null`.
+- [x] Added unit tests for candidacy form logic.
+
 ---
 
 ## Git Commit History Log

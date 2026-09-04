@@ -7,8 +7,64 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRippleModule } from '@angular/material/core';
 
+import { MatDialog, MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+
 import { TripApiService } from 'trips-api-requests';
-import { Trip, TripStatus } from 'trips-models';
+import { HotelApiService } from 'hotels-api-requests';
+import { CoordinatorApiService } from 'coordinators-api-requests';
+import { Trip } from 'trips-models';
+
+@Component({
+  selector: 'tha-trip-dialog',
+  standalone: true,
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatDialogModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <h2 mat-dialog-title class="tha-font-bold">{{ data.trip.destination }}</h2>
+    <mat-dialog-content>
+      <div class="tha-flex-col tha-gap-4 tha-py-4">
+        <div class="tha-flex-row" style="align-items: center; gap: 8px;">
+          <mat-icon color="primary">date_range</mat-icon>
+          <span>{{ data.trip.startDate }} — {{ data.trip.endDate }} ({{ data.trip.durationDays }} days)</span>
+        </div>
+        
+        <div class="tha-flex-row" style="align-items: center; gap: 8px;">
+          <mat-icon color="accent">group</mat-icon>
+          <span *ngIf="data.coordinatorName">{{ data.coordinatorName }}</span>
+          <span *ngIf="!data.coordinatorName" class="tha-text-muted tha-italic">No Coordinator Assigned</span>
+        </div>
+
+        <div class="tha-flex-row" style="align-items: center; gap: 8px;">
+          <mat-icon color="accent">hotel</mat-icon>
+          <span *ngIf="data.hotelName">{{ data.hotelName }}</span>
+          <span *ngIf="!data.hotelName" class="tha-text-muted tha-italic">No Hotel Assigned</span>
+        </div>
+        
+        <div *ngIf="data.trip.notes" class="tha-mt-2">
+          <strong>Notes:</strong>
+          <p class="tha-text-muted">{{ data.trip.notes }}</p>
+        </div>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Close</button>
+      <button mat-flat-button color="primary" (click)="goToTrip()">Go to Trip Details</button>
+    </mat-dialog-actions>
+  `
+})
+export class TripDialogComponent {
+  readonly data = inject(MAT_DIALOG_DATA) as { trip: Trip, hotelName: string | null, coordinatorName: string | null };
+  private readonly router = inject(Router);
+  private readonly dialogRef = inject(MatDialogRef);
+
+  goToTrip() {
+    this.router.navigate(['/admin/trips', this.data.trip.id]);
+    this.dialogRef.close();
+  }
+}
+
 
 interface CalendarDay {
   date: Date;
@@ -19,7 +75,7 @@ interface CalendarDay {
 @Component({
   selector: 'tha-calendar',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatRippleModule],
+  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, MatRippleModule, MatDialogModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="tha-page tha-animate-fade-in tha-full-height tha-flex-col">
@@ -65,13 +121,15 @@ interface CalendarDay {
             <div class="day-number">{{ day.date.getDate() }}</div>
             
             <div class="trips-container">
-              <a *ngFor="let trip of day.trips" 
+              <div *ngFor="let trip of day.trips" 
                  class="trip-pill" 
-                 [routerLink]="['/admin/trips', trip.id]"
+                 [style.background-color]="getTripColor(trip.id)"
+                 [style.color]="getTripTextColor(trip.id)"
+                 (click)="openTripDialog(trip)"
                  matRipple
-                 [title]="trip.title + ' (' + trip.destination + ')'">
-                <span class="trip-pill-text">{{ trip.title }}</span>
-              </a>
+                 [title]="trip.destination + ' (' + trip.startDate + ')'">
+                <span class="trip-pill-text">{{ trip.destination }}</span>
+              </div>
             </div>
 
           </div>
@@ -137,8 +195,8 @@ interface CalendarDay {
         flex: 1;
       }
       .trip-pill {
-        background: var(--tha-primary-light);
-        color: var(--tha-primary-dark);
+        border-radius: 4px;
+        text-decoration: none;
         font-size: 11px;
         font-weight: 600;
         padding: 2px 6px;
@@ -158,6 +216,9 @@ interface CalendarDay {
 })
 export class CalendarComponent {
   private readonly tripApi = inject(TripApiService);
+  private readonly hotelApi = inject(HotelApiService);
+  private readonly coordinatorApi = inject(CoordinatorApiService);
+  private readonly dialog = inject(MatDialog);
   
   private readonly currentDate = signal(new Date());
 
@@ -226,9 +287,6 @@ export class CalendarComponent {
   private getTripsForDate(date: Date, trips: ReadonlyArray<Trip>): Trip[] {
     const targetTime = date.getTime();
     return trips.filter((t) => {
-      // Exclude cancelled trips from calendar maybe? Or just show all? Let's exclude cancelled.
-      if (t.status === TripStatus.CANCELLED) return false;
-
       // Check if date falls within trip start/end bounds
       // Note: we set hours to 0 to ignore time parts in comparison
       const start = new Date(t.startDate);
@@ -259,5 +317,51 @@ export class CalendarComponent {
     return date.getDate() === today.getDate() &&
            date.getMonth() === today.getMonth() &&
            date.getFullYear() === today.getFullYear();
+  }
+
+  getTripColor(tripId: string): string {
+    let hash = 0;
+    for (let i = 0; i < tripId.length; i++) {
+      hash = tripId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 70%, 85%)`;
+  }
+  
+  getTripTextColor(tripId: string): string {
+    let hash = 0;
+    for (let i = 0; i < tripId.length; i++) {
+      hash = tripId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 80%, 25%)`;
+  }
+
+  async openTripDialog(trip: Trip) {
+    let hotelName: string | null = null;
+    let coordinatorName: string | null = null;
+
+    if (trip.hotelId) {
+      try {
+        const hotel = await firstValueFrom(this.hotelApi.getById$(trip.hotelId));
+        if (hotel) hotelName = hotel.name;
+      } catch (e) {
+        console.error('Failed to load hotel', e);
+      }
+    }
+
+    if (trip.coordinatorId) {
+      try {
+        const coord = await firstValueFrom(this.coordinatorApi.getById$(trip.coordinatorId));
+        if (coord) coordinatorName = `${coord.name} ${coord.surname}`;
+      } catch (e) {
+        console.error('Failed to load coordinator', e);
+      }
+    }
+
+    this.dialog.open(TripDialogComponent, {
+      data: { trip, hotelName, coordinatorName },
+      width: '400px'
+    });
   }
 }

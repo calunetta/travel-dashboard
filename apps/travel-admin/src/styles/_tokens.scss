@@ -49,12 +49,12 @@ $tha-surface-variant-light: #eef2f7;
 $tha-on-surface-light: #1a2035;
 $tha-on-surface-variant-light: #546e8a;
 
-// Dark theme
-$tha-bg-dark:         #121212;
-$tha-surface-dark:    #1e1e2e;
-$tha-surface-variant-dark: #2a2a3c;
-$tha-on-surface-dark: #e8ecf2;
-$tha-on-surface-variant-dark: #a0a0b0;
+// Dark theme (Futuristic Corporate)
+$tha-bg-dark:         #050505; // almost pure black
+$tha-surface-dark:    #0a0a0f;
+$tha-surface-variant-dark: #12121c;
+$tha-on-surface-dark: #f8f9fa;
+$tha-on-surface-variant-dark: #8b9bb4;
 
 // ── Typography ────────────────────────────────────────────────────────────────
 $tha-font-family-base: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;

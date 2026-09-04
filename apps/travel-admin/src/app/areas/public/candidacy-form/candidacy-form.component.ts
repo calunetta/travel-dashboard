@@ -15,7 +15,6 @@ import { BehaviorSubject, map } from 'rxjs';
 
 import { TripApiService } from 'trips-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
-import { TripStatus } from 'trips-models';
 import { AgePreference, CandidacyFormPayload } from 'coordinators-models';
 import type { FirestoreId } from 'shared-models';
 
@@ -53,7 +52,7 @@ import type { FirestoreId } from 'shared-models';
             
             <div *ngIf="trips.length === 0" class="tha-p-4" style="background: var(--tha-warning-bg); color: var(--tha-warning); border-radius: var(--tha-radius-md);">
               <mat-icon style="vertical-align: middle; margin-right: 8px;">warning</mat-icon>
-              <span>There are currently no published trips available for assignment.</span>
+              <span>There are currently no trips available for assignment.</span>
             </div>
 
             <!-- Trip Selection -->
@@ -61,7 +60,7 @@ import type { FirestoreId } from 'shared-models';
               <mat-label>Available Trips</mat-label>
               <mat-select formControlName="tripIds" multiple>
                 <mat-option *ngFor="let trip of trips" [value]="trip.id">
-                  {{ trip.title }} ({{ trip.startDate }} - {{ trip.endDate }})
+                  {{ trip.destination }} ({{ trip.startDate }} - {{ trip.endDate }})
                 </mat-option>
               </mat-select>
               <mat-error *ngIf="form.get('tripIds')?.hasError('required')">
@@ -109,7 +108,7 @@ import type { FirestoreId } from 'shared-models';
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="tha-full-width">
-              <mat-label>Notes / Cover Letter (Optional)</mat-label>
+              <mat-label>Notes(Optional)</mat-label>  
               <textarea matInput formControlName="notes" rows="4" placeholder="Tell us why you are a great fit..."></textarea>
             </mat-form-field>
 
@@ -147,13 +146,13 @@ export class CandidacyFormComponent {
 
   readonly agePreferences = Object.values(AgePreference);
 
-  // Observable of only PUBLISHED trips
-  private readonly publishedTrips$ = this.tripApi.getAll$().pipe(
-    map((trips) => trips.filter((t) => t.status === TripStatus.PUBLISHED))
+  // Observable of trips without a coordinator assigned
+  private readonly availableTrips$ = this.tripApi.getAll$().pipe(
+    map((trips) => trips.filter((t) => t.coordinatorId === null))
   );
 
   // Expose to template as signals
-  readonly availableTrips = toSignal(this.publishedTrips$, { initialValue: [] });
+  readonly availableTrips = toSignal(this.availableTrips$, { initialValue: [] });
   readonly tripsLoading = toSignal(
     new BehaviorSubject<boolean>(true).asObservable() // Simple mock for loading state until first emit
   );

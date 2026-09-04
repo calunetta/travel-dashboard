@@ -45,9 +45,21 @@
   border-radius: var(--tha-radius-lg);
   box-shadow: var(--tha-shadow-sm);
   padding: var(--tha-spacing-6);
-  transition: box-shadow var(--tha-transition-normal);
+  transition: all var(--tha-transition-normal);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 
-  &:hover { box-shadow: var(--tha-shadow-md); }
+  .dark-theme & {
+    background: rgba(10, 10, 15, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(139, 155, 180, 0.1);
+  }
+
+  &:hover { 
+    box-shadow: var(--tha-shadow-md); 
+    border-color: rgba(var(--tha-primary-500-rgb, 63, 123, 217), 0.3);
+  }
 }
 
 .tha-card-flat {
@@ -166,3 +178,15 @@
 .tha-animate-fade-in      { animation: tha-fade-in      var(--tha-transition-normal) ease forwards; }
 .tha-animate-slide-left   { animation: tha-slide-in-left var(--tha-transition-normal) ease forwards; }
 .tha-animate-scale-in     { animation: tha-scale-in     var(--tha-transition-normal) ease forwards; }
+
+// ── Global Alignment Fixes (Task 3) ───────────────────────────────────────────
+.mdc-button__label,
+.mat-mdc-list-item-title,
+.mat-mdc-list-item-unscoped-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.mat-mdc-list-item-icon {
+  margin-right: 0 !important; // override material default if gap is used
+}

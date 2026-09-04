@@ -10,10 +10,9 @@ import type {
   CreateTripPayload,
   RoomComposition,
 } from 'trips-models';
-import { RoomType, TripStatus, DEFAULT_ROOM_COMPOSITION } from 'trips-models';
+import { RoomType, DEFAULT_ROOM_COMPOSITION } from 'trips-models';
 import type { FirestoreId } from 'shared-models';
 import { timestampToIso } from 'shared-mapping-and-utils';
-import { isTripStatus } from 'shared-mapping-and-utils';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -50,13 +49,11 @@ export function mapSnapshotToTrip(
 
   return {
     id,
-    title: data.title ?? '',
     destination: data.destination ?? '',
     startDate: data.startDate ?? '',
     endDate: data.endDate ?? '',
     durationDays: 8,
     notes: data.notes ?? '',
-    status: isTripStatus(data.status) ? data.status : TripStatus.DRAFT,
     roomComposition: toRoomComposition(roomCompositionRaw as Record<string, unknown>),
     coordinatorId: (data.coordinatorId as FirestoreId | null) ?? null,
     hotelId: (data.hotelId as FirestoreId | null) ?? null,
@@ -87,13 +84,11 @@ export function mapCreatePayloadToFirestore(
   updatedAt: ReturnType<typeof serverTimestamp>;
 } {
   return {
-    title: payload.title,
     destination: payload.destination,
     startDate: payload.startDate,
     endDate: payload.endDate,
     durationDays: 8,
     notes: payload.notes,
-    status: payload.status,
     roomComposition: {
       SINGLE: payload.roomComposition[RoomType.SINGLE],
       DOUBLE: payload.roomComposition[RoomType.DOUBLE],
@@ -126,12 +121,10 @@ export function mapUpdatePayloadToFirestore(
 ): Partial<TripFirestoreDocument> & { updatedAt: ReturnType<typeof serverTimestamp> } {
   const update: Record<string, unknown> = {};
 
-  if (payload.title !== undefined) update['title'] = payload.title;
   if (payload.destination !== undefined) update['destination'] = payload.destination;
   if (payload.startDate !== undefined) update['startDate'] = payload.startDate;
   if (payload.endDate !== undefined) update['endDate'] = payload.endDate;
   if (payload.notes !== undefined) update['notes'] = payload.notes;
-  if (payload.status !== undefined) update['status'] = payload.status;
   if (payload.roomComposition !== undefined) {
     update['roomComposition'] = {
       SINGLE: payload.roomComposition[RoomType.SINGLE],
@@ -170,13 +163,11 @@ export function createDefaultTripPayload(): CreateTripPayload {
     .toISOString()
     .split('T')[0];
   return {
-    title: '',
     destination: '',
     startDate: today,
     endDate,
     durationDays: 8,
     notes: '',
-    status: TripStatus.DRAFT,
     roomComposition: { ...DEFAULT_ROOM_COMPOSITION },
     coordinatorId: null,
     hotelId: null,

@@ -14,7 +14,6 @@ import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { Trip } from 'trips-models';
-import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge.component';
 import { Observable, combineLatest, map } from 'rxjs';
 
 /** View model that combines trip data with joined hotel and coordinator names for display. */
@@ -36,7 +35,6 @@ interface TripViewModel extends Trip {
     MatIconModule,
     MatInputModule,
     MatFormFieldModule,
-    StatusBadgeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -60,34 +58,21 @@ interface TripViewModel extends Trip {
         <div style="overflow-x: auto;">
           <table mat-table [dataSource]="dataSource" matSort class="tha-full-width">
             
-            <!-- Title Column -->
-            <ng-container matColumnDef="title">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header> Title </th>
+            <!-- Destination Column -->
+            <ng-container matColumnDef="destination">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header> Destination </th>
               <td mat-cell *matCellDef="let trip">
-                <span class="tha-font-bold">{{ trip.title }}</span>
+                <span class="tha-font-bold">{{ trip.destination }}</span>
                 <div class="tha-text-xs tha-text-muted">{{ trip.weRoadTourSlug ?? 'No WeRoad mapping' }}</div>
               </td>
             </ng-container>
 
-            <!-- Destination Column -->
-            <ng-container matColumnDef="destination">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header> Destination </th>
-              <td mat-cell *matCellDef="let trip"> {{ trip.destination }} </td>
-            </ng-container>
 
             <!-- Dates Column -->
             <ng-container matColumnDef="dates">
               <th mat-header-cell *matHeaderCellDef> Dates </th>
               <td mat-cell *matCellDef="let trip">
                 {{ trip.startDate }} <br/> <span class="tha-text-xs tha-text-muted">to {{ trip.endDate }} ({{ trip.durationDays }} days)</span>
-              </td>
-            </ng-container>
-
-            <!-- Status Column -->
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header> Status </th>
-              <td mat-cell *matCellDef="let trip">
-                <tha-status-badge [status]="trip.status"></tha-status-badge>
               </td>
             </ng-container>
 
@@ -138,7 +123,7 @@ interface TripViewModel extends Trip {
 
             <!-- Row shown when there is no matching data. -->
             <tr class="mat-row" *matNoDataRow>
-              <td class="mat-cell tha-p-4 tha-text-center tha-text-muted" colspan="7">
+              <td class="mat-cell tha-p-4 tha-text-center tha-text-muted" colspan="6">
                 No trips found matching the filter.
               </td>
             </tr>
@@ -164,7 +149,7 @@ export class TripListComponent implements AfterViewInit {
   private readonly hotelApi = inject(HotelApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
 
-  readonly displayedColumns: string[] = ['title', 'destination', 'dates', 'status', 'coordinator', 'hotel', 'actions'];
+  readonly displayedColumns: string[] = ['destination', 'dates', 'coordinator', 'hotel', 'actions'];
   readonly dataSource = new MatTableDataSource<TripViewModel>();
 
   @ViewChild(MatSort) sort!: MatSort;
@@ -197,7 +182,7 @@ export class TripListComponent implements AfterViewInit {
       
     // Custom filter predicate to search across resolved names too
     this.dataSource.filterPredicate = (data: TripViewModel, filter: string) => {
-      const dataStr = `${data.title} ${data.destination} ${data.status} ${data.hotelName ?? ''} ${data.coordinatorName ?? ''} ${data.weRoadTourSlug ?? ''}`.toLowerCase();
+      const dataStr = `${data.destination} ${data.hotelName ?? ''} ${data.coordinatorName ?? ''} ${data.weRoadTourSlug ?? ''}`.toLowerCase();
       return dataStr.indexOf(filter) !== -1;
     };
   }

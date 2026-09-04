@@ -13,7 +13,9 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 
 import { TripApiService } from 'trips-api-requests';
-import { TripStatus, CreateTripPayload, UpdateTripPayload, DEFAULT_ROOM_COMPOSITION } from 'trips-models';
+import { HotelApiService } from 'hotels-api-requests';
+import { CoordinatorApiService } from 'coordinators-api-requests';
+import { CreateTripPayload, UpdateTripPayload, DEFAULT_ROOM_COMPOSITION } from 'trips-models';
 import { FirestoreId } from 'shared-models';
 import { Subscription, firstValueFrom } from 'rxjs';
 
@@ -37,7 +39,7 @@ import { Subscription, firstValueFrom } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="tha-page tha-animate-fade-in" style="max-width: 800px; margin: 0 auto;">
-      <div class="tha-flex-row tha-mb-6" style="align-items: center; gap: var(--tha-spacing-4);">
+      <div class="tha-flex-row tha-flex-center tha-mb-6" style="justify-content: flex-start;">
         <button mat-icon-button routerLink="/admin/trips" aria-label="Back to Trips">
           <mat-icon>arrow_back</mat-icon>
         </button>
@@ -49,12 +51,6 @@ import { Subscription, firstValueFrom } from 'rxjs';
           <form [formGroup]="form" (ngSubmit)="onSubmit()" class="tha-flex-col tha-gap-4">
             
             <div class="tha-grid-2">
-              <mat-form-field appearance="outline">
-                <mat-label>Title</mat-label>
-                <input matInput formControlName="title" placeholder="e.g. Bali Express" />
-                <mat-error *ngIf="form.get('title')?.hasError('required')">Title is required.</mat-error>
-              </mat-form-field>
-
               <mat-form-field appearance="outline">
                 <mat-label>Destination</mat-label>
                 <input matInput formControlName="destination" placeholder="e.g. Bali, Indonesia" />
@@ -71,7 +67,6 @@ import { Subscription, firstValueFrom } from 'rxjs';
                 <mat-error *ngIf="form.get('startDate')?.hasError('required')">Start Date is required.</mat-error>
               </mat-form-field>
 
-              <!-- End Date is read-only because it is auto-calculated -->
               <mat-form-field appearance="outline">
                 <mat-label>End Date (Auto-calculated 8 days)</mat-label>
                 <input matInput [matDatepicker]="endPicker" formControlName="endDate" readonly />
@@ -79,27 +74,37 @@ import { Subscription, firstValueFrom } from 'rxjs';
                 <mat-datepicker #endPicker></mat-datepicker>
               </mat-form-field>
             </div>
-
+            
             <div class="tha-grid-2">
               <mat-form-field appearance="outline">
-                <mat-label>Status</mat-label>
-                <mat-select formControlName="status">
-                  <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+                <mat-label>Assign Hotel (Optional)</mat-label>
+                <mat-select formControlName="hotelId">
+                  <mat-option [value]="null">-- None --</mat-option>
+                  <mat-option *ngFor="let h of hotels$ | async" [value]="h.id">{{ h.name }}</mat-option>
                 </mat-select>
-                <mat-error *ngIf="form.get('status')?.hasError('required')">Status is required.</mat-error>
               </mat-form-field>
 
+              <mat-form-field appearance="outline">
+                <mat-label>Assign Coordinator (Optional)</mat-label>
+                <mat-select formControlName="coordinatorId">
+                  <mat-option [value]="null">-- None --</mat-option>
+                  <mat-option *ngFor="let c of coordinators$ | async" [value]="c.id">{{ c.name }} {{ c.surname }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="tha-grid-2">
               <mat-form-field appearance="outline">
                 <mat-label>WeRoad Tour Slug (Optional)</mat-label>
                 <input matInput formControlName="weRoadTourSlug" placeholder="e.g. bali-express" />
                 <mat-hint>Links to WeRoad API for fetching fb group url</mat-hint>
               </mat-form-field>
+              
+              <mat-form-field appearance="outline" class="tha-full-width">
+                <mat-label>Facebook Group URL (Optional)</mat-label>
+                <input matInput formControlName="facebookGroupUrl" placeholder="https://facebook.com/groups/..." />
+              </mat-form-field>
             </div>
-
-            <mat-form-field appearance="outline" class="tha-full-width">
-              <mat-label>Facebook Group URL (Optional)</mat-label>
-              <input matInput formControlName="facebookGroupUrl" placeholder="https://facebook.com/groups/..." />
-            </mat-form-field>
 
             <mat-form-field appearance="outline" class="tha-full-width">
               <mat-label>Notes (Optional)</mat-label>
@@ -134,11 +139,14 @@ import { Subscription, firstValueFrom } from 'rxjs';
 export class TripFormComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly tripApi = inject(TripApiService);
+  private readonly hotelApi = inject(HotelApiService);
+  private readonly coordinatorApi = inject(CoordinatorApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
-
-  readonly statuses = Object.values(TripStatus);
+  
+  readonly hotels$ = this.hotelApi.getAll$();
+  readonly coordinators$ = this.coordinatorApi.getAll$();
   
   isEditMode = false;
   tripId: FirestoreId | null = null;
@@ -147,11 +155,11 @@ export class TripFormComponent implements OnInit, OnDestroy {
   private sub = new Subscription();
 
   readonly form = this.fb.group({
-    title: ['', Validators.required],
     destination: ['', Validators.required],
     startDate: [null as Date | null, Validators.required],
     endDate: [null as Date | null, Validators.required],
-    status: [TripStatus.DRAFT, Validators.required],
+    hotelId: [null as FirestoreId | null],
+    coordinatorId: [null as FirestoreId | null],
     notes: [''],
     weRoadTourSlug: [''],
     facebookGroupUrl: [''],
@@ -189,11 +197,11 @@ export class TripFormComponent implements OnInit, OnDestroy {
       const trip = await firstValueFrom(this.tripApi.getById$(id));
       if (trip) {
         this.form.patchValue({
-          title: trip.title,
           destination: trip.destination,
           startDate: new Date(trip.startDate),
           endDate: new Date(trip.endDate),
-          status: trip.status,
+          hotelId: trip.hotelId,
+          coordinatorId: trip.coordinatorId,
           notes: trip.notes,
           weRoadTourSlug: trip.weRoadTourSlug,
           facebookGroupUrl: trip.facebookGroupUrl,
@@ -225,11 +233,11 @@ export class TripFormComponent implements OnInit, OnDestroy {
       if (this.isEditMode && this.tripId) {
         const payload: UpdateTripPayload = {
           id: this.tripId,
-          title: formVal.title!,
           destination: formVal.destination!,
           startDate: formatDate(formVal.startDate!),
           endDate: formatDate(formVal.endDate!),
-          status: formVal.status as TripStatus,
+          hotelId: formVal.hotelId ?? null,
+          coordinatorId: formVal.coordinatorId ?? null,
           notes: formVal.notes ?? '',
           weRoadTourSlug: formVal.weRoadTourSlug ?? null,
           facebookGroupUrl: formVal.facebookGroupUrl ?? null,
@@ -238,18 +246,16 @@ export class TripFormComponent implements OnInit, OnDestroy {
         this.snackBar.open('Trip updated successfully', 'Close', { duration: 3000 });
       } else {
         const payload: CreateTripPayload = {
-          title: formVal.title!,
           destination: formVal.destination!,
           startDate: formatDate(formVal.startDate!),
           endDate: formatDate(formVal.endDate!),
           durationDays: 8,
-          status: formVal.status as TripStatus,
+          hotelId: formVal.hotelId ?? null,
+          coordinatorId: formVal.coordinatorId ?? null,
           notes: formVal.notes ?? '',
           weRoadTourSlug: formVal.weRoadTourSlug ?? null,
           facebookGroupUrl: formVal.facebookGroupUrl ?? null,
           roomComposition: DEFAULT_ROOM_COMPOSITION,
-          coordinatorId: null,
-          hotelId: null,
           hotelBookerId: null,
           documents: [],
         };

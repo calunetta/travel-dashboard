@@ -88,7 +88,6 @@ export class FirebaseAuthService implements OnDestroy {
    * Throws if the popup is blocked or the user cancels.
    */
   async signInWithGoogle(): Promise<void> {
-    this._isLoading.set(true);
     this._error.set(null);
     try {
       const provider = new GoogleAuthProvider();
@@ -98,7 +97,6 @@ export class FirebaseAuthService implements OnDestroy {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sign-in failed';
       this._error.set(message);
-      this._isLoading.set(false);
       throw err;
     }
   }
@@ -130,22 +128,28 @@ export class FirebaseAuthService implements OnDestroy {
    * This collection is NEVER writable from the app (enforced by Firestore rules).
    */
   async #buildAuthenticatedUser(firebaseUser: User): Promise<AuthenticatedUser> {
-    const adminDocRef = doc(this.firestore, ADMINS_COLLECTION, firebaseUser.uid);
-    const adminSnapshot = await getDoc(adminDocRef);
-
     let isAdmin = false;
     let adminProfile: Admin | null = null;
 
-    if (adminSnapshot.exists()) {
-      isAdmin = true;
-      const data = adminSnapshot.data() as AdminDocument;
-      adminProfile = {
-        id: firebaseUser.uid as FirestoreId,
-        name: data.name ?? '',
-        surname: data.surname ?? '',
-        email: data.email ?? firebaseUser.email ?? '',
-        phone: data.phone ?? '',
-      };
+    try {
+      const adminDocRef = doc(this.firestore, ADMINS_COLLECTION, firebaseUser.uid);
+      const adminSnapshot = await getDoc(adminDocRef);
+
+      if (adminSnapshot.exists()) {
+        isAdmin = true;
+        const data = adminSnapshot.data() as AdminDocument;
+        adminProfile = {
+          id: firebaseUser.uid as FirestoreId,
+          name: data.name ?? '',
+          surname: data.surname ?? '',
+          email: data.email ?? firebaseUser.email ?? '',
+          phone: data.phone ?? '',
+        };
+      }
+    } catch (e) {
+      console.error('Failed to read admin profile from Firestore:', e);
+      // We catch this so the user is still authenticated (as non-admin)
+      // rather than breaking the entire auth flow.
     }
 
     return {

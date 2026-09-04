@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
+  Injector,
 } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,13 +22,15 @@ import { filter } from 'rxjs/operators';
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="tha-page tha-flex-center" style="min-height: 100vh; background: var(--tha-surface-bg);">
+    <div class="tha-page tha-flex-center" style="min-height: 100vh; background: var(--tha-bg);">
       <mat-card class="tha-card tha-animate-scale-in" style="max-width: 420px; width: 100%; text-align: center; padding: var(--tha-spacing-8);">
         <mat-card-header style="display: flex; flex-direction: column; align-items: center; margin-bottom: var(--tha-spacing-6);">
-          <div style="font-size: 56px; margin-bottom: var(--tha-spacing-3);">✈️</div>
-          <mat-card-title class="tha-text-2xl tha-font-bold">Travel Handling App</mat-card-title>
+          <div style="padding: 16px; background: rgba(var(--tha-primary-500-rgb, 63, 123, 217), 0.1); border-radius: 50%; margin-bottom: var(--tha-spacing-3);">
+            <mat-icon color="primary" style="font-size: 36px; width: 36px; height: 36px;">admin_panel_settings</mat-icon>
+          </div>
+          <mat-card-title class="tha-text-2xl tha-font-bold">Admin Portal</mat-card-title>
           <mat-card-subtitle class="tha-text-sm tha-text-muted tha-mt-2">
-            Admin Portal — Sign in to continue
+            Secure Access — Sign in to continue
           </mat-card-subtitle>
         </mat-card-header>
 
@@ -54,8 +57,11 @@ import { filter } from 'rxjs/operators';
             @if (loading()) {
               <mat-spinner diameter="20" color="accent"></mat-spinner>
               <span class="tha-ml-2">Signing in…</span>
-            } @else {
+            }
+            @if (!loading()) {
               <mat-icon>login</mat-icon>
+            }
+            @if (!loading()) {
               <span>Sign in with Google</span>
             }
           </button>
@@ -67,6 +73,7 @@ import { filter } from 'rxjs/operators';
 export class LoginComponent {
   private readonly authService = inject(FirebaseAuthService);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -79,7 +86,7 @@ export class LoginComponent {
       
       // Wait for auth service to finish loading its state (admin profile fetch)
       await firstValueFrom(
-        toObservable(this.authService.isLoading).pipe(filter(l => !l))
+        toObservable(this.authService.isLoading, { injector: this.injector }).pipe(filter(l => !l))
       );
 
       if (this.authService.isAdmin()) {

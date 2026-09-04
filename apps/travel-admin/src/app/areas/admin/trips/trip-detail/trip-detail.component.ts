@@ -18,7 +18,7 @@ import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { FirestoreId } from 'shared-models';
-import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge.component';
+import { Trip } from 'trips-models';
 import { switchMap, map, shareReplay } from 'rxjs';
 import { RoomType } from 'trips-models';
 
@@ -38,7 +38,7 @@ import { RoomType } from 'trips-models';
     MatInputModule,
     FormsModule,
     MatFormFieldModule,
-    StatusBadgeComponent,
+    MatProgressSpinnerModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -50,12 +50,13 @@ import { RoomType } from 'trips-models';
             <mat-icon>arrow_back</mat-icon>
           </button>
           <div>
-            <div class="tha-flex-row" style="align-items: center; gap: var(--tha-spacing-2);">
-              <h1 class="tha-text-3xl tha-font-bold tha-mb-0">{{ t.title }}</h1>
-              <tha-status-badge [status]="t.status"></tha-status-badge>
+            <div class="tha-flex-row" style="align-items: center; justify-content: space-between; gap: 1rem;">
+              <div>
+                <h1 class="tha-text-3xl tha-font-bold tha-mb-2">{{ t.destination }}</h1>
+              </div>
             </div>
             <div class="tha-text-sm tha-text-muted tha-mt-1">
-              {{ t.destination }} | {{ t.startDate }} to {{ t.endDate }} ({{ t.durationDays }} days)
+              {{ t.startDate }} to {{ t.endDate }} ({{ t.durationDays }} days)
             </div>
           </div>
         </div>
