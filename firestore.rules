@@ -43,7 +43,7 @@ service cloud.firestore {
     // Public read: coordinators need to browse trips for candidacy
     // Admin write: only verified admins can mutate trip data
     match /trips/{tripId} {
-      allow read: if true;
+      allow read: if isAdmin() || resource.data.status == 'PUBLISHED';
       allow create, update, delete: if isAdmin();
     }
 

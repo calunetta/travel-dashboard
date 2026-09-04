@@ -323,17 +323,52 @@ apps/travel-admin/src/app/areas/public/candidacy-success/candidacy-success.compo
 
 ---
 
-### ✅ Step 6 — Testing Suite (Jest + Cypress)
+### ⏳ Step 6 — Testing Suite (Jest + Cypress)
 
-**Status:** COMPLETED
+**Status:** IN PROGRESS
 
-#### What was done:
+#### What was done (by User):
+- User is actively implementing Step 6.
 - [x] Configure Jest for unit testing domain models and services.
 - [x] Setup Cypress E2E tests for the `Public` and `Admin` critical paths.
 - [x] Fix Nx and Cypress configuration errors for Standalone components.
 - [x] Resolve `tha-root` bootstrapping issue in `index.html` preventing app load.
 - [x] Implement E2E assertions for empty-state candidacy flow rendering and submission validation.
 - [x] Verify successful build (`yarn nx build travel-admin`) and E2E pass (`yarn nx e2e travel-admin-e2e`).
+
+---
+
+### ✅ Step 7: Security & Deployment
+
+**Status:** COMPLETED
+**Completed At:** 2026-09-04
+
+#### What was done:
+- [x] Tightened Firestore Security Rules: Trips are restricted to `allow read: if isAdmin() || resource.data.status == 'PUBLISHED'` preventing public access to drafts.
+- [x] Secured Coordinator and Candidacy documents (public creation only, no reads).
+- [x] Created GitHub Actions CI/CD workflow (`.github/workflows/deploy.yml`) to automatically build and deploy to Firebase Hosting on push to `main`.
+- [x] Configured Firebase Hosting rules mapped to Angular dist output.
+
+#### ⚠️ Required Manual Actions For Deployment:
+1. Initialize Firebase Hosting CI token: `firebase init hosting:github` or use GCP Console to generate a service account.
+2. Ensure the GitHub Repository Secret `FIREBASE_SERVICE_ACCOUNT` is properly set.
+3. Replace `YOUR_FIREBASE_PROJECT_ID` in `.github/workflows/deploy.yml` with the target project alias.
+
+---
+
+## Git Commit History Log
+
+Following the Master Rules for granular Git versioning, these are the logical commits performed across Steps 1 to 5:
+
+1. `init: initialize Nx standalone monorepo with Angular 19 and styles`
+2. `feat(shared): generate core domain libraries and define data models`
+3. `feat(trips): implement strict WeRoad API mappers and Firestore wrappers`
+4. `feat(auth): add Firebase authentication config and token providers`
+5. `feat(admin): build NgRx SignalStore for admin state and assignment logic`
+6. `feat(trips): implement TripReminderService for backend cloud function triggers`
+7. `feat(admin-ui): create Admin shell, dashboard, and trip detail components`
+8. `feat(public-ui): build public candidacy form and success flow`
+9. `chore(deps): configure global Material themes and typography`
 
 ---
 
