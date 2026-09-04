@@ -484,3 +484,50 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **GitHub Actions (CI/CD):** Created `.github/workflows/ci-cd.yml` to automate testing, linting, building, and deployment to Firebase Hosting upon merges to the `main` branch.
 3. **Optimizations:** Verified `project.json` Angular build configurations (`outputHashing`, build optimizer, and bundle budgets).
 4. **Proxy & CORS:** Maintained `https://api-catalog.weroad.it` as the base URL for the WeRoad API in production.
+
+---
+
+### ✅ Step 8 - PART 1: RBAC Expansion (SUPER_ADMIN) & Hotel Creation Bug Fix
+
+**Status:** Completed  
+**Date:** 2026-09-04  
+**Commit:** `feat(rbac): add SUPER_ADMIN role, admin assignment on trip creation, and fix hotel creation bug`
+
+**Key Changes:**
+1. **AdminRole type** — Added `AdminRole = 'ADMIN' | 'SUPER_ADMIN'` to `admin.model.ts`. The `role` field defaults to `'ADMIN'` if not set in Firestore. **To set SUPER_ADMIN:** Edit user's document in Firebase Console → `admins` collection → add `role: "SUPER_ADMIN"`.
+2. **FirebaseAuthService** — Added `isSuperAdmin` computed signal. Reads `role` from Firestore admin document on login.
+3. **AdminApiService** — New service in `auth-api-requests`: fetches all admin profiles (cached via `shareReplay`) for SUPER_ADMIN trip assignment UI.
+4. **TripFormComponent** — SUPER_ADMINs see a multi-select panel to explicitly assign admins to trips. Standard admins inherit Tour's `adminIds` automatically.
+5. **AdminShellComponent** — SUPER ADMIN badge pill shown in header toolbar.
+6. **Firestore Rules** — Added `isSuperAdmin()` helper function. SUPER_ADMINs bypass `isResourceAdmin`. All admins can read all admin profiles (for assignment UI).
+7. **Hotel Creation Bug Fix** — Race condition where `toursCache` was empty at submit time resulted in `adminIds: []` which was rejected by Firestore. Fix: use `firstValueFrom(tours$)` at submit time + fallback to `currentUser().uid`.
+8. **Tests** — 8 unit tests for hotel form including 2 regression tests.
+
+---
+
+### ✅ Step 8 - PART 2: Firebase Storage Integration for Trip Documents
+
+**Status:** Completed  
+**Date:** 2026-09-04  
+**Commit:** `feat(storage): implement Firebase Storage for trip document uploads`
+
+**Key Changes:**
+1. **TripDocument model** — Added `paymentStatus: 'TO_BE_PAID' | 'PAID'` field. Added `DocumentPaymentStatus` type and `AddTripDocumentPayload` interface.
+2. **Trip mapper** — Updated to read/write `paymentStatus` field for documents in all 3 mapper functions.
+3. **FIREBASE_STORAGE_TOKEN** — New injection token in `shared-models`. Registered in `app.config.ts` via `getStorage()`.
+4. **TripStorageService** — New service in `trips-api-requests`:
+   - `validate(file)` — PDF-only, max 20MB client-side validation.
+   - `uploadDocument(tripId, file, docId)` — Resumable upload returning `Observable<UploadProgress>`.
+   - `deleteDocument(tripId, docId)` — Deletes from Firebase Storage.
+5. **TripApiService** — Added `addDocument` (arrayUnion), `removeDocument` (arrayRemove), `toggleDocumentPaymentStatus` methods.
+6. **TripDetailComponent** — Fully functional Documents tab:
+   - Hidden `<input type="file" accept="application/pdf">` with click trigger.
+   - Upload progress bar with percentage display.
+   - Document list with payment status toggle (TO_BE_PAID / PAID), download link, delete button.
+   - Snackbar feedback for all async operations.
+7. **Storage Rules** — `storage.rules`: PDF-only write (max 20MB content type check), authenticated reads, deny all other paths.
+8. **firebase.json** — Registered `storage.rules`.
+9. **Tests** — 9 unit tests for TripStorageService covering validate boundary values, upload progress, upload errors, delete paths.
+
+**Storage Path Structure:**  
+`trips/{tripId}/documents/{uuid}.pdf`
