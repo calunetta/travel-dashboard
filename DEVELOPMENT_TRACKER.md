@@ -473,3 +473,14 @@ Following the Master Rules for granular Git versioning, these are the logical co
 | Webpack over esbuild | esbuild tarballs were corrupt in local yarn cache during bootstrap. Functional equivalent for dev. |
 | `ignore-engines true` | 1-patch Node version difference (24.14.1 vs 24.15.0). All code runs correctly. |
 | `admin` collection uses UID as doc ID | Enables O(1) Firestore `exists()` check in security rules without extra query. |
+
+### ✅ Step 7 - Production Release & CI/CD Setup
+
+**Status:** Completed
+**Focus:** Production configurations and GitHub Actions pipeline.
+
+**Key Changes:**
+1. **Environment Variables:** Replaced placeholders in `environment.prod.ts` with the actual Firebase Project configuration.
+2. **GitHub Actions (CI/CD):** Created `.github/workflows/ci-cd.yml` to automate testing, linting, building, and deployment to Firebase Hosting upon merges to the `main` branch.
+3. **Optimizations:** Verified `project.json` Angular build configurations (`outputHashing`, build optimizer, and bundle budgets).
+4. **Proxy & CORS:** Maintained `https://api-catalog.weroad.it` as the base URL for the WeRoad API in production.
