@@ -15,9 +15,13 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
+import { TourApiService } from 'tours-api-requests';
+import { TripCodeGenerator } from 'trips-mapping-and-utils';
 import { CreateTripPayload, UpdateTripPayload, DEFAULT_ROOM_COMPOSITION } from 'trips-models';
+import type { Tour } from 'tours-models';
 import { FirestoreId } from 'shared-models';
-import { Subscription, firstValueFrom } from 'rxjs';
+import { Subscription, firstValueFrom, combineLatest } from 'rxjs';
+import { startWith } from 'rxjs/operators';
 
 @Component({
   selector: 'tha-trip-form',
@@ -52,7 +56,16 @@ import { Subscription, firstValueFrom } from 'rxjs';
             
             <div class="tha-grid-2">
               <mat-form-field appearance="outline">
-                <mat-label>Destination</mat-label>
+                <mat-label>Select Tour</mat-label>
+                <mat-select formControlName="tourId">
+                  <mat-option [value]="null">-- None --</mat-option>
+                  <mat-option *ngFor="let t of tours$ | async" [value]="t.id">{{ t.tourName }} ({{ t.tourWeRoadCode }})</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('tourId')?.hasError('required')">Tour is required.</mat-error>
+              </mat-form-field>
+              
+              <mat-form-field appearance="outline">
+                <mat-label>Destination (Auto-fills from Tour)</mat-label>
                 <input matInput formControlName="destination" placeholder="e.g. Bali, Indonesia" />
                 <mat-error *ngIf="form.get('destination')?.hasError('required')">Destination is required.</mat-error>
               </mat-form-field>
@@ -68,7 +81,7 @@ import { Subscription, firstValueFrom } from 'rxjs';
               </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>End Date (Auto-calculated 8 days)</mat-label>
+                <mat-label>End Date (Auto-calculated)</mat-label>
                 <input matInput [matDatepicker]="endPicker" formControlName="endDate" readonly />
                 <mat-datepicker-toggle matIconSuffix [for]="endPicker" disabled></mat-datepicker-toggle>
                 <mat-datepicker #endPicker></mat-datepicker>
@@ -141,13 +154,17 @@ export class TripFormComponent implements OnInit, OnDestroy {
   private readonly tripApi = inject(TripApiService);
   private readonly hotelApi = inject(HotelApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
+  private readonly tourApi = inject(TourApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
-  
+
   readonly hotels$ = this.hotelApi.getAll$();
   readonly coordinators$ = this.coordinatorApi.getAll$();
-  
+  readonly tours$ = this.tourApi.getAll$();
+
+  toursCache: Tour[] = [];
+
   isEditMode = false;
   tripId: FirestoreId | null = null;
   submitting = false;
@@ -155,9 +172,10 @@ export class TripFormComponent implements OnInit, OnDestroy {
   private sub = new Subscription();
 
   readonly form = this.fb.group({
-    destination: ['', Validators.required],
+    tourId: [null as FirestoreId | null, Validators.required],
+    destination: [{ value: '', disabled: true }, Validators.required],
     startDate: [null as Date | null, Validators.required],
-    endDate: [null as Date | null, Validators.required],
+    endDate: [{ value: null as Date | null, disabled: true }, Validators.required],
     hotelId: [null as FirestoreId | null],
     coordinatorId: [null as FirestoreId | null],
     notes: [''],
@@ -174,15 +192,37 @@ export class TripFormComponent implements OnInit, OnDestroy {
       this.loadTrip(this.tripId);
     }
 
-    // Auto-calculate endDate (start + 7 days) to enforce 8-day duration
+    // Cache tours for quick lookup
     this.sub.add(
-      this.form.get('startDate')?.valueChanges.subscribe((startDate) => {
-        if (startDate) {
-          const end = new Date(startDate);
-          end.setDate(end.getDate() + 7);
-          this.form.patchValue({ endDate: end }, { emitEvent: false });
+      this.tours$.subscribe(tours => this.toursCache = tours as Tour[])
+    );
+
+    // Pre-select tour if passed in queryParams
+    const tourIdParam = this.route.snapshot.queryParamMap.get('tourId');
+    if (tourIdParam && !this.isEditMode) {
+      this.form.patchValue({ tourId: tourIdParam as FirestoreId });
+    }
+
+    this.sub.add(
+      combineLatest([
+        this.form.get('tourId')!.valueChanges.pipe(startWith(this.form.get('tourId')!.value)),
+        this.form.get('startDate')!.valueChanges.pipe(startWith(this.form.get('startDate')!.value))
+      ]).subscribe(([tourId, startDate]) => {
+        if (tourId) {
+          const tour = this.toursCache.find(t => t.id === tourId);
+          if (tour) {
+            this.form.patchValue({ destination: tour.country }, { emitEvent: false });
+
+            if (startDate && tour.tourLength) {
+              const end = new Date(startDate);
+              end.setDate(end.getDate() + tour.tourLength - 1);
+              this.form.patchValue({ endDate: end }, { emitEvent: false });
+            } else {
+              this.form.patchValue({ endDate: null }, { emitEvent: false });
+            }
+          }
         } else {
-          this.form.patchValue({ endDate: null }, { emitEvent: false });
+          this.form.patchValue({ destination: '', endDate: null }, { emitEvent: false });
         }
       })
     );
@@ -197,6 +237,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
       const trip = await firstValueFrom(this.tripApi.getById$(id));
       if (trip) {
         this.form.patchValue({
+          tourId: trip.tourId,
           destination: trip.destination,
           startDate: new Date(trip.startDate),
           endDate: new Date(trip.endDate),
@@ -225,14 +266,18 @@ export class TripFormComponent implements OnInit, OnDestroy {
     // Format dates to ISO yyyy-mm-dd
     const formatDate = (date: Date): string => {
       const offset = date.getTimezoneOffset()
-      const d = new Date(date.getTime() - (offset*60*1000))
+      const d = new Date(date.getTime() - (offset * 60 * 1000))
       return d.toISOString().split('T')[0]
     };
 
     try {
+      const selectedTour = this.toursCache.find(t => t.id === formVal.tourId);
+      const adminIds = selectedTour ? selectedTour.adminIds : [];
+
       if (this.isEditMode && this.tripId) {
         const payload: UpdateTripPayload = {
           id: this.tripId,
+          tourId: formVal.tourId!,
           destination: formVal.destination!,
           startDate: formatDate(formVal.startDate!),
           endDate: formatDate(formVal.endDate!),
@@ -245,16 +290,25 @@ export class TripFormComponent implements OnInit, OnDestroy {
         await this.tripApi.update(payload);
         this.snackBar.open('Trip updated successfully', 'Close', { duration: 3000 });
       } else {
+        const allTrips = await firstValueFrom(this.tripApi.getAll$());
+        const existingCodes = allTrips.map(t => t.code).filter(Boolean);
+        const generatedCode = selectedTour
+          ? TripCodeGenerator.generateCode(selectedTour.tourWeRoadCode, formatDate(formVal.startDate!), existingCodes)
+          : '';
+
         const payload: CreateTripPayload = {
+          tourId: formVal.tourId!,
           destination: formVal.destination!,
           startDate: formatDate(formVal.startDate!),
           endDate: formatDate(formVal.endDate!),
+          code: generatedCode,
           durationDays: 8,
           hotelId: formVal.hotelId ?? null,
           coordinatorId: formVal.coordinatorId ?? null,
           notes: formVal.notes ?? '',
           weRoadTourSlug: formVal.weRoadTourSlug ?? null,
           facebookGroupUrl: formVal.facebookGroupUrl ?? null,
+          adminIds,
           roomComposition: DEFAULT_ROOM_COMPOSITION,
           hotelBookerId: null,
           documents: [],

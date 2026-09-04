@@ -17,9 +17,11 @@ import {
   onSnapshot,
   query,
   orderBy,
+  where,
   type DocumentReference,
 } from 'firebase/firestore';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay } from 'rxjs';
+import { FirebaseAuthService } from 'auth-api-requests';
 import { FIRESTORE_TOKEN } from 'shared-models';
 import type { FirestoreId } from 'shared-models';
 import type { Trip, CreateTripPayload, UpdateTripPayload } from 'trips-models';
@@ -34,18 +36,27 @@ const TRIPS_COLLECTION = 'trips';
 @Injectable({ providedIn: 'root' })
 export class TripApiService {
   private readonly firestore = inject(FIRESTORE_TOKEN);
+  private readonly auth = inject(FirebaseAuthService);
 
   // ── Real-Time Reads ────────────────────────────────────────────────────────
+
+  private allTrips$?: Observable<ReadonlyArray<Trip>>;
 
   /**
    * Returns a real-time Observable of all trips, ordered by startDate ascending.
    * The Observable emits a new array every time the Firestore collection changes.
    * Automatically unsubscribes when the Observable is unsubscribed.
+   * Cached using shareReplay to prevent multiple simultaneous snapshot listeners.
    */
   getAll$(): Observable<ReadonlyArray<Trip>> {
-    return new Observable<ReadonlyArray<Trip>>((observer) => {
+    if (!this.allTrips$) {
+      this.allTrips$ = new Observable<ReadonlyArray<Trip>>((observer) => {
       const col = collection(this.firestore, TRIPS_COLLECTION);
-      const q = query(col, orderBy('startDate', 'asc'));
+      const q = query(
+        col, 
+        where('adminIds', 'array-contains', this.auth.currentUser()?.uid ?? ''),
+        orderBy('startDate', 'asc')
+      );
 
       const unsubscribe = onSnapshot(
         q,
@@ -60,7 +71,9 @@ export class TripApiService {
 
       // Return teardown logic for RxJS unsubscription.
       return () => unsubscribe();
-    });
+    }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    }
+    return this.allTrips$;
   }
 
   /**

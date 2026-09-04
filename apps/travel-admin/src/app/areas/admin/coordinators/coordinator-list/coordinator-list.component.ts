@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatSortModule, MatSort } from '@angular/material/sort';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
@@ -17,7 +17,6 @@ import { Coordinator } from 'coordinators-models';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,
@@ -71,17 +70,13 @@ import { Coordinator } from 'coordinators-models';
               </td>
             </ng-container>
 
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let coordinator" style="text-align: right;">
-                <button mat-icon-button color="primary" [routerLink]="['/admin/coordinators', coordinator.id]" aria-label="View Details" title="View Details">
-                  <mat-icon>visibility</mat-icon>
-                </button>
-              </td>
-            </ng-container>
+
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="tha-table-row-hover"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                class="tha-table-row-hover tha-clickable-row"
+                (click)="navigateToCoordinator(row.id)">
+            </tr>
 
             <tr class="mat-row" *matNoDataRow>
               <td class="mat-cell tha-p-4 tha-text-center tha-text-muted" colspan="5">
@@ -102,13 +97,18 @@ import { Coordinator } from 'coordinators-models';
       .tha-table-row-hover:hover {
         background-color: var(--tha-surface-variant);
       }
+      .tha-clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
     `,
   ],
 })
 export class CoordinatorListComponent implements AfterViewInit {
   private readonly coordinatorApi = inject(CoordinatorApiService);
+  private readonly router = inject(Router);
 
-  readonly displayedColumns: string[] = ['name', 'email', 'phone', 'agePreference', 'actions'];
+  readonly displayedColumns: string[] = ['name', 'email', 'phone', 'agePreference'];
   readonly dataSource = new MatTableDataSource<Coordinator>();
 
   @ViewChild(MatSort) sort!: MatSort;
@@ -137,5 +137,9 @@ export class CoordinatorListComponent implements AfterViewInit {
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage();
     }
+  }
+
+  navigateToCoordinator(id: string) {
+    this.router.navigate(['/admin/coordinators', id]);
   }
 }

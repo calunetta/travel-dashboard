@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatSortModule, MatSort } from '@angular/material/sort';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
@@ -17,7 +17,6 @@ import { Hotel } from 'hotels-models';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,
@@ -75,17 +74,13 @@ import { Hotel } from 'hotels-models';
               </td>
             </ng-container>
 
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let hotel" style="text-align: right;">
-                <button mat-icon-button color="primary" [routerLink]="['/admin/hotels', hotel.id, 'edit']" aria-label="Edit Hotel" title="Edit Hotel">
-                  <mat-icon>edit</mat-icon>
-                </button>
-              </td>
-            </ng-container>
+
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="tha-table-row-hover"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                class="tha-table-row-hover tha-clickable-row"
+                (click)="navigateToHotel(row.id)">
+            </tr>
 
             <!-- Row shown when there is no matching data. -->
             <tr class="mat-row" *matNoDataRow>
@@ -107,13 +102,18 @@ import { Hotel } from 'hotels-models';
       .tha-table-row-hover:hover {
         background-color: var(--tha-surface-variant);
       }
+      .tha-clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
     `,
   ],
 })
 export class HotelListComponent implements AfterViewInit {
   private readonly hotelApi = inject(HotelApiService);
+  private readonly router = inject(Router);
 
-  readonly displayedColumns: string[] = ['name', 'destination', 'supplierName', 'country', 'pricingRanges', 'actions'];
+  readonly displayedColumns: string[] = ['name', 'destination', 'supplierName', 'country', 'pricingRanges'];
   readonly dataSource = new MatTableDataSource<Hotel>();
 
   @ViewChild(MatSort) sort!: MatSort;
@@ -142,5 +142,9 @@ export class HotelListComponent implements AfterViewInit {
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage();
     }
+  }
+
+  navigateToHotel(hotelId: string) {
+    this.router.navigate(['/admin/hotels', hotelId, 'edit']);
   }
 }

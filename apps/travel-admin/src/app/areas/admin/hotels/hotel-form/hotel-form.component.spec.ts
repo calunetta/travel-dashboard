@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { HotelApiService } from 'hotels-api-requests';
+import { TourApiService } from 'tours-api-requests';
 import { of } from 'rxjs';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { CountryCode } from 'hotels-models';
@@ -12,6 +13,7 @@ describe('HotelFormComponent', () => {
   let component: HotelFormComponent;
   let fixture: ComponentFixture<HotelFormComponent>;
   let mockHotelApi: any;
+  let mockTourApi: any;
 
   beforeEach(async () => {
     Object.defineProperty(globalThis, 'crypto', {
@@ -27,6 +29,10 @@ describe('HotelFormComponent', () => {
       update: jest.fn().mockResolvedValue(undefined),
     };
 
+    mockTourApi = {
+      getAll$: jest.fn().mockReturnValue(of([])),
+    };
+
     await TestBed.configureTestingModule({
       imports: [
         HotelFormComponent, 
@@ -37,6 +43,7 @@ describe('HotelFormComponent', () => {
       providers: [
         provideRouter([]),
         { provide: HotelApiService, useValue: mockHotelApi },
+        { provide: TourApiService, useValue: mockTourApi },
       ],
     }).compileComponents();
 

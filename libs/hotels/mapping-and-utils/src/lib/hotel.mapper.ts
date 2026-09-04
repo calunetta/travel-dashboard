@@ -61,6 +61,8 @@ export function mapSnapshotToHotel(
     },
     pricingRanges,
     notes: data.notes ?? '',
+    tourId: typeof data.tourId === 'string' ? data.tourId as FirestoreId : '' as FirestoreId,
+    adminIds: Array.isArray(data.adminIds) ? (data.adminIds as FirestoreId[]) : [],
     createdAt: timestampToIso(data.createdAt),
     updatedAt: timestampToIso(data.updatedAt),
   };
@@ -104,6 +106,8 @@ export function mapCreateHotelToFirestore(
       })),
     })),
     notes: payload.notes,
+    tourId: payload.tourId,
+    adminIds: payload.adminIds,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };

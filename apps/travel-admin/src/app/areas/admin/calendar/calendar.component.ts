@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -126,6 +126,9 @@ interface CalendarDay {
                  [style.background-color]="getTripColor(trip.id)"
                  [style.color]="getTripTextColor(trip.id)"
                  (click)="openTripDialog(trip)"
+                 (keydown.enter)="openTripDialog(trip)"
+                 (keydown.space)="openTripDialog(trip)"
+                 tabindex="0"
                  matRipple
                  [title]="trip.destination + ' (' + trip.startDate + ')'">
                 <span class="trip-pill-text">{{ trip.destination }}</span>
@@ -325,7 +328,7 @@ export class CalendarComponent {
       hash = tripId.charCodeAt(i) + ((hash << 5) - hash);
     }
     const hue = Math.abs(hash) % 360;
-    return `hsl(${hue}, 70%, 85%)`;
+    return `hsl(${hue}, 70%, 25%)`;
   }
   
   getTripTextColor(tripId: string): string {
@@ -334,7 +337,7 @@ export class CalendarComponent {
       hash = tripId.charCodeAt(i) + ((hash << 5) - hash);
     }
     const hue = Math.abs(hash) % 360;
-    return `hsl(${hue}, 80%, 25%)`;
+    return `hsl(${hue}, 80%, 85%)`;
   }
 
   async openTripDialog(trip: Trip) {

@@ -14,10 +14,12 @@ import {
   onSnapshot,
   query,
   orderBy,
+  where,
   serverTimestamp,
   type DocumentReference,
 } from 'firebase/firestore';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay } from 'rxjs';
+import { FirebaseAuthService } from 'auth-api-requests';
 import { FIRESTORE_TOKEN } from 'shared-models';
 import type { FirestoreId } from 'shared-models';
 import type { Hotel, CreateHotelPayload, UpdateHotelPayload, DateRangePricing } from 'hotels-models';
@@ -31,16 +33,25 @@ const HOTELS_COLLECTION = 'hotels';
 @Injectable({ providedIn: 'root' })
 export class HotelApiService {
   private readonly firestore = inject(FIRESTORE_TOKEN);
+  private readonly auth = inject(FirebaseAuthService);
 
   // ── Real-Time Reads ────────────────────────────────────────────────────────
 
+  private allHotels$?: Observable<ReadonlyArray<Hotel>>;
+
   /**
    * Returns a real-time Observable of all hotels, ordered by name ascending.
+   * Cached using shareReplay to prevent multiple simultaneous snapshot listeners.
    */
   getAll$(): Observable<ReadonlyArray<Hotel>> {
-    return new Observable<ReadonlyArray<Hotel>>((observer) => {
+    if (!this.allHotels$) {
+      this.allHotels$ = new Observable<ReadonlyArray<Hotel>>((observer) => {
       const col = collection(this.firestore, HOTELS_COLLECTION);
-      const q = query(col, orderBy('name', 'asc'));
+      const q = query(
+        col, 
+        where('adminIds', 'array-contains', this.auth.currentUser()?.uid ?? ''),
+        orderBy('name', 'asc')
+      );
 
       const unsubscribe = onSnapshot(
         q,
@@ -54,7 +65,9 @@ export class HotelApiService {
       );
 
       return () => unsubscribe();
-    });
+    }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    }
+    return this.allHotels$;
   }
 
   /**

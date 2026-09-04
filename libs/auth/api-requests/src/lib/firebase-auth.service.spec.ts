@@ -6,7 +6,9 @@ import * as firestore from 'firebase/firestore';
 
 // Mock Firebase functions
 jest.mock('firebase/auth', () => ({
-  GoogleAuthProvider: jest.fn(),
+  GoogleAuthProvider: jest.fn().mockImplementation(() => ({
+    setCustomParameters: jest.fn(),
+  })),
   signInWithPopup: jest.fn(),
   signOut: jest.fn(),
   onAuthStateChanged: jest.fn(),

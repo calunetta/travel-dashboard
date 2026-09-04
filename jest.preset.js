@@ -1,3 +1,8 @@
 const nxPreset = require('@nx/jest/preset').default;
 
-module.exports = { ...nxPreset };
+const path = require('path');
+
+module.exports = { 
+  ...nxPreset,
+  setupFiles: [path.resolve(__dirname, 'global-setup.js')]
+};

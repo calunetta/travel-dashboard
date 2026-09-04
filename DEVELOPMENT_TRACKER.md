@@ -325,16 +325,17 @@ apps/travel-admin/src/app/areas/public/candidacy-success/candidacy-success.compo
 
 ### ⏳ Step 6 — Testing Suite (Jest + Cypress)
 
-**Status:** IN PROGRESS
+**Status:** COMPLETED
 
 #### What was done (by User):
-- User is actively implementing Step 6.
 - [x] Configure Jest for unit testing domain models and services.
 - [x] Setup Cypress E2E tests for the `Public` and `Admin` critical paths.
-- [x] Fix Nx and Cypress configuration errors for Standalone components.
-- [x] Resolve `tha-root` bootstrapping issue in `index.html` preventing app load.
-- [x] Implement E2E assertions for empty-state candidacy flow rendering and submission validation.
-- [x] Verify successful build (`yarn nx build travel-admin`) and E2E pass (`yarn nx e2e travel-admin-e2e`).
+- [x] Run `yarn nx run-many -t test` to verify complete test coverage and Zero-Regression policy.
+- [x] Implemented global test setup to mock `fetch`, `Response`, and `firebase/auth` for JSDOM environments.
+- [x] Resolved asynchronous Signal (toObservable) timeouts in testing by properly mocking and instantiating streams as class properties.
+- [x] Run `yarn nx run-many -t lint` and fix accessibility and unused import lint errors in `calendar.component.ts`.
+- [x] Run `yarn nx build travel-admin` to guarantee successful compilation after stabilization.
+- [x] Run `yarn nx e2e travel-admin-e2e` to verify critical user flows.
 
 ---
 
@@ -412,6 +413,29 @@ apps/travel-admin/src/app/areas/public/candidacy-success/candidacy-success.compo
 - [x] Rebuilt Calendar UI utilizing Angular Material Dialog (`TripDialogComponent`) and dynamic hashing colors for trip pills.
 - [x] Updated Candidacy Form to only show trips with `coordinatorId === null`.
 - [x] Added unit tests for candidacy form logic.
+
+### ✅ Bug Fix & Polish 6 (Trip Code & Tour Denormalization)
+
+**Status:** COMPLETED
+**Completed At:** 2026-09-04
+
+#### What was done:
+- [x] Corrected Architectural rules: removed `startDate` and `code` from the `Tour` model, shifting `code` generation to `Trip`.
+- [x] Implemented Trip code generation in `TripFormComponent` using `TripCodeGenerator`, dynamically computing it from `WeRoadCode` and `startDate`.
+- [x] Configured denormalization for `adminIds`: automatically syncing the `Tour.adminIds` array down to `Trip` during creation.
+- [x] Executed full test suite (`yarn nx run-many -t test`) and Cypress E2E suite (`yarn nx e2e travel-admin-e2e`), ensuring strict zero-regression policy.
+
+### ✅ Bug Fix & Polish 7 (Tour Architecture & RBAC)
+
+**Status:** COMPLETED
+**Completed At:** 2026-09-04
+
+#### What was done:
+- [x] Added `tourLength` property to `Tour` model and updated forms.
+- [x] Enforced RBAC: `adminIds` are hidden from UI and injected server-side by `TourApiService` and `HotelApiService` to prevent unauthorized admin assignment.
+- [x] Hotels are strictly linked to a single `tourId`.
+- [x] Fixed testing suite for `trips-mapping-and-utils` and `hotel-form.component.spec.ts`.
+- [x] Executed full test suite and Cypress E2E suite successfully.
 
 ---
 

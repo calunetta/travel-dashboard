@@ -55,6 +55,8 @@ export interface Trip {
   readonly destination: string;
   readonly startDate: ISODateString;
   readonly endDate: ISODateString;
+  /** Unique code generated from Tour WeRoadCode and start date */
+  readonly code: string;
   /** Fixed at 8 days per business rule. */
   readonly durationDays: 8;
   readonly notes: string;
@@ -67,6 +69,8 @@ export interface Trip {
   /** Raw URL from WeRoad API */
   readonly weRoadTourSlug: string | null;
   readonly documents: ReadonlyArray<TripDocument>;
+  readonly tourId: FirestoreId;
+  readonly adminIds: ReadonlyArray<FirestoreId>;
   readonly createdAt: ISODateString;
   readonly updatedAt: ISODateString;
 }
@@ -79,6 +83,7 @@ export interface TripFirestoreDocument {
   readonly destination: string;
   readonly startDate: string;
   readonly endDate: string;
+  readonly code: string;
   readonly durationDays: 8;
   readonly notes: string;
   readonly roomComposition: {
@@ -99,6 +104,8 @@ export interface TripFirestoreDocument {
     readonly url: string;
     readonly uploadedAt: string;
   }>;
+  readonly tourId: string;
+  readonly adminIds: ReadonlyArray<string>;
   readonly createdAt: FirestoreTimestamp;
   readonly updatedAt: FirestoreTimestamp;
 }

@@ -16,7 +16,7 @@ describe('Coordinator Candidacy Flow', () => {
 
   it('should show a warning when there are no available trips', () => {
     cy.get('mat-icon').contains('warning');
-    cy.contains('There are currently no published trips available for assignment.');
+    cy.contains('There are currently no trips available for assignment.');
   });
 
   it('should have the submit button disabled when there are no trips', () => {

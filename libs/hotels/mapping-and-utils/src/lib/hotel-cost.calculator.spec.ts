@@ -1,6 +1,6 @@
 import { calculateHotelCost } from './hotel-cost.calculator';
 import { Hotel, CountryCode } from 'hotels-models';
-import { Trip, TripStatus, RoomType } from 'trips-models';
+import { Trip, RoomType } from 'trips-models';
 import { FirestoreId, ISODateString } from 'shared-models';
 
 describe('Hotel Cost Calculator', () => {
@@ -55,7 +55,6 @@ describe('Hotel Cost Calculator', () => {
       destination: 'Rome',
       startDate: '2026-06-10' as ISODateString,
       endDate: '2026-06-17' as ISODateString,
-      status: TripStatus.PUBLISHED,
       notes: '',
       hotelBookerId: null,
       weRoadTourSlug: null,

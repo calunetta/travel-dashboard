@@ -52,6 +52,7 @@ export function mapSnapshotToTrip(
     destination: data.destination ?? '',
     startDate: data.startDate ?? '',
     endDate: data.endDate ?? '',
+    code: data.code ?? '',
     durationDays: 8,
     notes: data.notes ?? '',
     roomComposition: toRoomComposition(roomCompositionRaw as Record<string, unknown>),
@@ -60,6 +61,8 @@ export function mapSnapshotToTrip(
     hotelBookerId: (data.hotelBookerId as FirestoreId | null) ?? null,
     facebookGroupUrl: data.facebookGroupUrl ?? null,
     weRoadTourSlug: data.weRoadTourSlug ?? null,
+    tourId: (data.tourId ?? '') as FirestoreId,
+    adminIds: Array.isArray(data.adminIds) ? (data.adminIds as FirestoreId[]) : [],
     documents: documents.map((d) => ({
       id: d.id as FirestoreId,
       name: d.name,
@@ -87,6 +90,7 @@ export function mapCreatePayloadToFirestore(
     destination: payload.destination,
     startDate: payload.startDate,
     endDate: payload.endDate,
+    code: payload.code,
     durationDays: 8,
     notes: payload.notes,
     roomComposition: {
@@ -101,6 +105,8 @@ export function mapCreatePayloadToFirestore(
     hotelBookerId: payload.hotelBookerId,
     facebookGroupUrl: payload.facebookGroupUrl,
     weRoadTourSlug: payload.weRoadTourSlug,
+    tourId: payload.tourId,
+    adminIds: payload.adminIds,
     documents: payload.documents.map((d) => ({
       id: d.id,
       name: d.name,
@@ -124,6 +130,7 @@ export function mapUpdatePayloadToFirestore(
   if (payload.destination !== undefined) update['destination'] = payload.destination;
   if (payload.startDate !== undefined) update['startDate'] = payload.startDate;
   if (payload.endDate !== undefined) update['endDate'] = payload.endDate;
+  if (payload.code !== undefined) update['code'] = payload.code;
   if (payload.notes !== undefined) update['notes'] = payload.notes;
   if (payload.roomComposition !== undefined) {
     update['roomComposition'] = {
@@ -139,6 +146,8 @@ export function mapUpdatePayloadToFirestore(
   if (payload.hotelBookerId !== undefined) update['hotelBookerId'] = payload.hotelBookerId;
   if (payload.facebookGroupUrl !== undefined) update['facebookGroupUrl'] = payload.facebookGroupUrl;
   if (payload.weRoadTourSlug !== undefined) update['weRoadTourSlug'] = payload.weRoadTourSlug;
+  if (payload.tourId !== undefined) update['tourId'] = payload.tourId;
+  if (payload.adminIds !== undefined) update['adminIds'] = payload.adminIds;
   if (payload.documents !== undefined) {
     update['documents'] = payload.documents.map((d) => ({
       id: d.id,
@@ -166,6 +175,7 @@ export function createDefaultTripPayload(): CreateTripPayload {
     destination: '',
     startDate: today,
     endDate,
+    code: '',
     durationDays: 8,
     notes: '',
     roomComposition: { ...DEFAULT_ROOM_COMPOSITION },
@@ -174,6 +184,8 @@ export function createDefaultTripPayload(): CreateTripPayload {
     hotelBookerId: null,
     facebookGroupUrl: null,
     weRoadTourSlug: null,
+    tourId: '' as FirestoreId,
+    adminIds: [],
     documents: [],
   };
 }

@@ -38,13 +38,30 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────
+    // RBAC Helper
+    // ─────────────────────────────────────────────
+    function isResourceAdmin() {
+      return isAdmin() && (
+        (resource != null && request.auth.uid in resource.data.adminIds) ||
+        (resource == null && request.resource != null && request.auth.uid in request.resource.data.adminIds)
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // TOURS collection
+    // ─────────────────────────────────────────────
+    match /tours/{tourId} {
+      allow read, create, update, delete: if isResourceAdmin();
+    }
+
+    // ─────────────────────────────────────────────
     // TRIPS collection
     // ─────────────────────────────────────────────
     // Public read: coordinators need to browse trips for candidacy
     // Admin write: only verified admins can mutate trip data
     match /trips/{tripId} {
-      allow read: if isAdmin() || resource.data.coordinatorId == null;
-      allow create, update, delete: if isAdmin();
+      allow read: if isResourceAdmin() || resource.data.coordinatorId == null;
+      allow create, update, delete: if isResourceAdmin();
     }
 
     // ─────────────────────────────────────────────
@@ -52,7 +69,7 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
     // Full admin access only
     match /hotels/{hotelId} {
-      allow read, create, update, delete: if isAdmin();
+      allow read, create, update, delete: if isResourceAdmin();
     }
 
     // ─────────────────────────────────────────────

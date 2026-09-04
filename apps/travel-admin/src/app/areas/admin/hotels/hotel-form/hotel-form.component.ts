@@ -15,7 +15,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 
 import { HotelApiService } from 'hotels-api-requests';
+import { TourApiService } from 'tours-api-requests';
 import { CountryCode, CreateHotelPayload, UpdateHotelPayload, HotelBillingData } from 'hotels-models';
+import type { Tour } from 'tours-models';
 import { RoomType } from 'trips-models';
 import { FirestoreId } from 'shared-models';
 import { firstValueFrom } from 'rxjs';
@@ -58,6 +60,17 @@ import { firstValueFrom } from 'rxjs';
           </mat-card-header>
           <mat-card-content class="tha-pt-4">
             <div class="tha-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Select Tour</mat-label>
+                <mat-select formControlName="tourId">
+                  <mat-option [value]="null">-- None --</mat-option>
+                  <mat-option *ngFor="let t of tours$ | async" [value]="t.id">{{ t.tourName }} ({{ t.tourWeRoadCode }})</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('tourId')?.hasError('required')">Tour is required.</mat-error>
+              </mat-form-field>
+            </div>
+            
+            <div class="tha-grid-2 tha-mt-4">
               <mat-form-field appearance="outline">
                 <mat-label>Hotel Name</mat-label>
                 <input matInput formControlName="name" placeholder="e.g. Grand Resort" />
@@ -243,9 +256,13 @@ import { firstValueFrom } from 'rxjs';
 export class HotelFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly hotelApi = inject(HotelApiService);
+  private readonly tourApi = inject(TourApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
+
+  readonly tours$ = this.tourApi.getAll$();
+  toursCache: Tour[] = [];
 
   readonly countries = Object.values(CountryCode);
   
@@ -254,6 +271,7 @@ export class HotelFormComponent implements OnInit {
   submitting = false;
 
   readonly form = this.fb.group({
+    tourId: [null as FirestoreId | null, Validators.required],
     name: ['', Validators.required],
     destination: ['', Validators.required],
     notes: [''],
@@ -288,6 +306,8 @@ export class HotelFormComponent implements OnInit {
       this.hotelId = id as FirestoreId;
       this.loadHotel(this.hotelId);
     }
+    
+    this.tours$.subscribe(tours => this.toursCache = tours as Tour[]);
   }
 
   addPricingRange() {
@@ -323,6 +343,7 @@ export class HotelFormComponent implements OnInit {
       const hotel = await firstValueFrom(this.hotelApi.getById$(id));
       if (hotel) {
         this.form.patchValue({
+          tourId: hotel.tourId,
           name: hotel.name,
           destination: hotel.destination,
           notes: hotel.notes,
@@ -400,12 +421,17 @@ export class HotelFormComponent implements OnInit {
         await this.hotelApi.update(payload);
         this.snackBar.open('Hotel updated successfully', 'Close', { duration: 3000 });
       } else {
+        const selectedTour = this.toursCache.find(t => t.id === formVal.tourId);
+        const adminIds = selectedTour ? selectedTour.adminIds : [];
+
         const payload: CreateHotelPayload = {
           name: formVal.name!,
           destination: formVal.destination!,
-          notes: formVal.notes || '',
+          notes: formVal.notes ?? '',
           billingData: formVal.billingData as unknown as HotelBillingData,
           pricingRanges: formattedPricingRanges,
+          adminIds: adminIds,
+          tourId: formVal.tourId!,
         };
         await this.hotelApi.create(payload);
         this.snackBar.open('Hotel created successfully', 'Close', { duration: 3000 });

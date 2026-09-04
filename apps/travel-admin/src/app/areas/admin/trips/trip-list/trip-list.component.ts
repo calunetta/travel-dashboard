@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 
+import { Router } from '@angular/router';
 import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
@@ -108,18 +109,13 @@ interface TripViewModel extends Trip {
               </td>
             </ng-container>
 
-            <!-- Actions Column -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let trip" style="text-align: right;">
-                <button mat-icon-button color="primary" [routerLink]="['/admin/trips', trip.id]" aria-label="View Details" title="View Details">
-                  <mat-icon>visibility</mat-icon>
-                </button>
-              </td>
-            </ng-container>
+
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="tha-table-row-hover"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                class="tha-table-row-hover tha-clickable-row"
+                (click)="navigateToTrip(row.id)">
+            </tr>
 
             <!-- Row shown when there is no matching data. -->
             <tr class="mat-row" *matNoDataRow>
@@ -141,6 +137,10 @@ interface TripViewModel extends Trip {
       .tha-table-row-hover:hover {
         background-color: var(--tha-surface-variant);
       }
+      .tha-clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
     `,
   ],
 })
@@ -148,8 +148,9 @@ export class TripListComponent implements AfterViewInit {
   private readonly tripApi = inject(TripApiService);
   private readonly hotelApi = inject(HotelApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
+  private readonly router = inject(Router);
 
-  readonly displayedColumns: string[] = ['destination', 'dates', 'coordinator', 'hotel', 'actions'];
+  readonly displayedColumns: string[] = ['destination', 'dates', 'coordinator', 'hotel'];
   readonly dataSource = new MatTableDataSource<TripViewModel>();
 
   @ViewChild(MatSort) sort!: MatSort;
@@ -199,5 +200,9 @@ export class TripListComponent implements AfterViewInit {
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage();
     }
+  }
+
+  navigateToTrip(tripId: string) {
+    this.router.navigate(['/admin/trips', tripId]);
   }
 }

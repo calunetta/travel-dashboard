@@ -78,6 +78,8 @@ export class LoginComponent {
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
+  private readonly authLoading$ = toObservable(this.authService.isLoading, { injector: this.injector });
+
   async signIn(): Promise<void> {
     this.loading.set(true);
     this.errorMessage.set(null);
@@ -86,7 +88,7 @@ export class LoginComponent {
       
       // Wait for auth service to finish loading its state (admin profile fetch)
       await firstValueFrom(
-        toObservable(this.authService.isLoading, { injector: this.injector }).pipe(filter(l => !l))
+        this.authLoading$.pipe(filter(l => !l))
       );
 
       if (this.authService.isAdmin()) {

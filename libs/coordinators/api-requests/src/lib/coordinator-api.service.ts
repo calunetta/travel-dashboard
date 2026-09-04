@@ -27,7 +27,7 @@ import {
   serverTimestamp,
   type DocumentReference,
 } from 'firebase/firestore';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay } from 'rxjs';
 import { FIRESTORE_TOKEN } from 'shared-models';
 import type { FirestoreId } from 'shared-models';
 import type {
@@ -56,11 +56,15 @@ export class CoordinatorApiService {
 
   // ── Coordinators — Real-Time Reads ────────────────────────────────────────
 
+  private allCoordinators$?: Observable<ReadonlyArray<Coordinator>>;
+
   /**
    * Returns a real-time Observable of all coordinators, ordered by surname.
+   * Cached using shareReplay to prevent multiple simultaneous snapshot listeners.
    */
   getAll$(): Observable<ReadonlyArray<Coordinator>> {
-    return new Observable<ReadonlyArray<Coordinator>>((observer) => {
+    if (!this.allCoordinators$) {
+      this.allCoordinators$ = new Observable<ReadonlyArray<Coordinator>>((observer) => {
       const col = collection(this.firestore, COORDINATORS_COLLECTION);
       const q = query(col, orderBy('surname', 'asc'));
 
@@ -76,7 +80,9 @@ export class CoordinatorApiService {
       );
 
       return () => unsubscribe();
-    });
+    }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    }
+    return this.allCoordinators$;
   }
 
   /**
@@ -127,12 +133,16 @@ export class CoordinatorApiService {
 
   // ── Candidacies — Real-Time Reads ────────────────────────────────────────
 
+  private allCandidacies$?: Observable<ReadonlyArray<Candidacy>>;
+
   /**
    * Returns a real-time Observable of all candidacies (admin view).
    * Ordered by submittedAt descending (newest first).
+   * Cached using shareReplay to prevent multiple simultaneous snapshot listeners.
    */
   getAllCandidacies$(): Observable<ReadonlyArray<Candidacy>> {
-    return new Observable<ReadonlyArray<Candidacy>>((observer) => {
+    if (!this.allCandidacies$) {
+      this.allCandidacies$ = new Observable<ReadonlyArray<Candidacy>>((observer) => {
       const col = collection(this.firestore, CANDIDACIES_COLLECTION);
       const q = query(col, orderBy('submittedAt', 'desc'));
 
@@ -148,7 +158,9 @@ export class CoordinatorApiService {
       );
 
       return () => unsubscribe();
-    });
+    }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    }
+    return this.allCandidacies$;
   }
 
   /**

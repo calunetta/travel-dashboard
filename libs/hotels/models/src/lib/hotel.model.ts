@@ -81,6 +81,8 @@ export interface Hotel {
   /** Dynamic pricing configuration — multiple ranges per hotel. */
   readonly pricingRanges: ReadonlyArray<DateRangePricing>;
   readonly notes: string;
+  readonly tourId: FirestoreId;
+  readonly adminIds: ReadonlyArray<FirestoreId>;
   readonly createdAt: ISODateString;
   readonly updatedAt: ISODateString;
 }
@@ -115,6 +117,8 @@ export interface HotelFirestoreDocument {
     }>;
   }>;
   readonly notes: string;
+  readonly tourId: string;
+  readonly adminIds: ReadonlyArray<string>;
   readonly createdAt: FirestoreTimestamp;
   readonly updatedAt: FirestoreTimestamp;
 }

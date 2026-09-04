@@ -11,11 +11,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
-import { BehaviorSubject, map } from 'rxjs';
+import { BehaviorSubject, map, catchError, of } from 'rxjs';
 
 import { TripApiService } from 'trips-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { AgePreference, CandidacyFormPayload } from 'coordinators-models';
+import { Trip } from 'trips-models';
 import type { FirestoreId } from 'shared-models';
 
 @Component({
@@ -148,11 +149,15 @@ export class CandidacyFormComponent {
 
   // Observable of trips without a coordinator assigned
   private readonly availableTrips$ = this.tripApi.getAll$().pipe(
-    map((trips) => trips.filter((t) => t.coordinatorId === null))
+    map((trips) => trips.filter((t) => t.coordinatorId === null)),
+    catchError((err) => {
+      console.error('Firestore failed to load trips:', err);
+      return of([] as Trip[]);
+    })
   );
 
   // Expose to template as signals
-  readonly availableTrips = toSignal(this.availableTrips$, { initialValue: [] });
+  readonly availableTrips = toSignal(this.availableTrips$, { initialValue: undefined });
   readonly tripsLoading = toSignal(
     new BehaviorSubject<boolean>(true).asObservable() // Simple mock for loading state until first emit
   );
