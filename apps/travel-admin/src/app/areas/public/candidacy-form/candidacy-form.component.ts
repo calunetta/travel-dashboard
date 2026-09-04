@@ -17,6 +17,7 @@ import { TripApiService } from 'trips-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { AgePreference, CandidacyFormPayload } from 'coordinators-models';
 import { Trip } from 'trips-models';
+import { Nationality } from 'shared-models';
 import type { FirestoreId } from 'shared-models';
 
 @Component({
@@ -109,6 +110,16 @@ import type { FirestoreId } from 'shared-models';
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="tha-full-width">
+              <mat-label>Nationality</mat-label>
+              <mat-select formControlName="nationality">
+                <mat-option *ngFor="let nat of nationalities" [value]="nat">
+                  {{ nat }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="form.get('nationality')?.hasError('required')">Please select a nationality.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="tha-full-width">
               <mat-label>Notes(Optional)</mat-label>  
               <textarea matInput formControlName="notes" rows="4" placeholder="Tell us why you are a great fit..."></textarea>
             </mat-form-field>
@@ -146,6 +157,7 @@ export class CandidacyFormComponent {
   private readonly snackBar = inject(MatSnackBar);
 
   readonly agePreferences = Object.values(AgePreference);
+  readonly nationalities = Object.values(Nationality);
 
   // Observable of trips without a coordinator assigned
   private readonly availableTrips$ = this.tripApi.getAll$().pipe(
@@ -172,6 +184,7 @@ export class CandidacyFormComponent {
     email: ['', [Validators.required, Validators.email]],
     whatsapp: ['', Validators.required],
     agePreference: [AgePreference.ADULT, Validators.required],
+    nationality: [Nationality.IT, Validators.required],
     notes: [''],
   });
 
@@ -195,6 +208,7 @@ export class CandidacyFormComponent {
         email: formValue.email ?? '',
         whatsapp: formValue.whatsapp ?? '',
         agePreference: formValue.agePreference as AgePreference,
+        nationality: formValue.nationality as Nationality,
         notes: formValue.notes ?? '',
       };
 

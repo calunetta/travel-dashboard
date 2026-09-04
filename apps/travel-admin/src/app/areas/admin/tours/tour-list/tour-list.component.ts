@@ -46,45 +46,47 @@ import { Observable } from 'rxjs';
       </div>
 
       <mat-card class="tha-card" style="padding: 0; overflow: hidden;">
-        <table mat-table [dataSource]="tours$ | async" class="tha-full-width">
-          
-          <ng-container matColumnDef="tourWeRoadCode">
-            <th mat-header-cell *matHeaderCellDef>Code</th>
-            <td mat-cell *matCellDef="let t" class="tha-font-bold">{{ t.tourWeRoadCode }}</td>
-          </ng-container>
+        @if(tours$ | async; as tours) {
+          <table mat-table [dataSource]="tours" class="tha-full-width">
+            
+            <ng-container matColumnDef="tourWeRoadCode">
+              <th mat-header-cell *matHeaderCellDef>Code</th>
+              <td mat-cell *matCellDef="let t" class="tha-font-bold">{{ t.tourWeRoadCode }}</td>
+            </ng-container>
 
-          <ng-container matColumnDef="tourName">
-            <th mat-header-cell *matHeaderCellDef>Name</th>
-            <td mat-cell *matCellDef="let t">{{ t.tourName }}</td>
-          </ng-container>
+            <ng-container matColumnDef="tourName">
+              <th mat-header-cell *matHeaderCellDef>Name</th>
+              <td mat-cell *matCellDef="let t">{{ t.tourName }}</td>
+            </ng-container>
 
-          <ng-container matColumnDef="country">
-            <th mat-header-cell *matHeaderCellDef>Country</th>
-            <td mat-cell *matCellDef="let t">{{ t.country }}</td>
-          </ng-container>
+            <ng-container matColumnDef="country">
+              <th mat-header-cell *matHeaderCellDef>Country</th>
+              <td mat-cell *matCellDef="let t">{{ t.country }}</td>
+            </ng-container>
 
-          <ng-container matColumnDef="tourLength">
-            <th mat-header-cell *matHeaderCellDef>Length</th>
-            <td mat-cell *matCellDef="let t">{{ t.tourLength }} days</td>
-          </ng-container>
+            <ng-container matColumnDef="tourLength">
+              <th mat-header-cell *matHeaderCellDef>Length</th>
+              <td mat-cell *matCellDef="let t">{{ t.tourLength }} days</td>
+            </ng-container>
 
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef style="width: 80px; text-align: right;"></th>
-            <td mat-cell *matCellDef="let t" style="text-align: right;">
-              <button 
-                *ngIf="isSuperAdmin()"
-                mat-icon-button 
-                [routerLink]="[t.id, 'edit']"
-                matTooltip="Edit Tour"
-              >
-                <mat-icon class="tha-text-muted">edit</mat-icon>
-              </button>
-            </td>
-          </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef style="width: 80px; text-align: right;"></th>
+              <td mat-cell *matCellDef="let t" style="text-align: right;">
+                <button 
+                  *ngIf="isSuperAdmin()"
+                  mat-icon-button 
+                  [routerLink]="[t.id, 'edit']"
+                  matTooltip="Edit Tour"
+                >
+                  <mat-icon class="tha-text-muted">edit</mat-icon>
+                </button>
+              </td>
+            </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="tha-table-row"></tr>
-        </table>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="tha-table-row"></tr>
+          </table>
+        }
         
         <div 
           *ngIf="(tours$ | async)?.length === 0" 
@@ -110,7 +112,7 @@ export class TourListComponent implements OnInit {
 
   readonly isSuperAdmin = this.authService.isSuperAdmin;
   readonly displayedColumns = ['tourWeRoadCode', 'tourName', 'country', 'tourLength', 'actions'];
-  
+
   tours$!: Observable<ReadonlyArray<Tour>>;
 
   ngOnInit() {

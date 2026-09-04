@@ -12,7 +12,8 @@ import type {
   DocumentPaymentStatus,
 } from 'trips-models';
 import { RoomType, DEFAULT_ROOM_COMPOSITION } from 'trips-models';
-import type { FirestoreId } from 'shared-models';
+import type { FirestoreId, Nationality } from 'shared-models';
+import { Nationality as NationalityEnum } from 'shared-models';
 import { timestampToIso } from 'shared-mapping-and-utils';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ export function mapSnapshotToTrip(
     hotelBookerId: (data.hotelBookerId as FirestoreId | null) ?? null,
     facebookGroupUrl: data.facebookGroupUrl ?? null,
     weRoadTourSlug: data.weRoadTourSlug ?? null,
+    nationality: (data.nationality as Nationality) ?? NationalityEnum.IT,
     tourId: (data.tourId ?? '') as FirestoreId,
     adminIds: Array.isArray(data.adminIds) ? (data.adminIds as FirestoreId[]) : [],
     documents: documents.map((d) => ({
@@ -107,6 +109,7 @@ export function mapCreatePayloadToFirestore(
     hotelBookerId: payload.hotelBookerId,
     facebookGroupUrl: payload.facebookGroupUrl,
     weRoadTourSlug: payload.weRoadTourSlug,
+    nationality: payload.nationality,
     tourId: payload.tourId,
     adminIds: payload.adminIds,
     documents: payload.documents.map((d) => ({
@@ -149,6 +152,7 @@ export function mapUpdatePayloadToFirestore(
   if (payload.hotelBookerId !== undefined) update['hotelBookerId'] = payload.hotelBookerId;
   if (payload.facebookGroupUrl !== undefined) update['facebookGroupUrl'] = payload.facebookGroupUrl;
   if (payload.weRoadTourSlug !== undefined) update['weRoadTourSlug'] = payload.weRoadTourSlug;
+  if (payload.nationality !== undefined) update['nationality'] = payload.nationality;
   if (payload.tourId !== undefined) update['tourId'] = payload.tourId;
   if (payload.adminIds !== undefined) update['adminIds'] = payload.adminIds;
   if (payload.documents !== undefined) {
@@ -188,6 +192,7 @@ export function createDefaultTripPayload(): CreateTripPayload {
     hotelBookerId: null,
     facebookGroupUrl: null,
     weRoadTourSlug: null,
+    nationality: NationalityEnum.IT,
     tourId: '' as FirestoreId,
     adminIds: [],
     documents: [],

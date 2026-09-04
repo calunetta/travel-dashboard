@@ -12,9 +12,10 @@ import type {
   CandidacyFormPayload,
 } from 'coordinators-models';
 import { AgePreference, CandidacyStatus } from 'coordinators-models';
-import type { FirestoreId } from 'shared-models';
+import type { FirestoreId, Nationality } from 'shared-models';
+import { Nationality as NationalityEnum } from 'shared-models';
 import { timestampToIso } from 'shared-mapping-and-utils';
-import { isAgePreference, isCandidacyStatus } from 'shared-mapping-and-utils';
+import { isAgePreference, isCandidacyStatus, isNationality } from 'shared-mapping-and-utils';
 
 // ─── Coordinator: Firestore → Domain ─────────────────────────────────────────
 
@@ -35,6 +36,9 @@ export function mapSnapshotToCoordinator(
     surname: data.surname ?? '',
     email: data.email ?? '',
     phone: data.phone ?? '',
+    nationality: isNationality(data.nationality)
+      ? data.nationality
+      : NationalityEnum.IT,
     agePreference: isAgePreference(data.agePreference)
       ? data.agePreference
       : AgePreference.ADULT,
@@ -71,6 +75,9 @@ export function mapSnapshotToCandidacy(
       : AgePreference.ADULT,
     whatsapp: data.whatsapp ?? '',
     email: data.email ?? '',
+    nationality: isNationality(data.nationality)
+      ? data.nationality
+      : NationalityEnum.IT,
     notes: data.notes ?? '',
     status: isCandidacyStatus(data.status) ? data.status : CandidacyStatus.PENDING,
     submittedAt: timestampToIso(data.submittedAt),
@@ -101,6 +108,7 @@ export function mapCandidacyFormToFirestore(
     agePreference: payload.agePreference,
     whatsapp: payload.whatsapp.trim(),
     email: payload.email.trim().toLowerCase(),
+    nationality: payload.nationality,
     notes: payload.notes.trim(),
     status: CandidacyStatus.PENDING,
     submittedAt: serverTimestamp(),
@@ -125,6 +133,7 @@ export function mapCandidacyToCoordinatorFirestore(
     surname: candidacy.surname,
     email: candidacy.email,
     phone: candidacy.whatsapp,
+    nationality: candidacy.nationality,
     agePreference: candidacy.agePreference,
     notes: candidacy.notes,
     feedback: '',

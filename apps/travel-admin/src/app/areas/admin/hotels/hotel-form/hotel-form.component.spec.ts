@@ -10,8 +10,9 @@ import { of } from 'rxjs';
 import { signal } from '@angular/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CountryCode } from 'hotels-models';
-import type { Tour } from 'tours-models';
 import type { FirestoreId } from 'shared-models';
+import { Nationality } from 'shared-models';
+import type { Tour } from 'tours-models';
 
 const MOCK_TOUR: Tour = {
   id: 'tour-1' as FirestoreId,
@@ -19,6 +20,7 @@ const MOCK_TOUR: Tour = {
   tourWeRoadCode: 'BALI',
   country: 'ID',
   tourLength: 8,
+  nationalities: [Nationality.IT],
   adminIds: ['admin-uid-1' as FirestoreId],
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-01T00:00:00.000Z',
@@ -184,7 +186,7 @@ describe('HotelFormComponent', () => {
     
     // We expect the catch block to be hit and a snackbar to be shown.
     // However, the error is caught inside onSubmit and logged/snackbarred.
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(jest.fn());
     await component.onSubmit();
     
     expect(consoleSpy).toHaveBeenCalledWith('Failed to save hotel', expect.any(Error));

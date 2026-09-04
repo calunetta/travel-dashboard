@@ -133,7 +133,7 @@ describe('TripStorageService', () => {
       const file = new File(['pdf'], 'test.pdf', { type: ACCEPTED_MIME_TYPE });
 
       service.uploadDocument('trip-123' as import('shared-models').FirestoreId, file, 'doc-id').subscribe({
-        next: () => {},
+        next: () => { return; },
         error: (err) => {
           expect(err).toBe(uploadError);
           done();

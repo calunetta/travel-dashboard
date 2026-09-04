@@ -52,6 +52,7 @@ export class TourApiService {
       tourWeRoadCode: payload.tourWeRoadCode,
       tourName: payload.tourName,
       tourLength: payload.tourLength,
+      nationalities: payload.nationalities as unknown as string[],
       adminIds: payload.adminIds as unknown as string[],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -69,6 +70,7 @@ export class TourApiService {
     if (payload.tourWeRoadCode !== undefined) updateData['tourWeRoadCode'] = payload.tourWeRoadCode;
     if (payload.tourName !== undefined) updateData['tourName'] = payload.tourName;
     if (payload.tourLength !== undefined) updateData['tourLength'] = payload.tourLength;
+    if (payload.nationalities !== undefined) updateData['nationalities'] = payload.nationalities as unknown as string[];
     if (payload.adminIds !== undefined) updateData['adminIds'] = payload.adminIds as unknown as string[];
 
     await setDoc(docRef, { ...updateData, updatedAt: serverTimestamp() }, { merge: true });
@@ -81,6 +83,7 @@ export class TourApiService {
       tourWeRoadCode: data.tourWeRoadCode ?? '',
       tourName: data.tourName ?? '',
       tourLength: data.tourLength ?? 0,
+      nationalities: Array.isArray(data.nationalities) ? data.nationalities : [],
       adminIds: Array.isArray(data.adminIds) ? data.adminIds : [],
       createdAt: data.createdAt ? timestampToIso(data.createdAt) : '',
       updatedAt: data.updatedAt ? timestampToIso(data.updatedAt) : '',

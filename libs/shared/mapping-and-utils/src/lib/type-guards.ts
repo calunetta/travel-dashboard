@@ -7,6 +7,7 @@ import { RoomType } from 'trips-models';
 import { AgePreference, AssignmentType, CandidacyStatus } from 'coordinators-models';
 import { CountryCode } from 'hotels-models';
 import type { WeRoadTour, WeRoadPaginatedToursResponse, FirestoreId } from 'shared-models';
+import { Nationality } from 'shared-models';
 
 // ─── Primitive Guards ─────────────────────────────────────────────────────────
 
@@ -54,6 +55,10 @@ export function isCandidacyStatus(value: unknown): value is CandidacyStatus {
 
 export function isCountryCode(value: unknown): value is CountryCode {
   return isString(value) && Object.values(CountryCode).includes(value as CountryCode);
+}
+
+export function isNationality(value: unknown): value is Nationality {
+  return isString(value) && Object.values(Nationality).includes(value as Nationality);
 }
 
 // ─── Firestore Document Guards ───────────────────────────────────────────────
@@ -111,6 +116,7 @@ export function isCoordinatorFirestoreDocument(value: unknown): value is {
   if (!isNonEmptyString(value['email'])) return false;
   if (!isNonEmptyString(value['phone'])) return false;
   if (!isAgePreference(value['agePreference'])) return false;
+  if (!isNationality(value['nationality'])) return false;
   return true;
 }
 
@@ -132,6 +138,7 @@ export function isCandidacyFirestoreDocument(value: unknown): value is {
   if (!isNonEmptyString(value['email'])) return false;
   if (!isNonEmptyString(value['whatsapp'])) return false;
   if (!isAgePreference(value['agePreference'])) return false;
+  if (!isNationality(value['nationality'])) return false;
   if (!Array.isArray(value['tripIds'])) return false;
   if (!isCandidacyStatus(value['status'])) return false;
   return true;

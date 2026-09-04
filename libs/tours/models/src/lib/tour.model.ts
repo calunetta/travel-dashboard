@@ -1,4 +1,4 @@
-import type { FirestoreId, FirestoreTimestamp, ISODateString } from 'shared-models';
+import type { FirestoreId, FirestoreTimestamp, ISODateString, Nationality } from 'shared-models';
 
 /**
  * Core Tour domain model.
@@ -9,6 +9,7 @@ export interface Tour {
   readonly tourWeRoadCode: string;
   readonly tourName: string;
   readonly tourLength: number;
+  readonly nationalities: ReadonlyArray<Nationality>;
   readonly adminIds: ReadonlyArray<FirestoreId>;
   readonly createdAt: ISODateString;
   readonly updatedAt: ISODateString;
@@ -22,6 +23,7 @@ export interface TourFirestoreDocument {
   readonly tourWeRoadCode: string;
   readonly tourName: string;
   readonly tourLength: number;
+  readonly nationalities: ReadonlyArray<string>;
   readonly adminIds: ReadonlyArray<string>;
   readonly createdAt: FirestoreTimestamp;
   readonly updatedAt: FirestoreTimestamp;

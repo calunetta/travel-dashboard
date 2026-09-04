@@ -2,7 +2,7 @@
 // TRIP DOMAIN MODELS
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { FirestoreId, FirestoreTimestamp, ISODateString } from 'shared-models';
+import type { FirestoreId, FirestoreTimestamp, ISODateString, Nationality } from 'shared-models';
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +74,7 @@ export interface Trip {
   readonly facebookGroupUrl: string | null;
   /** Raw URL from WeRoad API */
   readonly weRoadTourSlug: string | null;
+  readonly nationality: Nationality;
   readonly documents: ReadonlyArray<TripDocument>;
   readonly tourId: FirestoreId;
   readonly adminIds: ReadonlyArray<FirestoreId>;
@@ -104,6 +105,7 @@ export interface TripFirestoreDocument {
   readonly hotelBookerId: string | null;
   readonly facebookGroupUrl: string | null;
   readonly weRoadTourSlug: string | null;
+  readonly nationality: string;
   readonly documents: ReadonlyArray<{
     readonly id: string;
     readonly name: string;

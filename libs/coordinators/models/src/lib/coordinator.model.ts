@@ -2,7 +2,7 @@
 // COORDINATOR DOMAIN MODELS
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { FirestoreId, FirestoreTimestamp, ISODateString } from 'shared-models';
+import type { FirestoreId, FirestoreTimestamp, ISODateString, Nationality } from 'shared-models';
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 
@@ -49,6 +49,7 @@ export interface Coordinator {
   readonly email: string;
   /** WhatsApp-compatible phone number with country code e.g. "+393331234567" */
   readonly phone: string;
+  readonly nationality: Nationality;
   readonly agePreference: AgePreference;
   readonly notes: string;
   /** Post-trip feedback left by admins. */
@@ -66,6 +67,7 @@ export interface CoordinatorFirestoreDocument {
   readonly email: string;
   readonly phone: string;
   readonly agePreference: string;
+  readonly nationality: string;
   readonly notes: string;
   readonly feedback: string;
   readonly createdAt: FirestoreTimestamp;
@@ -87,6 +89,7 @@ export interface Candidacy {
   /** WhatsApp number — used to generate wa.me deep links. */
   readonly whatsapp: string;
   readonly email: string;
+  readonly nationality: Nationality;
   readonly notes: string;
   readonly status: CandidacyStatus;
   readonly submittedAt: ISODateString;
@@ -104,6 +107,7 @@ export interface CandidacyFirestoreDocument {
   readonly agePreference: string;
   readonly whatsapp: string;
   readonly email: string;
+  readonly nationality: string;
   readonly notes: string;
   readonly status: string;
   readonly submittedAt: FirestoreTimestamp;
@@ -136,6 +140,7 @@ export interface CandidacyFormPayload {
   readonly agePreference: AgePreference;
   readonly whatsapp: string;
   readonly email: string;
+  readonly nationality: Nationality;
   readonly notes: string;
 }
 
