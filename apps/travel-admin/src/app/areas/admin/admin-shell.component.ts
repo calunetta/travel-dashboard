@@ -29,9 +29,10 @@ import { FirebaseAuthService } from 'auth-api-requests';
   template: `
     <mat-sidenav-container class="tha-full-height">
       <!-- Sidebar -->
-      <mat-sidenav mode="side" opened class="tha-sidenav" style="width: 280px;">
-        <mat-toolbar color="primary" class="tha-shadow-sm">
-          <span class="tha-font-bold">Admin Portal</span>
+      <mat-sidenav mode="side" opened class="tha-sidenav" style="width: 280px; background-color: var(--tha-sidebar-bg); color: var(--tha-sidebar-text);">
+        <mat-toolbar style="background-color: transparent; border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <mat-icon style="margin-right: 12px; color: var(--tha-primary-400);">admin_panel_settings</mat-icon>
+          <span class="tha-font-bold" style="letter-spacing: 0.5px;">Admin Portal</span>
         </mat-toolbar>
 
         <mat-nav-list>

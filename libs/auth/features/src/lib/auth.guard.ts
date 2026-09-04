@@ -11,6 +11,8 @@
 import { inject } from '@angular/core';
 import { type CanActivateFn, Router } from '@angular/router';
 import { FirebaseAuthService } from 'auth-api-requests';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { filter, map, take } from 'rxjs/operators';
 
 /**
  * Functional route guard that:
@@ -23,20 +25,19 @@ export const authGuard: CanActivateFn = () => {
   const authService = inject(FirebaseAuthService);
   const router = inject(Router);
 
-  // Auth is still initializing (e.g. cold refresh, Firebase token hydration).
-  // Return true temporarily — the shell component will handle redirection
-  // once isLoading becomes false. In production, a loading spinner covers this.
-  if (authService.isLoading()) {
-    return true;
-  }
-
-  if (!authService.isAuthenticated()) {
-    return router.createUrlTree(['/login']);
-  }
-
-  if (!authService.isAdmin()) {
-    return router.createUrlTree(['/unauthorized']);
-  }
-
-  return true;
+  return toObservable(authService.isLoading).pipe(
+    filter(isLoading => !isLoading),
+    take(1),
+    map(() => {
+      if (!authService.isAuthenticated()) {
+        return router.createUrlTree(['/login']);
+      }
+    
+      if (!authService.isAdmin()) {
+        return router.createUrlTree(['/unauthorized']);
+      }
+    
+      return true;
+    })
+  );
 };

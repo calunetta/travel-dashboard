@@ -24,80 +24,68 @@ import { CandidacyStatus } from 'coordinators-models';
       
       <div class="tha-grid-4 tha-mb-8">
         <!-- Active Trips -->
-        <mat-card class="tha-card tha-shadow-sm">
-          <mat-card-header class="tha-flex-row" style="align-items: center; justify-content: space-between;">
-            <div class="tha-flex-row" style="align-items: center; gap: 8px;">
-              <mat-icon color="primary">flight_takeoff</mat-icon>
-              <mat-card-title class="tha-text-lg">Active Trips</mat-card-title>
+        <mat-card class="tha-card tha-shadow-sm tha-transition-normal" style="padding: var(--tha-spacing-4); cursor: pointer;" routerLink="/admin/trips">
+          <div class="tha-flex-row" style="justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div class="tha-text-sm tha-text-muted tha-font-medium tha-mb-2" style="text-transform: uppercase; letter-spacing: 0.5px;">Active Trips</div>
+              <div class="tha-text-4xl tha-font-bold">{{ activeTripsCount() ?? '-' }}</div>
             </div>
-            <div class="tha-text-3xl tha-font-bold">
-              {{ activeTripsCount() ?? '-' }}
+            <div style="padding: var(--tha-spacing-3); background: rgba(var(--tha-primary-500-rgb, 63, 123, 217), 0.1); border-radius: var(--tha-radius-full);">
+              <mat-icon color="primary" style="font-size: 28px; width: 28px; height: 28px;">flight_takeoff</mat-icon>
             </div>
-          </mat-card-header>
-          <mat-card-actions align="end">
-            <button mat-button color="primary" routerLink="/admin/trips">Manage</button>
-          </mat-card-actions>
+          </div>
         </mat-card>
 
         <!-- Pending Candidacies -->
-        <mat-card class="tha-card tha-shadow-sm">
-          <mat-card-header class="tha-flex-row" style="align-items: center; justify-content: space-between;">
-            <div class="tha-flex-row" style="align-items: center; gap: 8px;">
-              <mat-icon style="color: var(--tha-warning);">assignment_late</mat-icon>
-              <mat-card-title class="tha-text-lg">Pending Candidacies</mat-card-title>
+        <mat-card class="tha-card tha-shadow-sm tha-transition-normal" style="padding: var(--tha-spacing-4); cursor: pointer;" routerLink="/admin/candidacies">
+          <div class="tha-flex-row" style="justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div class="tha-text-sm tha-text-muted tha-font-medium tha-mb-2" style="text-transform: uppercase; letter-spacing: 0.5px;">Pending Candidacies</div>
+              <div class="tha-text-4xl tha-font-bold">{{ pendingCandidaciesCount() ?? '-' }}</div>
             </div>
-            <div class="tha-text-3xl tha-font-bold">
-              {{ pendingCandidaciesCount() ?? '-' }}
+            <div style="padding: var(--tha-spacing-3); background: rgba(245, 124, 0, 0.1); border-radius: var(--tha-radius-full);">
+              <mat-icon style="color: var(--tha-warning); font-size: 28px; width: 28px; height: 28px;">assignment_late</mat-icon>
             </div>
-          </mat-card-header>
-          <mat-card-actions align="end">
-            <button mat-button color="primary" routerLink="/admin/candidacies">Review</button>
-          </mat-card-actions>
+          </div>
         </mat-card>
 
         <!-- Registered Coordinators -->
-        <mat-card class="tha-card tha-shadow-sm">
-          <mat-card-header class="tha-flex-row" style="align-items: center; justify-content: space-between;">
-            <div class="tha-flex-row" style="align-items: center; gap: 8px;">
-              <mat-icon style="color: var(--tha-success);">group</mat-icon>
-              <mat-card-title class="tha-text-lg">Coordinators</mat-card-title>
+        <mat-card class="tha-card tha-shadow-sm tha-transition-normal" style="padding: var(--tha-spacing-4); cursor: pointer;" routerLink="/admin/coordinators">
+          <div class="tha-flex-row" style="justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div class="tha-text-sm tha-text-muted tha-font-medium tha-mb-2" style="text-transform: uppercase; letter-spacing: 0.5px;">Coordinators</div>
+              <div class="tha-text-4xl tha-font-bold">{{ coordinatorsCount() ?? '-' }}</div>
             </div>
-            <div class="tha-text-3xl tha-font-bold">
-              {{ coordinatorsCount() ?? '-' }}
+            <div style="padding: var(--tha-spacing-3); background: rgba(46, 125, 50, 0.1); border-radius: var(--tha-radius-full);">
+              <mat-icon style="color: var(--tha-success); font-size: 28px; width: 28px; height: 28px;">group</mat-icon>
             </div>
-          </mat-card-header>
-          <mat-card-actions align="end">
-            <button mat-button color="primary" routerLink="/admin/coordinators">View All</button>
-          </mat-card-actions>
+          </div>
         </mat-card>
 
         <!-- Registered Hotels -->
-        <mat-card class="tha-card tha-shadow-sm">
-          <mat-card-header class="tha-flex-row" style="align-items: center; justify-content: space-between;">
-            <div class="tha-flex-row" style="align-items: center; gap: 8px;">
-              <mat-icon style="color: #9c27b0;">hotel</mat-icon>
-              <mat-card-title class="tha-text-lg">Hotels</mat-card-title>
+        <mat-card class="tha-card tha-shadow-sm tha-transition-normal" style="padding: var(--tha-spacing-4); cursor: pointer;" routerLink="/admin/hotels">
+          <div class="tha-flex-row" style="justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div class="tha-text-sm tha-text-muted tha-font-medium tha-mb-2" style="text-transform: uppercase; letter-spacing: 0.5px;">Hotels</div>
+              <div class="tha-text-4xl tha-font-bold">{{ hotelsCount() ?? '-' }}</div>
             </div>
-            <div class="tha-text-3xl tha-font-bold">
-              {{ hotelsCount() ?? '-' }}
+            <div style="padding: var(--tha-spacing-3); background: rgba(156, 39, 176, 0.1); border-radius: var(--tha-radius-full);">
+              <mat-icon style="color: #9c27b0; font-size: 28px; width: 28px; height: 28px;">hotel</mat-icon>
             </div>
-          </mat-card-header>
-          <mat-card-actions align="end">
-            <button mat-button color="primary" routerLink="/admin/hotels">View All</button>
-          </mat-card-actions>
+          </div>
         </mat-card>
       </div>
 
       <!-- Quick Actions -->
       <h2 class="tha-text-xl tha-font-bold tha-mb-4">Quick Actions</h2>
       <div class="tha-grid-4">
-        <button mat-flat-button color="primary" class="tha-full-width" style="height: 60px;" routerLink="/admin/trips/new">
+        <button mat-flat-button color="primary" class="tha-full-width" style="height: 56px; border-radius: var(--tha-radius-md);" routerLink="/admin/trips/new">
           <mat-icon>add</mat-icon> Create New Trip
         </button>
-        <button mat-stroked-button color="primary" class="tha-full-width" style="height: 60px;" routerLink="/admin/hotels/new">
+        <button mat-stroked-button color="primary" class="tha-full-width" style="height: 56px; border-radius: var(--tha-radius-md);" routerLink="/admin/hotels/new">
           <mat-icon>add_business</mat-icon> Add Hotel
         </button>
-        <button mat-stroked-button class="tha-full-width" style="height: 60px;" routerLink="/admin/calendar">
+        <button mat-stroked-button class="tha-full-width" style="height: 56px; border-radius: var(--tha-radius-md);" routerLink="/admin/calendar">
           <mat-icon>calendar_month</mat-icon> View Calendar
         </button>
       </div>

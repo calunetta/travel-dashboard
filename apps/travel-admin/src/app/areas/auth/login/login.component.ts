@@ -11,6 +11,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 import { FirebaseAuthService } from 'auth-api-requests';
 
+import { toObservable } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
+import { filter } from 'rxjs/operators';
+
 @Component({
   selector: 'tha-login',
   standalone: true,
@@ -72,6 +76,12 @@ export class LoginComponent {
     this.errorMessage.set(null);
     try {
       await this.authService.signInWithGoogle();
+      
+      // Wait for auth service to finish loading its state (admin profile fetch)
+      await firstValueFrom(
+        toObservable(this.authService.isLoading).pipe(filter(l => !l))
+      );
+
       if (this.authService.isAdmin()) {
         this.router.navigate(['/admin/dashboard']);
       } else {

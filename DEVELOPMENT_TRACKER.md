@@ -356,6 +356,19 @@ apps/travel-admin/src/app/areas/public/candidacy-success/candidacy-success.compo
 
 ---
 
+### ✅ Bug Fix & Polish 1
+
+**Status:** COMPLETED
+**Completed At:** 2026-09-04
+
+#### What was done:
+- [x] Fixed broken Material Icons (Ligature Issue) by adding the Google Fonts link and fixing the `<base href="/">` in `index.html`.
+- [x] Fixed `AuthGuard` and `LoginComponent` race condition by implementing `toObservable` and `firstValueFrom` to accurately wait for the Firebase Auth and Firestore `admins` collection load state before redirecting.
+- [x] Polished Dark Theme by updating surface colors to deep blacks (`#121212` and `#1e1e2e`) in `_tokens.scss`.
+- [x] Polished `DashboardComponent` and `AdminShellComponent` UI with proper stat cards, hover states, and matching sidebar header colors.
+
+---
+
 ## Git Commit History Log
 
 Following the Master Rules for granular Git versioning, these are the logical commits performed across Steps 1 to 5:
