@@ -33,7 +33,7 @@ export function mapSnapshotToHotel(
     toDate: range.toDate ?? '',
     label: range.label ?? '',
     prices: Array.isArray(range.prices)
-      ? range.prices.map((p) => ({
+      ? range.prices.map((p: any) => ({
           roomType: isRoomType(p.roomType) ? p.roomType : RoomType.DOUBLE,
           pricePerNightCents: typeof p.pricePerNightCents === 'number' ? p.pricePerNightCents : 0,
         }))

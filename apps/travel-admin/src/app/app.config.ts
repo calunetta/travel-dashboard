@@ -30,14 +30,6 @@ import {
   FIREBASE_AUTH_TOKEN,
 } from 'shared-models';
 
-// ── Initialize Firebase (once, eagerly) ──────────────────────────────────────
-// Firebase modular SDK requires explicit initialization before use.
-// All services inject FIREBASE_APP_TOKEN / FIRESTORE_TOKEN / FIREBASE_AUTH_TOKEN
-// instead of calling getFirestore() / getAuth() directly (enables test mocking).
-const firebaseApp = initializeApp(environment.firebase);
-const firestoreInstance = getFirestore(firebaseApp);
-const authInstance = getAuth(firebaseApp);
-
 export const appConfig: ApplicationConfig = {
   providers: [
     // ── Core ──────────────────────────────────────────────────────────────
@@ -49,15 +41,15 @@ export const appConfig: ApplicationConfig = {
     // ── Firebase ──────────────────────────────────────────────────────────
     {
       provide: FIREBASE_APP_TOKEN,
-      useValue: firebaseApp,
+      useFactory: () => initializeApp(environment.firebase),
     },
     {
       provide: FIRESTORE_TOKEN,
-      useValue: firestoreInstance,
+      useFactory: () => getFirestore(initializeApp(environment.firebase)),
     },
     {
       provide: FIREBASE_AUTH_TOKEN,
-      useValue: authInstance,
+      useFactory: () => getAuth(initializeApp(environment.firebase)),
     },
   ],
 };

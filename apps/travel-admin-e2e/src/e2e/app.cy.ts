@@ -3,11 +3,8 @@ import { getGreeting } from '../support/app.po';
 describe('travel-admin-e2e', () => {
   beforeEach(() => cy.visit('/'));
 
-  it('should display welcome message', () => {
-    // Custom command example, see `../support/commands.ts` file
-    cy.login('my-email@something.com', 'myPassword');
-
-    // Function helper example, see `../support/app.po.ts` file
-    getGreeting().contains(/Welcome/);
+  it('should redirect to public candidacy flow', () => {
+    cy.url().should('include', '/public');
+    cy.get('tha-candidacy-form').should('exist');
   });
 });

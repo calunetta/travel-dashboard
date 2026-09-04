@@ -153,7 +153,7 @@ export class CandidacyFormComponent {
   );
 
   // Expose to template as signals
-  readonly availableTrips = toSignal(this.publishedTrips$, { initialValue: null });
+  readonly availableTrips = toSignal(this.publishedTrips$, { initialValue: [] });
   readonly tripsLoading = toSignal(
     new BehaviorSubject<boolean>(true).asObservable() // Simple mock for loading state until first emit
   );

@@ -96,7 +96,7 @@ export class HotelApiService {
     const docRef = doc(this.firestore, HOTELS_COLLECTION, id);
 
     // Build a flat update object, only including provided fields.
-    const update: Record<string, unknown> = { updatedAt: serverTimestamp() };
+    const update: Record<string, any> = { updatedAt: serverTimestamp() };
 
     if (rest.name !== undefined) update['name'] = rest.name;
     if (rest.destination !== undefined) update['destination'] = rest.destination;

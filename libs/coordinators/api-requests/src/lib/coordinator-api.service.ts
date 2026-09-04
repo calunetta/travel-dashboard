@@ -104,7 +104,7 @@ export class CoordinatorApiService {
   async update(payload: UpdateCoordinatorPayload): Promise<void> {
     const { id, ...rest } = payload;
     const docRef = doc(this.firestore, COORDINATORS_COLLECTION, id);
-    const update: Record<string, unknown> = { updatedAt: serverTimestamp() };
+    const update: Record<string, any> = { updatedAt: serverTimestamp() };
 
     if (rest.name !== undefined) update['name'] = rest.name;
     if (rest.surname !== undefined) update['surname'] = rest.surname;
@@ -269,13 +269,13 @@ export class CoordinatorApiService {
       this.firestore,
       `trips/${tripId}/${ASSIGNMENTS_SUBCOLLECTION}`
     );
-    const assignment: Omit<TripAssignment, 'id'> & { assignedAt: ReturnType<typeof serverTimestamp> } = {
+    const assignment: Omit<TripAssignment, 'id' | 'assignedAt'> & { assignedAt: ReturnType<typeof serverTimestamp> } = {
       tripId,
       coordinatorId,
       assignedById,
       assignmentType: type,
       conflictingTripDate: null,
-      assignedAt: serverTimestamp() as unknown as string, // Will be resolved by Firestore
+      assignedAt: serverTimestamp(), // Will be resolved by Firestore
     };
     const assignmentRef: DocumentReference = await addDoc(assignmentsCol, assignment);
 

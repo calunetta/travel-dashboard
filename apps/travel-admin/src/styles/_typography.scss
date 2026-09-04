@@ -2,10 +2,10 @@
 // TYPOGRAPHY — Google Fonts Import + Base Typography Rules
 // ─────────────────────────────────────────────────────────────────────────────
 
+@use './tokens' as tokens;
+
 // Google Fonts (Inter variable font — covers all weights 100-900)
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
-@use './tokens' as tokens;
 
 // ── Base Typography Reset ─────────────────────────────────────────────────────
 html {

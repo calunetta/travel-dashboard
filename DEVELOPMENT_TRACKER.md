@@ -306,15 +306,34 @@ apps/travel-admin/src/app/areas/public/candidacy-success/candidacy-success.compo
 
 ---
 
-### ⏳ Step 5 — Admin Area (Dashboards & Calendars)
-
-**Status:** PENDING
+### ✅ Step 5 — Admin Area (Dashboards & Calendars)
+**Status:** COMPLETED
+**Goal:** Implement all admin dashboards, calendar views, CRUD operations, and the Assignment Engine.
+- **Implemented Features:**
+  - `AdminShellComponent`: Sidenav navigation with centralized Material UI Light/Dark theme.
+  - `DashboardComponent`: High-level stats and quick links.
+  - `TripListComponent` / `TripFormComponent` / `TripDetailComponent`: Full CRUD with 8-day duration auto-calculation, room composition editor, documents view, and assignments view.
+  - `HotelListComponent` / `HotelFormComponent`: Full CRUD with nested Billing Data and dynamic Monthly Pricing Ranges per room type.
+  - `CoordinatorListComponent` / `CoordinatorDetailComponent`: Admin view of coordinators, WhatsApp integration (`wa.me`), and Post-trip feedback.
+  - `CandidacyListComponent`: The Assignment Engine (Automatic & Manual) and rejection flow.
+  - `CalendarComponent`: Monthly grid view rendering 8-day trip spans.
+  - Reusable `StatusBadgeComponent` for trips and candidacies.
+- **Commands run:**
+  - `nx run travel-admin:lint` - Passed strict type checking (no `any` types used).
 
 ---
 
-### ⏳ Step 6 — Testing Suite (Jest + Cypress)
+### ✅ Step 6 — Testing Suite (Jest + Cypress)
 
-**Status:** PENDING
+**Status:** COMPLETED
+
+#### What was done:
+- [x] Configure Jest for unit testing domain models and services.
+- [x] Setup Cypress E2E tests for the `Public` and `Admin` critical paths.
+- [x] Fix Nx and Cypress configuration errors for Standalone components.
+- [x] Resolve `tha-root` bootstrapping issue in `index.html` preventing app load.
+- [x] Implement E2E assertions for empty-state candidacy flow rendering and submission validation.
+- [x] Verify successful build (`yarn nx build travel-admin`) and E2E pass (`yarn nx e2e travel-admin-e2e`).
 
 ---
 

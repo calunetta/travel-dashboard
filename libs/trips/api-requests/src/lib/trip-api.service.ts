@@ -104,7 +104,7 @@ export class TripApiService {
     const { id, ...rest } = payload;
     const docRef = doc(this.firestore, TRIPS_COLLECTION, id);
     const firestoreData = mapUpdatePayloadToFirestore(rest);
-    await updateDoc(docRef, firestoreData as Parameters<typeof updateDoc>[1]);
+    await updateDoc(docRef, firestoreData as Record<string, any>);
   }
 
   /**
@@ -126,7 +126,7 @@ export class TripApiService {
   ): Promise<void> {
     const docRef = doc(this.firestore, TRIPS_COLLECTION, tripId);
     const firestoreData = mapUpdatePayloadToFirestore({ coordinatorId });
-    await updateDoc(docRef, firestoreData as Parameters<typeof updateDoc>[1]);
+    await updateDoc(docRef, firestoreData as Record<string, any>);
   }
 
   /**
@@ -135,7 +135,7 @@ export class TripApiService {
   async assignHotel(tripId: FirestoreId, hotelId: FirestoreId | null): Promise<void> {
     const docRef = doc(this.firestore, TRIPS_COLLECTION, tripId);
     const firestoreData = mapUpdatePayloadToFirestore({ hotelId });
-    await updateDoc(docRef, firestoreData as Parameters<typeof updateDoc>[1]);
+    await updateDoc(docRef, firestoreData as Record<string, any>);
   }
 
   /**
@@ -147,6 +147,6 @@ export class TripApiService {
   ): Promise<void> {
     const docRef = doc(this.firestore, TRIPS_COLLECTION, tripId);
     const firestoreData = mapUpdatePayloadToFirestore({ facebookGroupUrl });
-    await updateDoc(docRef, firestoreData as Parameters<typeof updateDoc>[1]);
+    await updateDoc(docRef, firestoreData as Record<string, any>);
   }
 }
