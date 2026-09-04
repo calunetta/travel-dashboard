@@ -24,6 +24,15 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    /**
+     * Returns true if the authenticated user is a SUPER_ADMIN.
+     * Reads the `role` field from the admin's Firestore document.
+     */
+    function isSuperAdmin() {
+      return isAdmin() &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'SUPER_ADMIN';
+    }
+
     // ─────────────────────────────────────────────
     // ADMINS collection — STRICTLY READ-ONLY from the app
     // ─────────────────────────────────────────────
@@ -31,19 +40,26 @@ service cloud.firestore {
     // The app reads ONLY the authenticated user's own record to verify access.
     // WRITE is permanently blocked from all clients.
     match /admins/{adminId} {
-      // Allow a user to read only their own admin record (for auth verification)
-      allow read: if isAuthenticated() && request.auth.uid == adminId;
+      // Allow any admin to read ALL admin profiles (needed for SUPER_ADMIN trip assignment UI).
+      allow read: if isAdmin();
       // NEVER allow writes from the client — use Firebase Console only
       allow write: if false;
     }
 
     // ─────────────────────────────────────────────
-    // RBAC Helper
+    // RBAC Helpers
     // ─────────────────────────────────────────────
+
+    /**
+     * True if the current user's UID is in the resource's `adminIds` array,
+     * OR if the current user is a SUPER_ADMIN (can manage any resource).
+     */
     function isResourceAdmin() {
-      return isAdmin() && (
-        (resource != null && request.auth.uid in resource.data.adminIds) ||
-        (resource == null && request.resource != null && request.auth.uid in request.resource.data.adminIds)
+      return isSuperAdmin() || (
+        isAdmin() && (
+          (resource != null && request.auth.uid in resource.data.adminIds) ||
+          (resource == null && request.resource != null && request.auth.uid in request.resource.data.adminIds)
+        )
       );
     }
 
@@ -51,7 +67,10 @@ service cloud.firestore {
     // TOURS collection
     // ─────────────────────────────────────────────
     match /tours/{tourId} {
-      allow read, create, update, delete: if isResourceAdmin();
+      // Any admin can read tours (needed to populate selectors).
+      allow read: if isAdmin();
+      // Only SUPER_ADMINs can create/update/delete tours.
+      allow create, update, delete: if isResourceAdmin();
     }
 
     // ─────────────────────────────────────────────
@@ -61,7 +80,12 @@ service cloud.firestore {
     // Admin write: only verified admins can mutate trip data
     match /trips/{tripId} {
       allow read: if isResourceAdmin() || resource.data.coordinatorId == null;
-      allow create, update, delete: if isResourceAdmin();
+      // SUPER_ADMINs can create any trip.
+      // Standard admins can create trips where they are in adminIds.
+      allow create: if isSuperAdmin() || (
+        isAdmin() && request.auth.uid in request.resource.data.adminIds
+      );
+      allow update, delete: if isResourceAdmin();
     }
 
     // ─────────────────────────────────────────────
@@ -69,7 +93,11 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
     // Full admin access only
     match /hotels/{hotelId} {
-      allow read, create, update, delete: if isResourceAdmin();
+      allow read: if isAdmin();
+      allow create: if isSuperAdmin() || (
+        isAdmin() && request.auth.uid in request.resource.data.adminIds
+      );
+      allow update, delete: if isResourceAdmin();
     }
 
     // ─────────────────────────────────────────────

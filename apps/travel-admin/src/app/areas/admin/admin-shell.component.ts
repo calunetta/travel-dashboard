@@ -85,6 +85,10 @@ import { FirebaseAuthService } from 'auth-api-requests';
           <div class="tha-flex-1"></div>
           
           <span class="tha-text-sm tha-text-muted tha-mr-4">
+            <span
+              *ngIf="isSuperAdmin()"
+              style="font-size: 0.65rem; font-weight: 700; background: var(--tha-primary); color: #fff; padding: 2px 6px; border-radius: 4px; margin-right: 6px; letter-spacing: 0.5px;"
+            >SUPER ADMIN</span>
             {{ userEmail() }}
           </span>
 
@@ -129,6 +133,8 @@ export class AdminShellComponent {
   readonly userEmail = this.authService.currentUser
     ? () => this.authService.currentUser()?.email ?? ''
     : () => '';
+
+  readonly isSuperAdmin = this.authService.isSuperAdmin;
 
   async logout(): Promise<void> {
     await this.authService.signOut();

@@ -11,14 +11,18 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { TourApiService } from 'tours-api-requests';
+import { AdminApiService, FirebaseAuthService } from 'auth-api-requests';
 import { TripCodeGenerator } from 'trips-mapping-and-utils';
 import { CreateTripPayload, UpdateTripPayload, DEFAULT_ROOM_COMPOSITION } from 'trips-models';
 import type { Tour } from 'tours-models';
+import type { Admin } from 'auth-models';
 import { FirestoreId } from 'shared-models';
 import { Subscription, firstValueFrom, combineLatest } from 'rxjs';
 import { startWith } from 'rxjs/operators';
@@ -39,6 +43,8 @@ import { startWith } from 'rxjs/operators';
     MatSnackBarModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatChipsModule,
+    MatTooltipModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -106,6 +112,27 @@ import { startWith } from 'rxjs/operators';
               </mat-form-field>
             </div>
 
+            <!-- SUPER_ADMIN only: Assign admins to trip -->
+            <mat-card *ngIf="isSuperAdmin() && !isEditMode" class="tha-card" style="border: 1px solid rgba(var(--tha-primary-rgb), 0.3); background: rgba(var(--tha-primary-rgb), 0.04);">
+              <mat-card-header>
+                <mat-icon mat-card-avatar style="color: var(--tha-primary);">admin_panel_settings</mat-icon>
+                <mat-card-title style="font-size: 1rem;">Assign Admins to Trip <span style="font-size: 0.75rem; opacity: 0.7;">(SUPER_ADMIN only)</span></mat-card-title>
+                <mat-card-subtitle>Select which admins can manage this trip. Defaults to the Tour's admin list.</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content class="tha-pt-4">
+                <mat-form-field appearance="outline" class="tha-full-width">
+                  <mat-label>Assigned Admins</mat-label>
+                  <mat-select formControlName="assignedAdminIds" multiple>
+                    <mat-option *ngFor="let admin of allAdmins$ | async" [value]="admin.id">
+                      {{ admin.name }} {{ admin.surname }} 
+                      <span *ngIf="admin.role === 'SUPER_ADMIN'" style="font-size: 0.75rem; opacity: 0.6;">(Super Admin)</span>
+                    </mat-option>
+                  </mat-select>
+                  <mat-hint>If empty, the trip inherits the Tour's admins.</mat-hint>
+                </mat-form-field>
+              </mat-card-content>
+            </mat-card>
+
             <div class="tha-grid-2">
               <mat-form-field appearance="outline">
                 <mat-label>WeRoad Tour Slug (Optional)</mat-label>
@@ -155,6 +182,8 @@ export class TripFormComponent implements OnInit, OnDestroy {
   private readonly hotelApi = inject(HotelApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
   private readonly tourApi = inject(TourApiService);
+  private readonly adminApi = inject(AdminApiService);
+  private readonly authService = inject(FirebaseAuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
@@ -162,8 +191,13 @@ export class TripFormComponent implements OnInit, OnDestroy {
   readonly hotels$ = this.hotelApi.getAll$();
   readonly coordinators$ = this.coordinatorApi.getAll$();
   readonly tours$ = this.tourApi.getAll$();
+  readonly allAdmins$ = this.adminApi.getAll$();
+
+  /** Exposed signal for the template to conditionally show the admin assignment panel. */
+  readonly isSuperAdmin = this.authService.isSuperAdmin;
 
   toursCache: Tour[] = [];
+  adminsCache: Admin[] = [];
 
   isEditMode = false;
   tripId: FirestoreId | null = null;
@@ -181,6 +215,8 @@ export class TripFormComponent implements OnInit, OnDestroy {
     notes: [''],
     weRoadTourSlug: [''],
     facebookGroupUrl: [''],
+    /** SUPER_ADMIN only: explicitly assign a subset of admins to this trip. */
+    assignedAdminIds: [[] as FirestoreId[]],
   });
 
   ngOnInit(): void {
@@ -192,10 +228,9 @@ export class TripFormComponent implements OnInit, OnDestroy {
       this.loadTrip(this.tripId);
     }
 
-    // Cache tours for quick lookup
-    this.sub.add(
-      this.tours$.subscribe(tours => this.toursCache = tours as Tour[])
-    );
+    // Cache tours & admins for quick lookup
+    this.sub.add(this.tours$.subscribe(tours => this.toursCache = tours as Tour[]));
+    this.sub.add(this.allAdmins$.subscribe(admins => this.adminsCache = admins as Admin[]));
 
     // Pre-select tour if passed in queryParams
     const tourIdParam = this.route.snapshot.queryParamMap.get('tourId');
@@ -219,6 +254,11 @@ export class TripFormComponent implements OnInit, OnDestroy {
               this.form.patchValue({ endDate: end }, { emitEvent: false });
             } else {
               this.form.patchValue({ endDate: null }, { emitEvent: false });
+            }
+
+            // For SUPER_ADMINs, auto-populate the admin selector with the tour's admins.
+            if (this.isSuperAdmin()) {
+              this.form.patchValue({ assignedAdminIds: [...tour.adminIds] as FirestoreId[] }, { emitEvent: false });
             }
           }
         } else {
@@ -265,14 +305,21 @@ export class TripFormComponent implements OnInit, OnDestroy {
 
     // Format dates to ISO yyyy-mm-dd
     const formatDate = (date: Date): string => {
-      const offset = date.getTimezoneOffset()
-      const d = new Date(date.getTime() - (offset * 60 * 1000))
-      return d.toISOString().split('T')[0]
+      const offset = date.getTimezoneOffset();
+      const d = new Date(date.getTime() - (offset * 60 * 1000));
+      return d.toISOString().split('T')[0];
     };
 
     try {
       const selectedTour = this.toursCache.find(t => t.id === formVal.tourId);
-      const adminIds = selectedTour ? selectedTour.adminIds : [];
+
+      // Determine adminIds:
+      // - SUPER_ADMINs can explicitly override with selected admins.
+      // - Standard admins inherit the tour's adminIds (denormalization).
+      const adminIds: ReadonlyArray<FirestoreId> =
+        this.isSuperAdmin() && formVal.assignedAdminIds && formVal.assignedAdminIds.length > 0
+          ? formVal.assignedAdminIds
+          : (selectedTour ? selectedTour.adminIds : []);
 
       if (this.isEditMode && this.tripId) {
         const payload: UpdateTripPayload = {
@@ -316,7 +363,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
         const newId = await this.tripApi.create(payload);
         this.snackBar.open('Trip created successfully', 'Close', { duration: 3000 });
         this.router.navigate(['/admin/trips', newId]);
-        return; // Don't redirect to list, go to detail view
+        return; // Go to detail view, not list
       }
       this.router.navigate(['/admin/trips']);
     } catch (err) {

@@ -21,6 +21,7 @@ import type { Tour } from 'tours-models';
 import { RoomType } from 'trips-models';
 import { FirestoreId } from 'shared-models';
 import { firstValueFrom } from 'rxjs';
+import { FirebaseAuthService } from 'auth-api-requests';
 
 @Component({
   selector: 'tha-hotel-form',
@@ -262,6 +263,7 @@ export class HotelFormComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
 
   readonly tours$ = this.tourApi.getAll$();
+  private readonly authService = inject(FirebaseAuthService);
   toursCache: Tour[] = [];
 
   readonly countries = Object.values(CountryCode);
@@ -421,8 +423,17 @@ export class HotelFormComponent implements OnInit {
         await this.hotelApi.update(payload);
         this.snackBar.open('Hotel updated successfully', 'Close', { duration: 3000 });
       } else {
-        const selectedTour = this.toursCache.find(t => t.id === formVal.tourId);
-        const adminIds = selectedTour ? selectedTour.adminIds : [];
+        // BUG FIX: Use firstValueFrom(tours$) at submit time instead of relying
+        // on toursCache, which may be empty due to subscription timing.
+        // This guarantees adminIds are always correctly populated on creation.
+        const latestTours = await firstValueFrom(this.tours$);
+        const selectedTour = latestTours.find(t => t.id === formVal.tourId);
+        const currentUid = this.authService.currentUser()?.uid;
+        // Fallback: if the tour cannot be found (e.g. race), use the current user's uid
+        // so the Firestore security rule `isResourceAdmin()` does not reject the write.
+        const adminIds: ReadonlyArray<FirestoreId> = (selectedTour?.adminIds?.length
+          ? selectedTour.adminIds
+          : currentUid ? [currentUid] : []) as FirestoreId[];
 
         const payload: CreateHotelPayload = {
           name: formVal.name!,

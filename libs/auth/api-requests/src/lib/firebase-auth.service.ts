@@ -46,6 +46,9 @@ export class FirebaseAuthService implements OnDestroy {
 
   readonly isAuthenticated = computed(() => this._currentUser() !== null);
   readonly isAdmin = computed(() => this._currentUser()?.isAdmin === true);
+  readonly isSuperAdmin = computed(
+    () => this._currentUser()?.adminProfile?.role === 'SUPER_ADMIN'
+  );
   readonly adminProfile = computed(() => this._currentUser()?.adminProfile ?? null);
 
   constructor() {
@@ -144,6 +147,7 @@ export class FirebaseAuthService implements OnDestroy {
           surname: data.surname ?? '',
           email: data.email ?? firebaseUser.email ?? '',
           phone: data.phone ?? '',
+          role: data.role ?? 'ADMIN',
         };
       }
     } catch (e) {

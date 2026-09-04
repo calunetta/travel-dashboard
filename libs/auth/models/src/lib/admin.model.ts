@@ -7,6 +7,13 @@
 import type { FirestoreId, FirestoreTimestamp } from 'shared-models';
 
 /**
+ * RBAC role for an admin user.
+ * - ADMIN: Standard admin — can manage trips assigned to them.
+ * - SUPER_ADMIN: Elevated admin — can create trips and assign them to any admin.
+ */
+export type AdminRole = 'ADMIN' | 'SUPER_ADMIN';
+
+/**
  * Admin user stored in the Firestore `admins` collection.
  * Document ID = Firebase Auth UID.
  * This interface is READ-ONLY from the client.
@@ -17,6 +24,8 @@ export interface Admin {
   readonly surname: string;
   readonly email: string;
   readonly phone: string;
+  /** RBAC role. Defaults to 'ADMIN' if not set in Firestore. */
+  readonly role: AdminRole;
 }
 
 /**
@@ -28,6 +37,7 @@ export interface AdminDocument {
   readonly surname: string;
   readonly email: string;
   readonly phone: string;
+  readonly role?: AdminRole;
   readonly createdAt?: FirestoreTimestamp;
 }
 
