@@ -8,7 +8,7 @@ import { TourApiService } from 'tours-api-requests';
 import { FirebaseAuthService } from 'auth-api-requests';
 import { of } from 'rxjs';
 import { signal } from '@angular/core';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CountryCode } from 'hotels-models';
 import type { Tour } from 'tours-models';
 import type { FirestoreId } from 'shared-models';
@@ -84,7 +84,12 @@ describe('HotelFormComponent', () => {
         { provide: TourApiService, useValue: mockTourApi },
         { provide: FirebaseAuthService, useValue: mockAuthService },
       ],
-    }).compileComponents();
+    })
+    .overrideComponent(HotelFormComponent, {
+      remove: { imports: [MatSnackBarModule] },
+      add: { providers: [{ provide: MatSnackBar, useValue: { open: jest.fn() } }] }
+    })
+    .compileComponents();
 
     fixture = TestBed.createComponent(HotelFormComponent);
     component = fixture.componentInstance;
@@ -147,18 +152,16 @@ describe('HotelFormComponent', () => {
   });
 
   /**
-   * REGRESSION TEST — Bug Fix: Hotel creation with empty toursCache.
+   * REGRESSION TEST — Bug Fix: Strict Hotel creation adminIds.
    *
-   * Symptom: `toursCache` was empty at submit time (race condition), causing
-   * `adminIds` to be `[]`. Firestore's `isResourceAdmin()` rule rejected the
-   * write because the current user's UID was not in an empty array.
+   * Symptom: Fallback logic allowed hotels to be created with only the creator's UID,
+   * isolating other tour admins.
    *
-   * Fix: The component now calls `firstValueFrom(tours$)` at submit time to
-   * guarantee the latest tours are fetched, and falls back to the current
-   * user's UID to ensure the security rule always passes.
+   * Fix: Rely strictly on `toursCache` (populated synchronously via `shareReplay`).
+   * If the tour is not in cache, throw an error.
    */
-  it('[REGRESSION] should include adminIds from the tour when creating a hotel (race-safe)', async () => {
-    // Arrange: fill in the form with valid data
+  it('[REGRESSION] should strictly use adminIds from toursCache and throw if missing', async () => {
+    // Arrange: valid form data
     component.form.patchValue({
       tourId: 'tour-1' as FirestoreId,
       name: 'Grand Resort',
@@ -167,35 +170,26 @@ describe('HotelFormComponent', () => {
       billingData: buildValidBillingData(),
     });
 
-    // Simulate toursCache being EMPTY (the race condition scenario)
-    component.toursCache = [];
-
-    // Act: submit the form
+    // 1. Success case: tour is in cache
+    component.toursCache = [MOCK_TOUR];
     await component.onSubmit();
-
-    // Assert: create was called and adminIds is populated (from firstValueFrom, not toursCache)
+    
     expect(mockHotelApi.create).toHaveBeenCalledTimes(1);
     const callArg = (mockHotelApi.create as jest.Mock).mock.calls[0][0];
-    // Should have the tour's adminIds fetched at runtime, not the empty cache
-    expect(callArg.adminIds).toEqual(['admin-uid-1']);
-  });
+    expect(callArg.adminIds).toEqual(['admin-uid-1']); // Matches MOCK_TOUR.adminIds
 
-  it('[REGRESSION] should fall back to currentUser uid if tour is not found', async () => {
-    // Arrange: a tour ID that doesn't exist in the tours$ stream
-    component.form.patchValue({
-      tourId: 'non-existent-tour' as FirestoreId,
-      name: 'Grand Resort',
-      destination: 'Rome',
-      notes: '',
-      billingData: buildValidBillingData(),
-    });
-
-    // Act
+    // 2. Error case: tour is missing from cache (e.g. invalid tourId)
+    component.toursCache = []; // simulate missing tour
+    component.form.patchValue({ tourId: 'invalid-tour-id' as FirestoreId });
+    
+    // We expect the catch block to be hit and a snackbar to be shown.
+    // However, the error is caught inside onSubmit and logged/snackbarred.
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     await component.onSubmit();
-
-    // Assert: fallback to current user's uid prevents a Firestore rejection
-    expect(mockHotelApi.create).toHaveBeenCalledTimes(1);
-    const callArg = (mockHotelApi.create as jest.Mock).mock.calls[0][0];
-    expect(callArg.adminIds).toEqual(['admin-uid-1']);
+    
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to save hotel', expect.any(Error));
+    expect(consoleSpy.mock.calls[0][1].message).toBe('Selected tour not found in cache. Cannot assign adminIds securely.');
+    
+    consoleSpy.mockRestore();
   });
 });

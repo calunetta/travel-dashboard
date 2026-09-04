@@ -541,3 +541,18 @@ Following the Master Rules for granular Git versioning, these are the logical co
 
 **Storage Path Structure:**  
 `trips/{tripId}/documents/{uuid}.pdf`
+
+---
+
+### ✅ Step 9 - PART 1: Bug Fixes & SUPER_ADMIN Tour Interface
+
+**Status:** Completed  
+**Date:** 2026-09-04  
+**Commit:** `fix(hotels): strict adminIds denormalization & feat(tours): SUPER_ADMIN tour management UI`
+
+**Key Changes:**
+1. **Hotel Creation Bug Fix** — Replaced race-prone fallback logic in `HotelFormComponent` with a strict cache read. `TourApiService.getAll$()` now utilizes `shareReplay` to prevent multiple listeners and ensure instant retrieval. If the selected tour is not found in cache, creation is explicitly rejected to prevent "orphan" hotels.
+2. **SUPER_ADMIN Tour Management UI** — Created `/admin/tours` with `TourListComponent` and `TourFormComponent`. Only `SUPER_ADMIN`s can see the menu link and access these routes.
+3. **Tour Creation Logic** — Removed auto-assignment of creator in `TourApiService.create`. It now explicitly accepts `adminIds` from the form payload, assigned via a multi-select dropdown in `TourFormComponent`.
+4. **Firestore Security Rules** — Hardened `/tours/{tourId}` to strictly `allow create: if isSuperAdmin();`.
+5. **Testing** — Mocked `MatSnackBar` globally in `HotelFormComponent` specs to bypass JSDOM CSS parsing crashes, updating tests to enforce the strict fallback rejection logic. All tests pass (`13 passed`).

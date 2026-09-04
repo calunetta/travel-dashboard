@@ -130,6 +130,28 @@ export const appRoutes: Routes = [
             (m) => m.HotelFormComponent
           ),
       },
+      // ── Tours ──────────────────────────────────────────────────────────
+      {
+        path: 'tours',
+        loadComponent: () =>
+          import('./areas/admin/tours/tour-list/tour-list.component').then(
+            (m) => m.TourListComponent
+          ),
+      },
+      {
+        path: 'tours/new',
+        loadComponent: () =>
+          import('./areas/admin/tours/tour-form/tour-form.component').then(
+            (m) => m.TourFormComponent
+          ),
+      },
+      {
+        path: 'tours/:id/edit',
+        loadComponent: () =>
+          import('./areas/admin/tours/tour-form/tour-form.component').then(
+            (m) => m.TourFormComponent
+          ),
+      },
       // ── Coordinators ───────────────────────────────────────────────────
       {
         path: 'coordinators',

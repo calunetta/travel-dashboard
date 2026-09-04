@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { collection, doc, setDoc, query, where, serverTimestamp, type DocumentReference } from 'firebase/firestore';
-import { Observable, from, map } from 'rxjs';
+import { Observable, shareReplay } from 'rxjs';
 import { onSnapshot } from 'firebase/firestore';
 import { FIRESTORE_TOKEN } from 'shared-models';
 import { FirebaseAuthService } from 'auth-api-requests';
@@ -28,7 +28,7 @@ export class TourApiService {
       }, (err) => observer.error(err));
 
       return () => unsubscribe();
-    });
+    }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
   }
 
   getById$(id: string): Observable<Tour | null> {
@@ -52,7 +52,7 @@ export class TourApiService {
       tourWeRoadCode: payload.tourWeRoadCode,
       tourName: payload.tourName,
       tourLength: payload.tourLength,
-      adminIds: [this.auth.currentUser()?.uid ?? ''],
+      adminIds: payload.adminIds as unknown as string[],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };

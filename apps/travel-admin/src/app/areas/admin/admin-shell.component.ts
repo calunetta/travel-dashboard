@@ -44,6 +44,11 @@ import { FirebaseAuthService } from 'auth-api-requests';
           <mat-divider></mat-divider>
           <div class="tha-text-xs tha-text-muted tha-font-bold tha-px-4 tha-pt-4 tha-pb-2" style="text-transform: uppercase;">Management</div>
 
+          <a *ngIf="isSuperAdmin()" mat-list-item routerLink="/admin/tours" routerLinkActive="tha-active-link">
+            <mat-icon matListItemIcon>map</mat-icon>
+            <span matListItemTitle>Tours</span>
+          </a>
+
           <a mat-list-item routerLink="/admin/trips" routerLinkActive="tha-active-link">
             <mat-icon matListItemIcon>flight</mat-icon>
             <span matListItemTitle>Trips</span>

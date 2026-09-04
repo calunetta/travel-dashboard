@@ -163,7 +163,7 @@ export class TripApiService {
   ): Promise<void> {
     const docRef = doc(this.firestore, TRIPS_COLLECTION, tripId);
     const firestoreData = mapUpdatePayloadToFirestore({ facebookGroupUrl });
-    await updateDoc(docRef, firestoreData as Record<string, unknown>);
+    await updateDoc(docRef, firestoreData as Record<string, any>);
   }
 
   // ── Document Management ───────────────────────────────────────────────────

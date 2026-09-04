@@ -67,10 +67,11 @@ service cloud.firestore {
     // TOURS collection
     // ─────────────────────────────────────────────
     match /tours/{tourId} {
-      // Any admin can read tours (needed to populate selectors).
       allow read: if isAdmin();
-      // Only SUPER_ADMINs can create/update/delete tours.
-      allow create, update, delete: if isResourceAdmin();
+      // Only SUPER_ADMINs can create tours.
+      allow create: if isSuperAdmin();
+      // Updates and deletes can be done by assigned admins or SUPER_ADMINs
+      allow update, delete: if isResourceAdmin();
     }
 
     // ─────────────────────────────────────────────
