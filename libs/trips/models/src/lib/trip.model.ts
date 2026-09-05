@@ -70,6 +70,9 @@ export interface Trip {
   readonly coordinatorId: FirestoreId | null;
   readonly hotelId: FirestoreId | null;
   readonly hotelBookerId: FirestoreId | null;
+  readonly hotelBookedBy: string | null;
+  readonly hotelBookingMethod: string | null;
+  readonly hotelBookingReceiptUrl: string | null;
   /** Clickable Facebook group link, sourced from the WeRoad external API. */
   readonly facebookGroupUrl: string | null;
   /** Raw URL from WeRoad API */
@@ -103,6 +106,9 @@ export interface TripFirestoreDocument {
   readonly coordinatorId: string | null;
   readonly hotelId: string | null;
   readonly hotelBookerId: string | null;
+  readonly hotelBookedBy: string | null;
+  readonly hotelBookingMethod: string | null;
+  readonly hotelBookingReceiptUrl: string | null;
   readonly facebookGroupUrl: string | null;
   readonly weRoadTourSlug: string | null;
   readonly nationality: string;

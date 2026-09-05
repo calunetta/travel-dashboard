@@ -61,6 +61,9 @@ export function mapSnapshotToTrip(
     coordinatorId: (data.coordinatorId as FirestoreId | null) ?? null,
     hotelId: (data.hotelId as FirestoreId | null) ?? null,
     hotelBookerId: (data.hotelBookerId as FirestoreId | null) ?? null,
+    hotelBookedBy: data.hotelBookedBy ?? null,
+    hotelBookingMethod: data.hotelBookingMethod ?? null,
+    hotelBookingReceiptUrl: data.hotelBookingReceiptUrl ?? null,
     facebookGroupUrl: data.facebookGroupUrl ?? null,
     weRoadTourSlug: data.weRoadTourSlug ?? null,
     nationality: (data.nationality as Nationality) ?? NationalityEnum.IT,
@@ -107,6 +110,9 @@ export function mapCreatePayloadToFirestore(
     coordinatorId: payload.coordinatorId,
     hotelId: payload.hotelId,
     hotelBookerId: payload.hotelBookerId,
+    hotelBookedBy: payload.hotelBookedBy,
+    hotelBookingMethod: payload.hotelBookingMethod,
+    hotelBookingReceiptUrl: payload.hotelBookingReceiptUrl,
     facebookGroupUrl: payload.facebookGroupUrl,
     weRoadTourSlug: payload.weRoadTourSlug,
     nationality: payload.nationality,
@@ -150,6 +156,9 @@ export function mapUpdatePayloadToFirestore(
   if (payload.coordinatorId !== undefined) update['coordinatorId'] = payload.coordinatorId;
   if (payload.hotelId !== undefined) update['hotelId'] = payload.hotelId;
   if (payload.hotelBookerId !== undefined) update['hotelBookerId'] = payload.hotelBookerId;
+  if (payload.hotelBookedBy !== undefined) update['hotelBookedBy'] = payload.hotelBookedBy;
+  if (payload.hotelBookingMethod !== undefined) update['hotelBookingMethod'] = payload.hotelBookingMethod;
+  if (payload.hotelBookingReceiptUrl !== undefined) update['hotelBookingReceiptUrl'] = payload.hotelBookingReceiptUrl;
   if (payload.facebookGroupUrl !== undefined) update['facebookGroupUrl'] = payload.facebookGroupUrl;
   if (payload.weRoadTourSlug !== undefined) update['weRoadTourSlug'] = payload.weRoadTourSlug;
   if (payload.nationality !== undefined) update['nationality'] = payload.nationality;
@@ -190,6 +199,9 @@ export function createDefaultTripPayload(): CreateTripPayload {
     coordinatorId: null,
     hotelId: null,
     hotelBookerId: null,
+    hotelBookedBy: null,
+    hotelBookingMethod: null,
+    hotelBookingReceiptUrl: null,
     facebookGroupUrl: null,
     weRoadTourSlug: null,
     nationality: NationalityEnum.IT,

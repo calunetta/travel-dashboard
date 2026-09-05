@@ -23,7 +23,8 @@ import { TripCodeGenerator } from 'trips-mapping-and-utils';
 import { CreateTripPayload, UpdateTripPayload, DEFAULT_ROOM_COMPOSITION } from 'trips-models';
 import type { Tour } from 'tours-models';
 import type { Admin } from 'auth-models';
-import { FirestoreId } from 'shared-models';
+import { FirestoreId, Nationality, FIREBASE_STORAGE_TOKEN } from 'shared-models';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Subscription, firstValueFrom, combineLatest } from 'rxjs';
 import { startWith } from 'rxjs/operators';
 
@@ -112,6 +113,45 @@ import { startWith } from 'rxjs/operators';
               </mat-form-field>
             </div>
 
+            <div class="tha-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Nationality</mat-label>
+                <mat-select formControlName="nationality">
+                  <mat-option *ngFor="let nat of availableNationalities" [value]="nat">{{ nat }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('nationality')?.hasError('required')">Nationality is required.</mat-error>
+              </mat-form-field>
+            </div>
+            
+            <mat-card class="tha-mb-4" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
+              <mat-card-header>
+                <mat-card-title style="font-size: 1rem;">Hotel Booking Details (Optional)</mat-card-title>
+              </mat-card-header>
+              <mat-card-content class="tha-pt-4 tha-grid-2">
+                <mat-form-field appearance="outline">
+                  <mat-label>Booked By</mat-label>
+                  <input matInput formControlName="hotelBookedBy" placeholder="e.g. Mario Rossi" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Booking Method</mat-label>
+                  <input matInput formControlName="hotelBookingMethod" placeholder="e.g. Credit Card, Booking.com" />
+                </mat-form-field>
+                <div class="tha-flex-col tha-mt-2 tha-full-width" style="grid-column: span 2;">
+                  <label class="tha-text-sm tha-font-bold tha-mb-2">Booking Receipt (Image)</label>
+                  <input type="file" accept="image/*" (change)="onReceiptSelected($event)" #receiptInput style="display: none;" />
+                  <div class="tha-flex-row tha-items-center tha-gap-4">
+                    <button mat-stroked-button type="button" (click)="receiptInput.click()">
+                      <mat-icon>upload_file</mat-icon> Select Image
+                    </button>
+                    <span class="tha-text-xs tha-text-muted">{{ selectedReceiptFile ? selectedReceiptFile.name : (form.get('hotelBookingReceiptUrl')?.value ? 'Receipt already uploaded' : 'No file selected') }}</span>
+                    <a *ngIf="form.get('hotelBookingReceiptUrl')?.value && !selectedReceiptFile" [href]="form.get('hotelBookingReceiptUrl')?.value" target="_blank" class="tha-text-primary tha-text-xs tha-flex-row tha-items-center">
+                      <mat-icon style="font-size: 16px; width: 16px; height: 16px;">open_in_new</mat-icon> View Existing
+                    </a>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
             <!-- SUPER_ADMIN only: Assign admins to trip -->
             <mat-card *ngIf="isSuperAdmin() && !isEditMode" class="tha-card" style="border: 1px solid rgba(var(--tha-primary-rgb), 0.3); background: rgba(var(--tha-primary-rgb), 0.04);">
               <mat-card-header>
@@ -187,6 +227,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly storage = inject(FIREBASE_STORAGE_TOKEN);
 
   readonly hotels$ = this.hotelApi.getAll$();
   readonly coordinators$ = this.coordinatorApi.getAll$();
@@ -198,6 +239,8 @@ export class TripFormComponent implements OnInit, OnDestroy {
 
   toursCache: Tour[] = [];
   adminsCache: Admin[] = [];
+  availableNationalities: Nationality[] = [];
+  selectedReceiptFile: File | null = null;
 
   isEditMode = false;
   tripId: FirestoreId | null = null;
@@ -210,8 +253,12 @@ export class TripFormComponent implements OnInit, OnDestroy {
     destination: [{ value: '', disabled: true }, Validators.required],
     startDate: [null as Date | null, Validators.required],
     endDate: [{ value: null as Date | null, disabled: true }, Validators.required],
+    nationality: [null as Nationality | null, Validators.required],
     hotelId: [null as FirestoreId | null],
     coordinatorId: [null as FirestoreId | null],
+    hotelBookedBy: [''],
+    hotelBookingMethod: [''],
+    hotelBookingReceiptUrl: [''],
     notes: [''],
     weRoadTourSlug: [''],
     facebookGroupUrl: [''],
@@ -247,6 +294,14 @@ export class TripFormComponent implements OnInit, OnDestroy {
           const tour = this.toursCache.find(t => t.id === tourId);
           if (tour) {
             this.form.patchValue({ destination: tour.country }, { emitEvent: false });
+            this.availableNationalities = [...tour.nationalities];
+            // If current nationality is not in available, reset it
+            const currentNat = this.form.get('nationality')?.value;
+            if (currentNat && !this.availableNationalities.includes(currentNat)) {
+              this.form.patchValue({ nationality: null }, { emitEvent: false });
+            } else if (!currentNat && this.availableNationalities.length === 1) {
+              this.form.patchValue({ nationality: this.availableNationalities[0] }, { emitEvent: false });
+            }
 
             if (startDate && tour.tourLength) {
               const end = new Date(startDate);
@@ -257,12 +312,13 @@ export class TripFormComponent implements OnInit, OnDestroy {
             }
 
             // For SUPER_ADMINs, auto-populate the admin selector with the tour's admins.
-            if (this.isSuperAdmin()) {
+            if (this.isSuperAdmin() && !this.isEditMode) {
               this.form.patchValue({ assignedAdminIds: [...tour.adminIds] as FirestoreId[] }, { emitEvent: false });
             }
           }
         } else {
-          this.form.patchValue({ destination: '', endDate: null }, { emitEvent: false });
+          this.availableNationalities = [];
+          this.form.patchValue({ destination: '', endDate: null, nationality: null }, { emitEvent: false });
         }
       })
     );
@@ -281,8 +337,12 @@ export class TripFormComponent implements OnInit, OnDestroy {
           destination: trip.destination,
           startDate: new Date(trip.startDate),
           endDate: new Date(trip.endDate),
+          nationality: trip.nationality,
           hotelId: trip.hotelId,
           coordinatorId: trip.coordinatorId,
+          hotelBookedBy: trip.hotelBookedBy,
+          hotelBookingMethod: trip.hotelBookingMethod,
+          hotelBookingReceiptUrl: trip.hotelBookingReceiptUrl,
           notes: trip.notes,
           weRoadTourSlug: trip.weRoadTourSlug,
           facebookGroupUrl: trip.facebookGroupUrl,
@@ -311,6 +371,15 @@ export class TripFormComponent implements OnInit, OnDestroy {
     };
 
     try {
+      // 1. Upload receipt if exists
+      let receiptUrl = formVal.hotelBookingReceiptUrl;
+      if (this.selectedReceiptFile) {
+        const filePath = `trips/receipts/${Date.now()}_${this.selectedReceiptFile.name}`;
+        const storageRef = ref(this.storage, filePath);
+        const snapshot = await uploadBytes(storageRef, this.selectedReceiptFile);
+        receiptUrl = await getDownloadURL(snapshot.ref);
+      }
+
       const selectedTour = this.toursCache.find(t => t.id === formVal.tourId);
 
       // Determine adminIds:
@@ -328,8 +397,12 @@ export class TripFormComponent implements OnInit, OnDestroy {
           destination: formVal.destination!,
           startDate: formatDate(formVal.startDate!),
           endDate: formatDate(formVal.endDate!),
+          nationality: formVal.nationality!,
           hotelId: formVal.hotelId ?? null,
           coordinatorId: formVal.coordinatorId ?? null,
+          hotelBookedBy: formVal.hotelBookedBy ?? null,
+          hotelBookingMethod: formVal.hotelBookingMethod ?? null,
+          hotelBookingReceiptUrl: receiptUrl ?? null,
           notes: formVal.notes ?? '',
           weRoadTourSlug: formVal.weRoadTourSlug ?? null,
           facebookGroupUrl: formVal.facebookGroupUrl ?? null,
@@ -348,10 +421,14 @@ export class TripFormComponent implements OnInit, OnDestroy {
           destination: formVal.destination!,
           startDate: formatDate(formVal.startDate!),
           endDate: formatDate(formVal.endDate!),
+          nationality: formVal.nationality!,
           code: generatedCode,
           durationDays: 8,
           hotelId: formVal.hotelId ?? null,
           coordinatorId: formVal.coordinatorId ?? null,
+          hotelBookedBy: formVal.hotelBookedBy ?? null,
+          hotelBookingMethod: formVal.hotelBookingMethod ?? null,
+          hotelBookingReceiptUrl: receiptUrl ?? null,
           notes: formVal.notes ?? '',
           weRoadTourSlug: formVal.weRoadTourSlug ?? null,
           facebookGroupUrl: formVal.facebookGroupUrl ?? null,
@@ -371,6 +448,13 @@ export class TripFormComponent implements OnInit, OnDestroy {
       this.snackBar.open('Failed to save trip. Please check your connection.', 'Close', { duration: 5000 });
     } finally {
       this.submitting = false;
+    }
+  }
+
+  onReceiptSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      this.selectedReceiptFile = file;
     }
   }
 }
