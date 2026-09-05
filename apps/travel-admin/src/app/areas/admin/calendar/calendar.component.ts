@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -82,11 +82,11 @@ interface CalendarDay {
   selector: 'tha-calendar',
   standalone: true,
   imports: [
-    CommonModule, 
-    MatCardModule, 
-    MatButtonModule, 
-    MatIconModule, 
-    MatRippleModule, 
+    CommonModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatRippleModule,
     MatDialogModule,
     MatFormFieldModule,
     MatSelectModule,
@@ -128,7 +128,7 @@ interface CalendarDay {
           <mat-select [ngModel]="selectedTourId()" (ngModelChange)="selectedTourId.set($event)">
             <mat-option [value]="null">All Tours</mat-option>
             <mat-option *ngFor="let tour of allTours()" [value]="tour.id">
-              {{ tour.weRoadCode }} - {{ tour.destination }}
+              {{ tour.tourWeRoadCode }} - {{ tour.country }}
             </mat-option>
           </mat-select>
         </mat-form-field>
@@ -260,11 +260,19 @@ export class CalendarComponent {
   private readonly coordinatorApi = inject(CoordinatorApiService);
   private readonly tourApi = inject(TourApiService);
   private readonly dialog = inject(MatDialog);
-  
+
   private readonly currentDate = signal(new Date());
-  readonly selectedNationality = signal<Nationality | null>(null);
+  readonly selectedNationality = signal<Nationality | null>(Nationality.IT);
   readonly selectedTourId = signal<string | null>(null);
   readonly nationalities = Object.values(Nationality);
+
+  constructor() {
+    this.tourApi.getAll$().pipe(takeUntilDestroyed()).subscribe(tours => {
+      if (tours.length > 0 && this.selectedTourId() === null) {
+        this.selectedTourId.set(tours[0].id);
+      }
+    });
+  }
 
   readonly currentMonthName = computed(() => {
     return this.currentDate().toLocaleString('default', { month: 'long' });
@@ -343,10 +351,10 @@ export class CalendarComponent {
       // Check if date falls within trip start/end bounds
       // Note: we set hours to 0 to ignore time parts in comparison
       const start = new Date(t.startDate);
-      start.setHours(0,0,0,0);
+      start.setHours(0, 0, 0, 0);
       const end = new Date(t.endDate);
-      end.setHours(23,59,59,999);
-      
+      end.setHours(23, 59, 59, 999);
+
       return targetTime >= start.getTime() && targetTime <= end.getTime();
     });
   }
@@ -368,8 +376,8 @@ export class CalendarComponent {
   isToday(date: Date): boolean {
     const today = new Date();
     return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
   }
 
   getTripColor(tripId: string): string {
@@ -380,7 +388,7 @@ export class CalendarComponent {
     const hue = Math.abs(hash) % 360;
     return `hsl(${hue}, 70%, 25%)`;
   }
-  
+
   getTripTextColor(tripId: string): string {
     let hash = 0;
     for (let i = 0; i < tripId.length; i++) {
