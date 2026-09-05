@@ -1,5 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, ViewChild } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -29,7 +31,8 @@ import { FirebaseAuthService } from 'auth-api-requests';
   template: `
     <mat-sidenav-container class="tha-full-height">
       <!-- Sidebar -->
-      <mat-sidenav mode="side" opened class="tha-sidenav" style="width: 280px; background-color: var(--tha-sidebar-bg); color: var(--tha-sidebar-text);">
+      <mat-sidenav #sidenav [mode]="isMobile().matches ? 'over' : 'side'" [opened]="!isMobile().matches" 
+                   class="tha-sidenav" style="width: 280px; background-color: var(--tha-sidebar-bg); color: var(--tha-sidebar-text);">
         <mat-toolbar style="background-color: transparent; border-bottom: 1px solid rgba(255,255,255,0.1);">
           <mat-icon style="margin-right: 12px; color: var(--tha-primary-400);">admin_panel_settings</mat-icon>
           <span class="tha-font-bold" style="letter-spacing: 0.5px;">Admin Portal</span>
@@ -87,6 +90,10 @@ import { FirebaseAuthService } from 'auth-api-requests';
       <mat-sidenav-content class="tha-flex-col tha-surface-bg">
         <!-- Header -->
         <mat-toolbar class="tha-shadow-sm" style="background-color: var(--tha-surface); z-index: var(--tha-z-sticky);">
+          <button *ngIf="isMobile().matches" mat-icon-button (click)="sidenav.toggle()" aria-label="Toggle sidenav">
+            <mat-icon>menu</mat-icon>
+          </button>
+          
           <div class="tha-flex-1"></div>
           
           <span class="tha-text-sm tha-text-muted tha-mr-4">
@@ -134,6 +141,12 @@ export class AdminShellComponent {
   protected readonly themeService = inject(ThemeService);
   private readonly authService = inject(FirebaseAuthService);
   private readonly router = inject(Router);
+  private readonly breakpointObserver = inject(BreakpointObserver);
+
+  readonly isMobile = toSignal(
+    this.breakpointObserver.observe([Breakpoints.Handset, Breakpoints.TabletPortrait]),
+    { initialValue: { matches: false, breakpoints: {} } }
+  );
 
   readonly userEmail = this.authService.currentUser
     ? () => this.authService.currentUser()?.email ?? ''
