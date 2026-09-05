@@ -13,6 +13,7 @@ import type { FirebaseApp } from 'firebase/app';
 import type { Firestore } from 'firebase/firestore';
 import type { Auth } from 'firebase/auth';
 import type { FirebaseStorage } from 'firebase/storage';
+import type { Messaging } from 'firebase/messaging';
 
 /** Injection token for the Firebase App instance. */
 export const FIREBASE_APP_TOKEN = new InjectionToken<FirebaseApp>('FIREBASE_APP');
@@ -25,4 +26,7 @@ export const FIREBASE_AUTH_TOKEN = new InjectionToken<Auth>('FIREBASE_AUTH');
 
 /** Injection token for the Firebase Storage instance. */
 export const FIREBASE_STORAGE_TOKEN = new InjectionToken<FirebaseStorage>('FIREBASE_STORAGE');
+
+/** Injection token for the Firebase Messaging instance. */
+export const FIREBASE_MESSAGING_TOKEN = new InjectionToken<Messaging>('FIREBASE_MESSAGING');
 

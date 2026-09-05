@@ -14,7 +14,7 @@ import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { TourApiService } from 'tours-api-requests';
-import { Nationality } from 'shared-models';
+import { Nationality, FirestoreId } from 'shared-models';
 import { firstValueFrom, shareReplay } from 'rxjs';
 import { DEFAULT_ROOM_COMPOSITION, CreateTripPayload } from 'trips-models';
 import { TripCodeGenerator } from 'trips-mapping-and-utils';
@@ -186,7 +186,7 @@ export class CsvImportDialogComponent {
   readonly globalError = signal<string | null>(null);
   readonly isImporting = signal(false);
   readonly importedCount = signal(0);
-  
+
   readonly validRowsCount = computed(() => this.parsedRows().filter(r => r.isValid).length);
   readonly invalidRowsCount = computed(() => this.parsedRows().filter(r => !r.isValid).length);
   readonly importProgress = computed(() => {
@@ -281,8 +281,8 @@ export class CsvImportDialogComponent {
       }
 
       // 2. Resolve Tour
-      const tour = tours.find(t => 
-        t.weRoadTourSlug === row.weRoadTourSlug && 
+      const tour = tours.find(t =>
+        t.tourWeRoadCode === row.weRoadTourSlug &&
         t.nationalities.includes(natUpper as Nationality)
       );
 
@@ -305,12 +305,12 @@ export class CsvImportDialogComponent {
       }
 
       // 4. Resolve Hotel
-      let hotelId: string | null = null;
+      let hotelId: FirestoreId | null = null;
       let hotelName: string | undefined;
       if (row.hotel) {
         const hotel = hotels.find(h => h.name.toLowerCase() === row.hotel.toLowerCase());
         if (hotel) {
-          hotelId = hotel.id;
+          hotelId = hotel.id as FirestoreId;
           hotelName = hotel.name;
         } else {
           errors.push(`Hotel not found: ${row.hotel}`);
@@ -318,25 +318,28 @@ export class CsvImportDialogComponent {
       }
 
       if (row.coordinatorEmail && !row.coordinator) {
-         errors.push('Coordinator name is required if email is provided');
+        errors.push('Coordinator name is required if email is provided');
       }
 
       let payload: CreateTripPayload | undefined;
 
       if (errors.length === 0 && tour) {
         payload = {
-          destination: tour.destination,
+          destination: tour.country,
           startDate: row.startDate,
           endDate: resolvedEndDate,
-          code: TripCodeGenerator.generate(tour.weRoadCode, row.startDate),
-          durationDays: 8,
+          code: TripCodeGenerator.generateCode(tour.tourWeRoadCode, row.startDate, []),
+          durationDays: tour.tourLength as 8,
           notes: row.notes + (row.bookedBy ? ` (Booked by: ${row.bookedBy})` : ''),
           roomComposition: DEFAULT_ROOM_COMPOSITION,
           coordinatorId: null, // Set during import phase
           hotelId,
           hotelBookerId: null,
+          hotelBookedBy: null,
+          hotelBookingMethod: null,
+          hotelBookingReceiptUrl: null,
           facebookGroupUrl: null,
-          weRoadTourSlug: tour.weRoadTourSlug,
+          weRoadTourSlug: '',
           nationality: natUpper as Nationality,
           documents: [],
           tourId: tour.id,
@@ -369,16 +372,16 @@ export class CsvImportDialogComponent {
 
     for (const row of validRows) {
       try {
-        let coordinatorId: string | null = null;
-        
+        let coordinatorId: FirestoreId | null = null;
+
         // Upsert Coordinator if email provided
         if (row.raw.coordinatorEmail && row.raw.coordinator) {
-          coordinatorId = await this.coordinatorApi.upsertCoordinatorFromCsv(
+          coordinatorId = (await this.coordinatorApi.upsertCoordinatorFromCsv(
             row.raw.coordinator,
             '', // Surname not separately provided in CSV
             row.raw.coordinatorEmail,
             row.raw.coordinatorNumber || ''
-          );
+          )) as FirestoreId;
         }
 
         const finalPayload: CreateTripPayload = {
@@ -387,7 +390,7 @@ export class CsvImportDialogComponent {
         };
 
         await this.tripApi.create(finalPayload);
-        
+
         successCount++;
         this.importedCount.set(successCount);
       } catch (e) {
@@ -397,7 +400,7 @@ export class CsvImportDialogComponent {
     }
 
     this.isImporting.set(false);
-    
+
     if (failCount > 0) {
       this.snackBar.open(`Import completed: ${successCount} successful, ${failCount} failed.`, 'Close', { duration: 5000 });
     } else {

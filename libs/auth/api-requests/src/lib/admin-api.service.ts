@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Injectable, inject } from '@angular/core';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, doc, updateDoc } from 'firebase/firestore';
 import { Observable, shareReplay } from 'rxjs';
 import { FIRESTORE_TOKEN } from 'shared-models';
 import type { Admin, AdminDocument } from 'auth-models';
@@ -58,5 +58,13 @@ export class AdminApiService {
       }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
     }
     return this.allAdmins$;
+  }
+
+  /**
+   * Updates the FCM token for the currently authenticated admin.
+   */
+  async updateFcmToken(adminId: FirestoreId, fcmToken: string): Promise<void> {
+    const adminRef = doc(this.firestore, ADMINS_COLLECTION, adminId);
+    await updateDoc(adminRef, { fcmToken });
   }
 }

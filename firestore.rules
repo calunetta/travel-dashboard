@@ -42,8 +42,10 @@ service cloud.firestore {
     match /admins/{adminId} {
       // Allow any admin to read ALL admin profiles (needed for SUPER_ADMIN trip assignment UI).
       allow read: if isAdmin();
-      // NEVER allow writes from the client — use Firebase Console only
-      allow write: if false;
+      // Allow an admin to update ONLY their own fcmToken
+      allow update: if request.auth.uid == adminId 
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmToken']);
+      allow create, delete: if false;
     }
 
     // ─────────────────────────────────────────────

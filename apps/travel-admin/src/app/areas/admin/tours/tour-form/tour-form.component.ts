@@ -13,7 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { TourApiService } from 'tours-api-requests';
 import { AdminApiService, FirebaseAuthService } from 'auth-api-requests';
 import type { CreateTourPayload, UpdateTourPayload } from 'tours-models';
-import type { FirestoreId } from 'shared-models';
+import { FirestoreId, Nationality } from 'shared-models';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -71,6 +71,18 @@ import { firstValueFrom } from 'rxjs';
                 <input matInput type="number" formControlName="tourLength" />
                 <mat-error *ngIf="form.get('tourLength')?.hasError('required')">Length is required.</mat-error>
                 <mat-error *ngIf="form.get('tourLength')?.hasError('min')">Must be at least 1 day.</mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="tha-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Available Nationalities</mat-label>
+                <mat-select formControlName="nationalities" multiple>
+                  <mat-option *ngFor="let nat of availableNationalities" [value]="nat">
+                    {{ nat }}
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('nationalities')?.hasError('required')">Required.</mat-error>
               </mat-form-field>
             </div>
 
@@ -135,8 +147,17 @@ export class TourFormComponent implements OnInit {
     tourName: ['', Validators.required],
     country: ['', Validators.required],
     tourLength: [8, [Validators.required, Validators.min(1)]],
+    nationalities: [[] as Nationality[], Validators.required],
     adminIds: [[] as FirestoreId[], Validators.required],
   });
+
+  readonly availableNationalities: Nationality[] = [
+    Nationality.IT, 
+    Nationality.ES, 
+    Nationality.UK, 
+    Nationality.DE, 
+    Nationality.FR
+  ];
 
   ngOnInit(): void {
     // SECURITY: Only SUPER_ADMINs can access this route
@@ -169,6 +190,7 @@ export class TourFormComponent implements OnInit {
           tourName: tour.tourName,
           country: tour.country,
           tourLength: tour.tourLength,
+          nationalities: (tour.nationalities || []) as Nationality[],
           adminIds: tour.adminIds as FirestoreId[],
         });
       }
@@ -195,6 +217,7 @@ export class TourFormComponent implements OnInit {
           tourName: formVal.tourName!,
           country: formVal.country!,
           tourLength: formVal.tourLength!,
+          nationalities: formVal.nationalities as readonly Nationality[],
           adminIds: formVal.adminIds as readonly FirestoreId[],
         };
         await this.tourApi.update(payload);
@@ -205,6 +228,7 @@ export class TourFormComponent implements OnInit {
           tourName: formVal.tourName!,
           country: formVal.country!,
           tourLength: formVal.tourLength!,
+          nationalities: formVal.nationalities as readonly Nationality[],
           adminIds: formVal.adminIds as readonly FirestoreId[],
         };
         await this.tourApi.create(payload);

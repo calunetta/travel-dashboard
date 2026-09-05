@@ -10,7 +10,7 @@
 
 import {
   ApplicationConfig,
-  provideZoneChangeDetection,
+  provideZoneChangeDetection, isDevMode,
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
@@ -21,6 +21,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
+import { getMessaging } from 'firebase/messaging';
 
 // App
 import { appRoutes } from './app.routes';
@@ -30,7 +31,9 @@ import {
   FIRESTORE_TOKEN,
   FIREBASE_AUTH_TOKEN,
   FIREBASE_STORAGE_TOKEN,
+  FIREBASE_MESSAGING_TOKEN,
 } from 'shared-models';
+import { provideServiceWorker } from '@angular/service-worker';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -57,5 +60,12 @@ export const appConfig: ApplicationConfig = {
       provide: FIREBASE_STORAGE_TOKEN,
       useFactory: () => getStorage(initializeApp(environment.firebase)),
     },
+    {
+      provide: FIREBASE_MESSAGING_TOKEN,
+      useFactory: () => getMessaging(initializeApp(environment.firebase)),
+    }, provideServiceWorker('ngsw-worker.js', {
+            enabled: !isDevMode(),
+            registrationStrategy: 'registerWhenStable:30000'
+          }),
   ],
 };

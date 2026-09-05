@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AdminShellComponent } from './admin-shell.component';
 import { BreakpointObserver, BreakpointState, Breakpoints } from '@angular/cdk/layout';
-import { FirebaseAuthService } from 'auth-api-requests';
+import { FirebaseAuthService, AdminApiService } from 'auth-api-requests';
+import { FIREBASE_MESSAGING_TOKEN } from 'shared-models';
 import { ThemeService } from 'shared-ui';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of } from 'rxjs';
@@ -28,13 +29,19 @@ describe('AdminShellComponent', () => {
       toggle: jest.fn(),
     };
 
-    await TestBed.configureTestingModule({
-      imports: [AdminShellComponent, RouterTestingModule, BrowserAnimationsModule],
-      providers: [
-        { provide: BreakpointObserver, useValue: mockBreakpointObserver },
-        { provide: FirebaseAuthService, useValue: mockAuthService },
-        { provide: ThemeService, useValue: mockThemeService },
-      ],
+      const mockAdminApi = {
+        updateFcmToken: jest.fn().mockResolvedValue(true)
+      };
+
+      await TestBed.configureTestingModule({
+        imports: [AdminShellComponent, RouterTestingModule, BrowserAnimationsModule],
+        providers: [
+          { provide: BreakpointObserver, useValue: mockBreakpointObserver },
+          { provide: FirebaseAuthService, useValue: mockAuthService },
+          { provide: ThemeService, useValue: mockThemeService },
+          { provide: AdminApiService, useValue: mockAdminApi },
+          { provide: FIREBASE_MESSAGING_TOKEN, useValue: {} },
+        ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AdminShellComponent);
@@ -53,5 +60,22 @@ describe('AdminShellComponent', () => {
     const sidenav = compiled.querySelector('mat-sidenav');
     expect(sidenav?.getAttribute('ng-reflect-mode')).toBe('side');
     expect(sidenav?.getAttribute('ng-reflect-opened')).toBe('true');
+  });
+
+  it('should switch to over mode on mobile (matches: true)', () => {
+    // Override the mock for this specific test
+    mockBreakpointObserver.observe = jest.fn().mockReturnValue(of({ matches: true } as BreakpointState));
+    
+    // Re-create component to pick up new mock value
+    fixture = TestBed.createComponent(AdminShellComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.isMobile()?.matches).toBe(true);
+    
+    const compiled = fixture.nativeElement as HTMLElement;
+    const sidenav = compiled.querySelector('mat-sidenav');
+    expect(sidenav?.getAttribute('ng-reflect-mode')).toBe('over');
+    expect(sidenav?.getAttribute('ng-reflect-opened')).toBe('false');
   });
 });

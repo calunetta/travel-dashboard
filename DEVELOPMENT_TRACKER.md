@@ -597,3 +597,36 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **CSV Batch Importer** — Created `CsvImportDialogComponent` for Trips. The importer handles strict validation against our Nationality domain, automatically resolves `Tour` and `Hotel` models, estimates missing End Dates, and dynamically creates missing `Coordinator` profiles.
 3. **Coordinator API** — Implemented `upsertCoordinatorFromCsv` to allow the CSV importer to seamlessly link coordinators by email, creating them if necessary.
 4. **Testing** — Passed the full test suite (`yarn nx run travel-admin:test`), upholding the Zero-Regression Policy.
+
+---
+
+### ✅ Step 13 - PART 5: PWA & Firebase Notifications
+
+**Status:** Completed  
+**Date:** 2026-09-05  
+**Commit:** `feat(pwa): configure offline support, firebase functions, and FCM notifications`
+
+**Key Changes:**
+1. **PWA Support** — Enabled Angular service worker via `ng add @angular/pwa` for manifest and offline capabilities. Registered `firebase-messaging-sw.js` for background push notifications in project assets.
+2. **FCM Token Management** — Modified `AdminShellComponent` to request notification permissions upon login and persist the `fcmToken` to the `admins/{adminId}` document in Firestore.
+3. **Firestore Security Rules** — Updated `admins` read-only rule to allow self-updates explicitly scoped to the `fcmToken` field. Added `updateFcmToken` to `AdminApiService`.
+4. **Cloud Functions (`functions/src/index.ts`)** — Created three Cloud Functions using `firebase-admin` and `firebase-functions`:
+   - `onTripDocumentUploaded`: Triggers on `documents` array expansion; notifies assigned admins of the trip via FCM.
+   - `onDocumentStatusChanged`: Triggers when any document's `paymentStatus` transitions from `TO_BE_PAID` to `PAID`; notifies all `SUPER_ADMIN` profiles.
+   - `checkUpcomingTripsCron`: Runs daily (`every day 00:00`); identifies trips starting exactly one week ahead with zero documents and notifies assigned admins.
+5. **Testing** — Implemented comprehensive Jest mocks for the newly injected `FIREBASE_MESSAGING_TOKEN` and `AdminApiService` in `AdminShellComponent` specs. Passed the entire test suite.
+
+---
+
+### ✅ Step 14 - PART 6: Testing & Final Review
+
+**Status:** Completed  
+**Date:** 2026-09-05  
+**Commit:** `test(all): add Jest and Cypress tests for responsive UI and domain logic`
+
+**Key Changes:**
+1. **Unit Testing (Jest)** — Completed unit tests for `TripFormComponent` verifying nationality filtering based on selected Tours. Added specific tests in `AdminShellComponent` evaluating the `BreakpointObserver` handling of `isMobile` changes (side vs. over modes). 
+2. **E2E Testing (Cypress)** — Authored `admin-dashboard.cy.ts` covering critical UI interactions:
+   - Evaluated the Mobile Burger menu toggling the Sidenav properly under the `iphone-x` viewport setting.
+   - Assessed the Calendar route defaults correctly applying `Italy (IT)` as the default Nationality filter.
+3. **Execution Protocol Complete** — Adhered strictly to the Zero-Regression policy ensuring that every iteration across Parts 1 through 6 passed the `travel-admin` validation suites.

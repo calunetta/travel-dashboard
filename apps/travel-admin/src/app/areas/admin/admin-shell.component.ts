@@ -10,7 +10,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { ThemeService } from 'shared-ui';
-import { FirebaseAuthService } from 'auth-api-requests';
+import { FirebaseAuthService, AdminApiService } from 'auth-api-requests';
+import { FIREBASE_MESSAGING_TOKEN, FirestoreId } from 'shared-models';
+import { getToken } from 'firebase/messaging';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'tha-admin-shell',
@@ -140,8 +143,35 @@ import { FirebaseAuthService } from 'auth-api-requests';
 export class AdminShellComponent {
   protected readonly themeService = inject(ThemeService);
   private readonly authService = inject(FirebaseAuthService);
+  private readonly adminApi = inject(AdminApiService);
   private readonly router = inject(Router);
   private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly messaging = inject(FIREBASE_MESSAGING_TOKEN, { optional: true });
+
+  constructor() {
+    this.initNotifications();
+  }
+
+  private async initNotifications() {
+    if (!this.messaging) return;
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        const token = await getToken(this.messaging, {
+          vapidKey: (environment.firebase as any).vapidKey
+        });
+        
+        const user = this.authService.currentUser();
+        if (token && user) {
+          await this.adminApi.updateFcmToken(user.uid as FirestoreId, token);
+          console.log('FCM Token successfully saved.');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get FCM token', error);
+    }
+  }
 
   readonly isMobile = toSignal(
     this.breakpointObserver.observe([Breakpoints.Handset, Breakpoints.TabletPortrait]),
