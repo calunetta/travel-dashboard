@@ -9,8 +9,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 import { Router } from '@angular/router';
+import { CsvImportDialogComponent } from '../csv-import-dialog/csv-import-dialog.component';
 import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
@@ -36,15 +38,21 @@ interface TripViewModel extends Trip {
     MatIconModule,
     MatInputModule,
     MatFormFieldModule,
+    MatDialogModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="tha-page tha-animate-fade-in">
       <div class="tha-flex-row tha-mb-6" style="justify-content: space-between; align-items: center;">
         <h1 class="tha-text-3xl tha-font-bold tha-mb-0">Trips</h1>
-        <button mat-flat-button color="primary" routerLink="/admin/trips/new">
-          <mat-icon>add</mat-icon> New Trip
-        </button>
+        <div class="tha-flex-row tha-gap-4">
+          <button mat-stroked-button color="primary" (click)="openBatchImport()">
+            <mat-icon>upload_file</mat-icon> Batch Import (CSV)
+          </button>
+          <button mat-flat-button color="primary" routerLink="/admin/trips/new">
+            <mat-icon>add</mat-icon> New Trip
+          </button>
+        </div>
       </div>
 
       <div class="tha-card tha-shadow-sm tha-p-0">
@@ -149,6 +157,7 @@ export class TripListComponent implements AfterViewInit {
   private readonly hotelApi = inject(HotelApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
   readonly displayedColumns: string[] = ['destination', 'dates', 'coordinator', 'hotel'];
   readonly dataSource = new MatTableDataSource<TripViewModel>();
@@ -204,5 +213,12 @@ export class TripListComponent implements AfterViewInit {
 
   navigateToTrip(tripId: string) {
     this.router.navigate(['/admin/trips', tripId]);
+  }
+
+  openBatchImport() {
+    this.dialog.open(CsvImportDialogComponent, {
+      width: '800px',
+      disableClose: true // don't close randomly if clicking outside while importing
+    });
   }
 }

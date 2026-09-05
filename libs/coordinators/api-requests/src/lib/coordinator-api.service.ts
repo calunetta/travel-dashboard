@@ -403,4 +403,41 @@ export class CoordinatorApiService {
 
     await Promise.all(withdrawals);
   }
+
+  /**
+   * Creates or updates a coordinator profile from CSV import.
+   * Matches by email — if found, updates; if not found, creates.
+   * Returns the coordinator's Firestore document ID.
+   */
+  async upsertCoordinatorFromCsv(name: string, surname: string, email: string, phone: string): Promise<FirestoreId> {
+    const col = collection(this.firestore, COORDINATORS_COLLECTION);
+    const q = query(col, where('email', '==', email.toLowerCase()), limit(1));
+    const snapshot = await getDocs(q);
+
+    if (!snapshot.empty) {
+      const existingRef = snapshot.docs[0].ref;
+      await updateDoc(existingRef, {
+        name,
+        surname,
+        phone,
+        updatedAt: serverTimestamp(),
+      });
+      return existingRef.id as FirestoreId;
+    }
+
+    const newCoordinator = {
+      name,
+      surname,
+      email: email.toLowerCase(),
+      phone,
+      nationality: 'IT', // Default for imports, or could be dynamic
+      agePreference: 'ALL',
+      notes: 'Imported via CSV',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const newRef: DocumentReference = await addDoc(col, newCoordinator);
+    return newRef.id as FirestoreId;
+  }
 }

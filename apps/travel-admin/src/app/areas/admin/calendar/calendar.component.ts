@@ -11,10 +11,16 @@ import { MatDialog, MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angu
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { FormsModule } from '@angular/forms';
+
 import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
+import { TourApiService } from 'tours-api-requests';
 import { Trip } from 'trips-models';
+import { Nationality } from 'shared-models';
 
 @Component({
   selector: 'tha-trip-dialog',
@@ -75,7 +81,17 @@ interface CalendarDay {
 @Component({
   selector: 'tha-calendar',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, MatRippleModule, MatDialogModule],
+  imports: [
+    CommonModule, 
+    MatCardModule, 
+    MatButtonModule, 
+    MatIconModule, 
+    MatRippleModule, 
+    MatDialogModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    FormsModule
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="tha-page tha-animate-fade-in tha-full-height tha-flex-col">
@@ -95,6 +111,27 @@ interface CalendarDay {
           </button>
           <button mat-stroked-button (click)="today()">Today</button>
         </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="tha-flex-row tha-mb-4" style="gap: var(--tha-spacing-4);">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Filter by Nationality</mat-label>
+          <mat-select [ngModel]="selectedNationality()" (ngModelChange)="selectedNationality.set($event)">
+            <mat-option [value]="null">All Nationalities</mat-option>
+            <mat-option *ngFor="let nat of nationalities" [value]="nat">{{ nat }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" style="min-width: 250px;">
+          <mat-label>Filter by Tour</mat-label>
+          <mat-select [ngModel]="selectedTourId()" (ngModelChange)="selectedTourId.set($event)">
+            <mat-option [value]="null">All Tours</mat-option>
+            <mat-option *ngFor="let tour of allTours()" [value]="tour.id">
+              {{ tour.weRoadCode }} - {{ tour.destination }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
 
       <!-- Calendar Grid -->
@@ -221,9 +258,13 @@ export class CalendarComponent {
   private readonly tripApi = inject(TripApiService);
   private readonly hotelApi = inject(HotelApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
+  private readonly tourApi = inject(TourApiService);
   private readonly dialog = inject(MatDialog);
   
   private readonly currentDate = signal(new Date());
+  readonly selectedNationality = signal<Nationality | null>(null);
+  readonly selectedTourId = signal<string | null>(null);
+  readonly nationalities = Object.values(Nationality);
 
   readonly currentMonthName = computed(() => {
     return this.currentDate().toLocaleString('default', { month: 'long' });
@@ -235,12 +276,21 @@ export class CalendarComponent {
 
   // Load all trips (in a real app we'd filter by month)
   private readonly allTrips = toSignal(this.tripApi.getAll$(), { initialValue: [] });
+  readonly allTours = toSignal(this.tourApi.getAll$(), { initialValue: [] });
 
   readonly calendarDays = computed(() => {
     const date = this.currentDate();
     const year = date.getFullYear();
     const month = date.getMonth();
-    const trips = this.allTrips();
+    const rawTrips = this.allTrips();
+    const natFilter = this.selectedNationality();
+    const tourFilter = this.selectedTourId();
+
+    const trips = rawTrips.filter(t => {
+      if (natFilter && t.nationality !== natFilter) return false;
+      if (tourFilter && t.tourId !== tourFilter) return false;
+      return true;
+    });
 
     const firstDayOfMonth = new Date(year, month, 1);
     const lastDayOfMonth = new Date(year, month + 1, 0);

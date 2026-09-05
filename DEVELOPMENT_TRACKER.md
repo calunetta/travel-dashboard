@@ -570,3 +570,30 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **Model Updates** — Added `nationalities` to `Tour` and `nationality` to `Trip`, `Coordinator`, `Candidacy`, and `CandidacyFormPayload`.
 3. **Mappers & Type Guards** — Added `isNationality` runtime type guard. Updated mappers to read/write nationality fields, defaulting to `Nationality.IT` for legacy documents.
 4. **Testing** — Fixed mock objects and linting errors (empty arrow functions) across test specs. Test suite passes successfully.
+
+---
+
+### ✅ Step 11 - PART 3: Nationality UI & Logic Integration
+
+**Status:** Completed  
+**Date:** 2026-09-05  
+**Commit:** `feat(ui): implement Nationality logic in Candidacy form and Assignment Engine`
+
+**Key Changes:**
+1. **Public Candidacy Form** — Added a `nationality` select field (defaults to `IT`). The dropdown for `availableTrips` is now dynamically filtered using a `combineLatest` stream that matches the trip's nationality with the candidate's selected nationality.
+2. **Assignment Engine (CandidacyListComponent)** — Enforced nationality matching in the First Come First Serve (FCFS) logic. For `AUTOMATIC` assignments, the engine checks that the candidacy's `nationality` strictly matches the selected trip's `nationality`, rejecting the assignment with a snackbar warning if they differ.
+3. **Testing** — Added tests to `candidacy-form.component.spec.ts` to ensure trips are correctly filtered out if they belong to a different nationality. Fixed Angular `no-non-null-assertion` linting warnings by strictly typing reactive forms access via `controls`.
+
+---
+
+### ✅ Step 12 - PART 4: Calendar Filters & CSV Logic
+
+**Status:** Completed  
+**Date:** 2026-09-05  
+**Commit:** `feat(ui): implement calendar filters and CSV batch import for Trips`
+
+**Key Changes:**
+1. **Calendar Filters** — Added `Tour` and `Nationality` dropdown filters to `CalendarComponent`, dynamically updating the `calendarDays` signal based on selected criteria.
+2. **CSV Batch Importer** — Created `CsvImportDialogComponent` for Trips. The importer handles strict validation against our Nationality domain, automatically resolves `Tour` and `Hotel` models, estimates missing End Dates, and dynamically creates missing `Coordinator` profiles.
+3. **Coordinator API** — Implemented `upsertCoordinatorFromCsv` to allow the CSV importer to seamlessly link coordinators by email, creating them if necessary.
+4. **Testing** — Passed the full test suite (`yarn nx run travel-admin:test`), upholding the Zero-Regression Policy.
