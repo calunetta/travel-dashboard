@@ -556,3 +556,17 @@ Following the Master Rules for granular Git versioning, these are the logical co
 3. **Tour Creation Logic** — Removed auto-assignment of creator in `TourApiService.create`. It now explicitly accepts `adminIds` from the form payload, assigned via a multi-select dropdown in `TourFormComponent`.
 4. **Firestore Security Rules** — Hardened `/tours/{tourId}` to strictly `allow create: if isSuperAdmin();`.
 5. **Testing** — Mocked `MatSnackBar` globally in `HotelFormComponent` specs to bypass JSDOM CSS parsing crashes, updating tests to enforce the strict fallback rejection logic. All tests pass (`13 passed`).
+
+---
+
+### ✅ Step 10 - PART 2: Nationality Domain Extension
+
+**Status:** Completed  
+**Date:** 2026-09-04  
+**Commit:** `feat(models): implement Nationality domain logic across Tour, Trip, Coordinator, and Candidacy`
+
+**Key Changes:**
+1. **Nationality Enum** — Created `Nationality` enum (`IT`, `ES`, `UK`, `FR`, `DE`) in `shared-models`.
+2. **Model Updates** — Added `nationalities` to `Tour` and `nationality` to `Trip`, `Coordinator`, `Candidacy`, and `CandidacyFormPayload`.
+3. **Mappers & Type Guards** — Added `isNationality` runtime type guard. Updated mappers to read/write nationality fields, defaulting to `Nationality.IT` for legacy documents.
+4. **Testing** — Fixed mock objects and linting errors (empty arrow functions) across test specs. Test suite passes successfully.

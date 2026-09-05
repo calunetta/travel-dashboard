@@ -4,6 +4,7 @@ import { TripApiService } from 'trips-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { of } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { Nationality } from 'shared-models';
 import { ActivatedRoute } from '@angular/router';
 
 describe('CandidacyFormComponent', () => {
@@ -28,11 +29,12 @@ describe('CandidacyFormComponent', () => {
     }).compileComponents();
   });
 
-  it('should filter out trips that already have a coordinator assigned', () => {
+  it('should filter out trips that already have a coordinator assigned or wrong nationality', () => {
     mockTripApi.getAll$.mockReturnValue(of([
-      { id: '1', destination: 'Bali', coordinatorId: null },
-      { id: '2', destination: 'Japan', coordinatorId: 'coord-123' },
-      { id: '3', destination: 'Peru', coordinatorId: null },
+      { id: '1', destination: 'Bali', coordinatorId: null, nationality: Nationality.IT },
+      { id: '2', destination: 'Japan', coordinatorId: 'coord-123', nationality: Nationality.IT },
+      { id: '3', destination: 'Peru', coordinatorId: null, nationality: Nationality.IT },
+      { id: '4', destination: 'France', coordinatorId: null, nationality: Nationality.FR },
     ]));
 
     const fixture = TestBed.createComponent(CandidacyFormComponent);

@@ -162,6 +162,7 @@ export class CandidacyListComponent implements AfterViewInit {
 
   private currentSearch = '';
   private currentStatus = 'ALL';
+  private allTrips: Trip[] = [];
 
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -173,6 +174,7 @@ export class CandidacyListComponent implements AfterViewInit {
     ])
       .pipe(
         map(([candidacies, trips]) => {
+          this.allTrips = [...trips];
           return candidacies.map((c) => {
             const tripNames = c.tripIds.map(
               (tid) => trips.find((t) => t.id === tid)?.destination ?? 'Unknown Trip'
@@ -249,6 +251,17 @@ export class CandidacyListComponent implements AfterViewInit {
     const tripId = candidacy.tripIds[0];
     if (!tripId) {
       this.snackBar.open('No trips selected in this candidacy', 'Close', { duration: 3000 });
+      return;
+    }
+
+    const trip = this.allTrips.find(t => t.id === tripId);
+    if (!trip) {
+      this.snackBar.open('Trip not found', 'Close', { duration: 3000 });
+      return;
+    }
+
+    if (type === AssignmentType.AUTOMATIC && candidacy.nationality !== trip.nationality) {
+      this.snackBar.open(`Nationality mismatch: Candidacy (${candidacy.nationality}) vs Trip (${trip.nationality})`, 'Close', { duration: 5000 });
       return;
     }
 

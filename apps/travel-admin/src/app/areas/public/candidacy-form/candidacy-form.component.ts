@@ -11,7 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
-import { BehaviorSubject, map, catchError, of } from 'rxjs';
+import { BehaviorSubject, map, catchError, of, combineLatest, startWith } from 'rxjs';
 
 import { TripApiService } from 'trips-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
@@ -159,21 +159,6 @@ export class CandidacyFormComponent {
   readonly agePreferences = Object.values(AgePreference);
   readonly nationalities = Object.values(Nationality);
 
-  // Observable of trips without a coordinator assigned
-  private readonly availableTrips$ = this.tripApi.getAll$().pipe(
-    map((trips) => trips.filter((t) => t.coordinatorId === null)),
-    catchError((err) => {
-      console.error('Firestore failed to load trips:', err);
-      return of([] as Trip[]);
-    })
-  );
-
-  // Expose to template as signals
-  readonly availableTrips = toSignal(this.availableTrips$, { initialValue: undefined });
-  readonly tripsLoading = toSignal(
-    new BehaviorSubject<boolean>(true).asObservable() // Simple mock for loading state until first emit
-  );
-
   private readonly _submitting = new BehaviorSubject<boolean>(false);
   readonly submitting = toSignal(this._submitting.asObservable(), { initialValue: false });
 
@@ -187,6 +172,28 @@ export class CandidacyFormComponent {
     nationality: [Nationality.IT, Validators.required],
     notes: [''],
   });
+
+  // Observable of trips without a coordinator assigned, filtered by selected nationality
+  private readonly availableTrips$ = combineLatest([
+    this.tripApi.getAll$(),
+    this.form.controls.nationality.valueChanges.pipe(
+      startWith(this.form.controls.nationality.value as Nationality)
+    )
+  ]).pipe(
+    map(([trips, nationality]) => 
+      trips.filter((t) => t.coordinatorId === null && t.nationality === nationality)
+    ),
+    catchError((err) => {
+      console.error('Firestore failed to load trips:', err);
+      return of([] as Trip[]);
+    })
+  );
+
+  // Expose to template as signals
+  readonly availableTrips = toSignal(this.availableTrips$, { initialValue: undefined });
+  readonly tripsLoading = toSignal(
+    new BehaviorSubject<boolean>(true).asObservable() // Simple mock for loading state until first emit
+  );
 
   // We rely on toSignal for trips, so no explicit subscribe needed for reading.
 
