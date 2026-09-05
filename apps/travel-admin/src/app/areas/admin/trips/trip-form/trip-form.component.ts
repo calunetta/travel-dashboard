@@ -14,7 +14,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { TripApiService } from 'trips-api-requests';
+import { TripApiService, TripStorageService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { TourApiService } from 'tours-api-requests';
@@ -227,6 +227,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly tripStorage = inject(TripStorageService);
   private readonly storage = inject(FIREBASE_STORAGE_TOKEN);
 
   readonly hotels$ = this.hotelApi.getAll$();
@@ -374,10 +375,16 @@ export class TripFormComponent implements OnInit, OnDestroy {
       // 1. Upload receipt if exists
       let receiptUrl = formVal.hotelBookingReceiptUrl;
       if (this.selectedReceiptFile) {
-        const filePath = `trips/receipts/${Date.now()}_${this.selectedReceiptFile.name}`;
-        const storageRef = ref(this.storage, filePath);
-        const snapshot = await uploadBytes(storageRef, this.selectedReceiptFile);
-        receiptUrl = await getDownloadURL(snapshot.ref);
+        const validationError = this.tripStorage.validateImageReceipt(this.selectedReceiptFile);
+        if (validationError) {
+          this.snackBar.open(validationError, 'Close', { duration: 5000 });
+          this.submitting = false;
+          return;
+        }
+        
+        // Use temp ID if creating a new trip
+        const targetTripId = this.tripId || ('pending_creation' as FirestoreId);
+        receiptUrl = await this.tripStorage.uploadReceipt(targetTripId, this.selectedReceiptFile);
       }
 
       const selectedTour = this.toursCache.find(t => t.id === formVal.tourId);

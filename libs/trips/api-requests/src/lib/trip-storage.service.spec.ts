@@ -169,4 +169,50 @@ describe('TripStorageService', () => {
       ).rejects.toThrow('Object not found');
     });
   });
+  // ── validateImageReceipt() ────────────────────────────────────────────────────────
+  
+  describe('validateImageReceipt()', () => {
+    it('should return null for a valid image within size limit', () => {
+      const file = new File(['image content'], 'test.jpg', { type: 'image/jpeg' });
+      Object.defineProperty(file, 'size', { value: 1024 * 1024 }); // 1 MB
+      expect(service.validateImageReceipt(file)).toBeNull();
+    });
+
+    it('should return an error for a non-image file', () => {
+      const file = new File(['content'], 'test.pdf', { type: ACCEPTED_MIME_TYPE });
+      const result = service.validateImageReceipt(file);
+      expect(result).toBe('Only JPG, PNG, and WebP images are accepted for receipts.');
+    });
+
+    it('should return an error for a file exceeding 20 MB', () => {
+      const file = new File(['image content'], 'big.png', { type: 'image/png' });
+      Object.defineProperty(file, 'size', { value: MAX_FILE_SIZE_BYTES + 1 });
+      const result = service.validateImageReceipt(file);
+      expect(result).toBe('File size must not exceed 20 MB.');
+    });
+  });
+
+  // ── uploadReceipt() ────────────────────────────────────────────────────────
+  
+  describe('uploadReceipt()', () => {
+    it('should call uploadBytesResumable and return a download URL', async () => {
+      const mockUploadTask = {
+        snapshot: { ref: {} }
+      };
+      (firebaseStorage.uploadBytesResumable as jest.Mock).mockResolvedValue(mockUploadTask);
+      (firebaseStorage.getDownloadURL as jest.Mock).mockResolvedValue('https://example.com/receipt.jpg');
+
+      const file = new File(['image'], 'receipt.jpg', { type: 'image/jpeg' });
+      const tripId = 'trip-123' as import('shared-models').FirestoreId;
+
+      const url = await service.uploadReceipt(tripId, file);
+
+      expect(url).toBe('https://example.com/receipt.jpg');
+      expect(firebaseStorage.ref).toHaveBeenCalledWith(
+        mockStorage,
+        expect.stringMatching(`trips/${tripId}/receipts/\\d+_receipt.jpg`)
+      );
+      expect(firebaseStorage.uploadBytesResumable).toHaveBeenCalledTimes(1);
+    });
+  });
 });

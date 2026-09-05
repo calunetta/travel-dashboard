@@ -630,3 +630,17 @@ Following the Master Rules for granular Git versioning, these are the logical co
    - Evaluated the Mobile Burger menu toggling the Sidenav properly under the `iphone-x` viewport setting.
    - Assessed the Calendar route defaults correctly applying `Italy (IT)` as the default Nationality filter.
 3. **Execution Protocol Complete** — Adhered strictly to the Zero-Regression policy ensuring that every iteration across Parts 1 through 6 passed the `travel-admin` validation suites.
+
+---
+
+### ✅ Step 15 - Trip Booking Details & Mobile Sidenav Fix
+
+**Status:** Completed  
+**Date:** 2026-09-05  
+**Commit:** `feat(trips): implement specific image upload for Trip booking receipts`
+
+**Key Changes:**
+1. **TripStorageService (Refactor)** — Extracted image upload logic out of `TripFormComponent` and added strict validation (`validateImageReceipt`) for JPEG, PNG, and WebP, along with a 20MB file size limit. Added `uploadReceipt` to handle `uploadBytesResumable` independently from the PDF document flow.
+2. **TripFormComponent** — Refactored to leverage `TripStorageService` for the `hotelBookingReceiptUrl` flow.
+3. **Testing** — Implemented unit tests for the image receipt validation flow. Sidenav `BreakpointObserver` tests were already fully covered and passing.
+

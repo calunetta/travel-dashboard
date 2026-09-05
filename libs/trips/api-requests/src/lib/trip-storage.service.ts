@@ -25,6 +25,7 @@ import type { FirestoreId } from 'shared-models';
 
 export const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 export const ACCEPTED_MIME_TYPE = 'application/pdf';
+export const ACCEPTED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 /** Progress snapshot emitted during an upload. */
 export interface UploadProgress {
@@ -125,5 +126,33 @@ export class TripStorageService {
     const path = `trips/${tripId}/documents/${docId}.pdf`;
     const storageRef = ref(this.storage, path);
     await deleteObject(storageRef);
+  }
+
+  /**
+   * Validates that the file is an accepted image format and within the size limit.
+   * Returns a validation error string if invalid, or null if valid.
+   */
+  validateImageReceipt(file: File): string | null {
+    if (!ACCEPTED_IMAGE_MIME_TYPES.includes(file.type)) {
+      return 'Only JPG, PNG, and WebP images are accepted for receipts.';
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return 'File size must not exceed 20 MB.';
+    }
+    return null;
+  }
+
+  /**
+   * Uploads an image receipt to Firebase Storage for the given trip.
+   * Returns the Firebase Storage download URL.
+   *
+   * @param tripId - The Firestore ID of the trip.
+   * @param file   - The File object to upload (must be an image).
+   */
+  async uploadReceipt(tripId: FirestoreId, file: File): Promise<string> {
+    const path = `trips/${tripId}/receipts/${Date.now()}_${file.name}`;
+    const storageRef = ref(this.storage, path);
+    const snapshot = await uploadBytesResumable(storageRef, file);
+    return getDownloadURL(snapshot.ref);
   }
 }
