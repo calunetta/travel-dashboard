@@ -658,3 +658,17 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **Table Navigation** — Added `tha-clickable-row` functionality to `ToursListComponent`, `HotelsListComponent`, and `CoordinatorsListComponent` allowing users to click anywhere on a row to navigate to the respective detail/edit page.
 3. **Dashboard Enhancements** — Refactored `DashboardComponent` to include a "Tours" statistics card and a "Create Tour" button in the Quick Actions section.
 4. **Validation** — Executed `nx test travel-admin`. All 19 unit tests passed successfully.
+
+---
+
+### ✅ Step 17 - Cyber-Minimalist Overhaul (Part 2)
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `refactor(ui): optimize hotel and trip form grids and consolidate trip view tabs`
+
+**Key Changes:**
+1. **HotelFormComponent** — Refactored the layout from `tha-grid-2` to `tha-grid-3` and `tha-grid-4` for general information and billing data, creating a more horizontal and compact grid.
+2. **TripDetailComponent** — Removed `mat-tab-group` and consolidated Overview, Room Composition, and Documents into a single, cohesive view using `tha-grid-2`. 
+3. **TripFormComponent** — Refactored the form layout to use `tha-grid-3` and `tha-grid-4` to eliminate wasted vertical space and align fields side-by-side.
+4. **Validation** — Executed `nx test travel-admin`. All 19 unit tests passed successfully.

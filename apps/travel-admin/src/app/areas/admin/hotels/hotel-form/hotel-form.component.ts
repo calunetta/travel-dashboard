@@ -71,7 +71,7 @@ import { FirebaseAuthService } from 'auth-api-requests';
               </mat-form-field>
             </div>
             
-            <div class="tha-grid-2 tha-mt-4">
+            <div class="tha-grid-3 tha-mt-4">
               <mat-form-field appearance="outline">
                 <mat-label>Hotel Name</mat-label>
                 <input matInput formControlName="name" placeholder="e.g. Grand Resort" />
@@ -83,12 +83,12 @@ import { FirebaseAuthService } from 'auth-api-requests';
                 <input matInput formControlName="destination" placeholder="e.g. Bali" />
                 <mat-error *ngIf="form.get('destination')?.hasError('required')">Destination is required.</mat-error>
               </mat-form-field>
+              
+              <mat-form-field appearance="outline">
+                <mat-label>Internal Notes</mat-label>
+                <textarea matInput formControlName="notes" rows="1"></textarea>
+              </mat-form-field>
             </div>
-            
-            <mat-form-field appearance="outline" class="tha-full-width tha-mt-4">
-              <mat-label>Internal Notes</mat-label>
-              <textarea matInput formControlName="notes" rows="3"></textarea>
-            </mat-form-field>
           </mat-card-content>
         </mat-card>
 
@@ -98,7 +98,7 @@ import { FirebaseAuthService } from 'auth-api-requests';
             <mat-card-title>Billing Information</mat-card-title>
           </mat-card-header>
           <mat-card-content class="tha-pt-4">
-            <div class="tha-grid-2">
+            <div class="tha-grid-3">
               <mat-form-field appearance="outline">
                 <mat-label>Supplier Name</mat-label>
                 <input matInput formControlName="supplierName" />
@@ -116,7 +116,9 @@ import { FirebaseAuthService } from 'auth-api-requests';
                 <input matInput formControlName="taxCode" />
                 <mat-error *ngIf="form.get('billingData.taxCode')?.hasError('required')">Required.</mat-error>
               </mat-form-field>
+            </div>
 
+            <div class="tha-grid-4 tha-mt-2">
               <mat-form-field appearance="outline">
                 <mat-label>Country</mat-label>
                 <mat-select formControlName="country">
@@ -134,14 +136,14 @@ import { FirebaseAuthService } from 'auth-api-requests';
                 <mat-label>Postal Code</mat-label>
                 <input matInput formControlName="postalCode" />
               </mat-form-field>
+              
+              <mat-form-field appearance="outline">
+                <mat-label>Address</mat-label>
+                <input matInput formControlName="address" />
+              </mat-form-field>
             </div>
 
-            <mat-form-field appearance="outline" class="tha-full-width tha-mt-2">
-              <mat-label>Address</mat-label>
-              <input matInput formControlName="address" />
-            </mat-form-field>
-
-            <div class="tha-grid-2 tha-mt-2">
+            <div class="tha-grid-4 tha-mt-2">
               <mat-form-field appearance="outline">
                 <mat-label>Phone</mat-label>
                 <input matInput formControlName="phone" />

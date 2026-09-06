@@ -61,7 +61,7 @@ import { startWith } from 'rxjs/operators';
         <mat-card-content>
           <form [formGroup]="form" (ngSubmit)="onSubmit()" class="tha-flex-col tha-gap-4">
             
-            <div class="tha-grid-2">
+            <div class="tha-grid-3">
               <mat-form-field appearance="outline">
                 <mat-label>Select Tour</mat-label>
                 <mat-select formControlName="tourId">
@@ -76,9 +76,17 @@ import { startWith } from 'rxjs/operators';
                 <input matInput formControlName="destination" placeholder="e.g. Bali, Indonesia" />
                 <mat-error *ngIf="form.get('destination')?.hasError('required')">Destination is required.</mat-error>
               </mat-form-field>
+              
+              <mat-form-field appearance="outline">
+                <mat-label>Nationality</mat-label>
+                <mat-select formControlName="nationality">
+                  <mat-option *ngFor="let nat of availableNationalities" [value]="nat">{{ nat }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('nationality')?.hasError('required')">Nationality is required.</mat-error>
+              </mat-form-field>
             </div>
 
-            <div class="tha-grid-2">
+            <div class="tha-grid-4">
               <mat-form-field appearance="outline">
                 <mat-label>Start Date</mat-label>
                 <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
@@ -93,9 +101,7 @@ import { startWith } from 'rxjs/operators';
                 <mat-datepicker-toggle matIconSuffix [for]="endPicker" disabled></mat-datepicker-toggle>
                 <mat-datepicker #endPicker></mat-datepicker>
               </mat-form-field>
-            </div>
-            
-            <div class="tha-grid-2">
+
               <mat-form-field appearance="outline">
                 <mat-label>Assign Hotel (Optional)</mat-label>
                 <mat-select formControlName="hotelId">
@@ -110,16 +116,6 @@ import { startWith } from 'rxjs/operators';
                   <mat-option [value]="null">-- None --</mat-option>
                   <mat-option *ngFor="let c of coordinators$ | async" [value]="c.id">{{ c.name }} {{ c.surname }}</mat-option>
                 </mat-select>
-              </mat-form-field>
-            </div>
-
-            <div class="tha-grid-2">
-              <mat-form-field appearance="outline">
-                <mat-label>Nationality</mat-label>
-                <mat-select formControlName="nationality">
-                  <mat-option *ngFor="let nat of availableNationalities" [value]="nat">{{ nat }}</mat-option>
-                </mat-select>
-                <mat-error *ngIf="form.get('nationality')?.hasError('required')">Nationality is required.</mat-error>
               </mat-form-field>
             </div>
             

@@ -12,7 +12,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatListModule } from '@angular/material/list';
@@ -42,7 +41,6 @@ import { RoomType } from 'trips-models';
     MatButtonModule,
     MatIconModule,
     MatDividerModule,
-    MatTabsModule,
     MatProgressSpinnerModule,
     MatProgressBarModule,
     MatListModule,
@@ -82,12 +80,14 @@ import { RoomType } from 'trips-models';
         </div>
       </div>
 
-      <mat-tab-group animationDuration="0ms" class="tha-card tha-shadow-sm" style="background: var(--tha-surface);">
-        <!-- Overview Tab -->
-        <mat-tab label="Overview">
-          <div class="tha-p-6 tha-grid-2" style="gap: var(--tha-spacing-8);">
-            <!-- Left Col -->
-            <div>
+      <div class="tha-grid-2" style="gap: var(--tha-spacing-6);">
+        <!-- Left Column: Overview -->
+        <div class="tha-flex-col tha-gap-6">
+          <mat-card class="tha-card tha-shadow-sm">
+            <mat-card-header>
+              <mat-card-title>Overview</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="tha-pt-4">
               <h3 class="tha-text-lg tha-font-bold tha-mb-4">Details</h3>
               <p><strong>Notes:</strong><br/> {{ t.notes || 'No notes provided.' }}</p>
               
@@ -131,13 +131,18 @@ import { RoomType } from 'trips-models';
                   <button mat-button color="primary" [routerLink]="['/admin/hotels', t.hotelId, 'edit']">View Hotel</button>
                 </mat-card-actions>
               </mat-card>
-            </div>
-          </div>
-        </mat-tab>
+            </mat-card-content>
+          </mat-card>
+        </div>
 
-        <!-- Room Composition Tab -->
-        <mat-tab label="Room Composition">
-          <div class="tha-p-6">
+        <!-- Right Column: Rooms & Documents -->
+        <div class="tha-flex-col tha-gap-6">
+          <!-- Room Composition -->
+          <mat-card class="tha-card tha-shadow-sm">
+            <mat-card-header>
+              <mat-card-title>Room Composition</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="tha-pt-4">
             <p class="tha-text-muted tha-mb-6">Adjust the number of rooms needed for this trip. This determines the hotel cost calculation.</p>
             
             <div class="tha-grid-4 tha-gap-4">
@@ -165,13 +170,15 @@ import { RoomType } from 'trips-models';
                 <mat-label>Extra Beds</mat-label>
                 <input matInput type="number" min="0" [(ngModel)]="rooms.EXTRA_BED" (change)="saveRooms()" />
               </mat-form-field>
-            </div>
-          </div>
-        </mat-tab>
+            </mat-card-content>
+          </mat-card>
 
-        <!-- Documents Tab -->
-        <mat-tab label="Documents ({{ t.documents.length }})">
-          <div class="tha-p-6">
+          <!-- Documents -->
+          <mat-card class="tha-card tha-shadow-sm">
+            <mat-card-header>
+              <mat-card-title>Documents ({{ t.documents.length }})</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="tha-pt-4">
             <!-- Upload Header -->
             <div class="tha-flex-row tha-flex-col-sm tha-mb-4" style="justify-content: space-between; gap: var(--tha-spacing-4);">
               <div>
@@ -275,9 +282,10 @@ import { RoomType } from 'trips-models';
                 </mat-card>
               </div>
             }
-          </div>
-        </mat-tab>
-      </mat-tab-group>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
     </div>
 
     <ng-template #loading>
