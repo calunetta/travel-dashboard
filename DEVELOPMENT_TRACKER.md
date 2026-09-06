@@ -775,4 +775,13 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **Data Services (`tour-api.service.ts`, `trip-api.service.ts`):** Added a `getByWeRoadCode$` query to fetch tours by their slug, and `getAvailableTripsByTourId$` to fetch unassigned trips tied specifically to that tour ID.
 3. **Component Refactor (`candidacy-form.component.ts`):** Updated the reactive pipeline. The component now extracts the slug from the URL, fetches the corresponding tour, and restricts the trip selector strictly to the trips available for that exact tour.
 
+### ✅ Step 26 - PART 3: Candidacies Table & Empty States Refactor
 
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `feat(admin): fix candidacies ID mapping and add empty states`
+
+**Key Changes:**
+1. **Candidacies Mapping (`candidacy-list.component.ts`):** Fixed the `tripIds` mapping. Extracted both destination and code strings from matched trips, grouping them into `tripDetails`, and rendering them as stylized chips within the UI.
+2. **Empty States (`_utilities.scss`):** Introduced `.tha-empty-state`, `.tha-empty-icon`, `.tha-empty-title`, and `.tha-empty-subtitle` core utilities for rendering beautiful fallback states. Added `.tha-chip` variations.
+3. **Empty States Implementation:** Replaced all plain text `*matNoDataRow` implementations across all 5 admin tables (`TripListComponent`, `CandidacyListComponent`, `HotelListComponent`, `TourListComponent`, `CoordinatorListComponent`) with consistent, icon-driven "No Data" screens spanning the full width of the table columns.

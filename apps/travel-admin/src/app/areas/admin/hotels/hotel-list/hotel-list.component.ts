@@ -85,8 +85,12 @@ import { Hotel } from 'hotels-models';
 
             <!-- Row shown when there is no matching data. -->
             <tr class="mat-row" *matNoDataRow>
-              <td class="mat-cell tha-p-4 tha-text-center tha-text-muted" colspan="6">
-                No hotels found matching the filter.
+              <td class="mat-cell tha-empty-state-cell" colspan="5">
+                <div class="tha-empty-state">
+                  <mat-icon class="tha-empty-icon">hotel</mat-icon>
+                  <h3 class="tha-empty-title">No hotels found</h3>
+                  <p class="tha-empty-subtitle">There are currently no hotels matching your criteria. Create one to get started.</p>
+                </div>
               </td>
             </tr>
           </table>

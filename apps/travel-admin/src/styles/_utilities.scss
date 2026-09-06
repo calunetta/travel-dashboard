@@ -211,3 +211,66 @@
 .mat-mdc-list-item-icon {
   margin-right: 0 !important; // override material default if gap is used
 }
+
+// ── Empty State ───────────────────────────────────────────────────────────────
+.tha-empty-state-cell {
+  border-bottom: 0 !important;
+}
+
+.tha-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--tha-spacing-8) var(--tha-spacing-4);
+  color: var(--tha-on-surface-variant);
+  text-align: center;
+  min-height: 250px;
+}
+
+.tha-empty-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  opacity: 0.5;
+  margin-bottom: var(--tha-spacing-4);
+  color: var(--tha-primary-500);
+}
+
+.tha-empty-title {
+  font-size: var(--tha-font-size-lg);
+  font-weight: 600;
+  margin: 0 0 var(--tha-spacing-2) 0;
+  color: var(--tha-on-surface);
+}
+
+.tha-empty-subtitle {
+  font-size: var(--tha-font-size-sm);
+  margin: 0;
+  max-width: 400px;
+  opacity: 0.8;
+}
+
+// ── Chips ─────────────────────────────────────────────────────────────────────
+.tha-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--tha-radius-full);
+  font-size: var(--tha-font-size-sm);
+  font-weight: 500;
+  background: var(--tha-surface-variant);
+  color: var(--tha-on-surface-variant);
+  white-space: nowrap;
+}
+
+.tha-chip-primary {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--tha-primary-500);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.tha-chip-sm {
+  padding: 2px 8px;
+  font-size: var(--tha-font-size-xs);
+}

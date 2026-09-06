@@ -79,8 +79,12 @@ import { Coordinator } from 'coordinators-models';
             </tr>
 
             <tr class="mat-row" *matNoDataRow>
-              <td class="mat-cell tha-p-4 tha-text-center tha-text-muted" colspan="5">
-                No coordinators found matching the filter.
+              <td class="mat-cell tha-empty-state-cell" colspan="4">
+                <div class="tha-empty-state">
+                  <mat-icon class="tha-empty-icon">person_off</mat-icon>
+                  <h3 class="tha-empty-title">No coordinators found</h3>
+                  <p class="tha-empty-subtitle">There are currently no coordinators matching your criteria.</p>
+                </div>
               </td>
             </tr>
           </table>

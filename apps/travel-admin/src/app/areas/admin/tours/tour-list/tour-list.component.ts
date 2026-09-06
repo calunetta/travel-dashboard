@@ -88,18 +88,18 @@ import { Observable } from 'rxjs';
                 class="tha-table-row-hover tha-clickable-row"
                 (click)="navigateToTour(row.id)">
             </tr>
+
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell tha-empty-state-cell" colspan="5">
+                <div class="tha-empty-state">
+                  <mat-icon class="tha-empty-icon">map</mat-icon>
+                  <h3 class="tha-empty-title">No tours found</h3>
+                  <p class="tha-empty-subtitle">There are currently no tours available. Create one to get started.</p>
+                </div>
+              </td>
+            </tr>
           </table>
         }
-        
-        <div 
-          *ngIf="(tours$ | async)?.length === 0" 
-          class="tha-flex-col tha-flex-center tha-p-8 tha-text-muted"
-        >
-          <mat-icon style="font-size: 48px; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.5;">
-            flight_takeoff
-          </mat-icon>
-          <p>No tours found.</p>
-        </div>
       </mat-card>
     </div>
   `,

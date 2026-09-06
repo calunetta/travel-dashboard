@@ -23,7 +23,7 @@ import { combineLatest, map } from 'rxjs';
 import { Trip } from 'trips-models';
 
 interface CandidacyViewModel extends Candidacy {
-  tripNames: string[];
+  tripDetails: { destination: string, code: string }[];
 }
 
 @Component({
@@ -82,8 +82,10 @@ interface CandidacyViewModel extends Candidacy {
             <ng-container matColumnDef="trips">
               <th mat-header-cell *matHeaderCellDef> Applied Trips </th>
               <td mat-cell *matCellDef="let candidacy">
-                <div class="tha-text-sm" *ngFor="let tripName of candidacy.tripNames">
-                  • {{ tripName }}
+                <div class="tha-flex-wrap tha-gap-1" style="display: flex;">
+                  <span class="tha-chip tha-chip-sm tha-chip-primary" *ngFor="let trip of candidacy.tripDetails">
+                    {{ trip.destination }} ({{ trip.code }})
+                  </span>
                 </div>
               </td>
             </ng-container>
@@ -129,8 +131,12 @@ interface CandidacyViewModel extends Candidacy {
             <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="tha-table-row-hover"></tr>
 
             <tr class="mat-row" *matNoDataRow>
-              <td class="mat-cell tha-p-4 tha-text-center tha-text-muted" colspan="5">
-                No candidacies found matching the filter.
+              <td class="mat-cell tha-empty-state-cell" colspan="5">
+                <div class="tha-empty-state">
+                  <mat-icon class="tha-empty-icon">assignment</mat-icon>
+                  <h3 class="tha-empty-title">No candidacies found</h3>
+                  <p class="tha-empty-subtitle">There are currently no candidacies matching your criteria.</p>
+                </div>
               </td>
             </tr>
           </table>
@@ -176,12 +182,16 @@ export class CandidacyListComponent implements AfterViewInit {
         map(([candidacies, trips]) => {
           this.allTrips = [...trips];
           return candidacies.map((c) => {
-            const tripNames = c.tripIds.map(
-              (tid) => trips.find((t) => t.id === tid)?.destination ?? 'Unknown Trip'
-            );
+            const tripDetails = c.tripIds.map((tid) => {
+              const trip = trips.find((t) => t.id === tid);
+              return {
+                destination: trip?.destination ?? 'Unknown Trip',
+                code: trip?.code ?? 'N/A'
+              };
+            });
             return {
               ...c,
-              tripNames,
+              tripDetails,
             } as CandidacyViewModel;
           });
         })
