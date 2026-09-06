@@ -6,7 +6,7 @@ describe('Coordinator Candidacy Flow', () => {
       body: 'Mocked Error'
     }).as('firestoreListen');
 
-    cy.visit('/public');
+    cy.visit('/mock-tour-code/public');
   });
 
   it('should display the candidacy form', () => {

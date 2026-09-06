@@ -13,30 +13,30 @@ export const appRoutes: Routes = [
   // ── Default redirect ──────────────────────────────────────────────────────
   {
     path: '',
-    redirectTo: 'public',
+    redirectTo: 'login',
     pathMatch: 'full',
   },
 
   // ── Public Area — Coordinator Candidacy Form (no auth) ───────────────────
   {
-    path: 'public',
+    path: ':tourWeRoadCode/public',
     loadComponent: () =>
       import('./areas/public/public-shell.component').then(
         (m) => m.PublicShellComponent
       ),
     children: [
       {
+        path: '',
+        loadComponent: () =>
+          import('./areas/public/candidacy-form/candidacy-form.component').then(
+            (m) => m.CandidacyFormComponent
+          ),
+      },
+      {
         path: 'success',
         loadComponent: () =>
           import('./areas/public/candidacy-success/candidacy-success.component').then(
             (m) => m.CandidacySuccessComponent
-          ),
-      },
-      {
-        path: ':tourWeRoadCode',
-        loadComponent: () =>
-          import('./areas/public/candidacy-form/candidacy-form.component').then(
-            (m) => m.CandidacyFormComponent
           ),
       },
     ],
@@ -189,6 +189,6 @@ export const appRoutes: Routes = [
   // ── Wildcard ──────────────────────────────────────────────────────────────
   {
     path: '**',
-    redirectTo: 'public',
+    redirectTo: 'login',
   },
 ];
