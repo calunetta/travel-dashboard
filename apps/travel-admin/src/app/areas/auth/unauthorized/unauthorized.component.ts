@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -47,6 +47,14 @@ import { FirebaseAuthService } from 'auth-api-requests';
 export class UnauthorizedComponent {
   private readonly authService = inject(FirebaseAuthService);
   private readonly router = inject(Router);
+
+  constructor() {
+    effect(() => {
+      if (this.authService.isAdmin()) {
+        this.router.navigate(['/admin']);
+      }
+    });
+  }
 
   readonly email = this.authService.currentUser
     ? () => this.authService.currentUser()?.email ?? null

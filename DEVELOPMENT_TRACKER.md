@@ -751,3 +751,15 @@ Following the Master Rules for granular Git versioning, these are the logical co
 **Key Changes:**
 1. **Firebase Hosting Configuration:** Updated `firebase.json` to set `hosting.public` to `dist/apps/travel-admin`, matching the exact output of the Nx browser builder.
 2. **GitHub Actions Workflow:** Updated `.github/workflows/ci-cd.yml` to remove the standalone build step and instead leverage the native `build_command` input in `FirebaseExtended/action-hosting-deploy@v0` to correctly orchestrate the build process right before deployment.
+
+### ✅ Step 24 - PART 1: Auth Flow Bug & Role Definition
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `fix(auth): implement realtime admin role resolution using onSnapshot`
+
+**Key Changes:**
+1. **FirebaseAuthService:** Replaced the one-off `getDoc` fetch with a realtime `onSnapshot` listener for the Firestore admin document. This ensures that when an administrator updates a user's role in the database, the client's auth state (`isAdmin`) is instantly updated without requiring a manual page refresh.
+2. **UnauthorizedComponent:** Added an Angular `effect` to observe the `isAdmin` signal. If an unauthorized user is granted access while viewing this page, they are seamlessly and automatically redirected to `/admin`.
+3. **Role Definition:** Verified that `AdminRole` is strictly typed as `'ADMIN' | 'SUPER_ADMIN'` in `admin.model.ts`.
+4. **Validation:** Angular testing, linting, and build passed successfully.

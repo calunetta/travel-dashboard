@@ -19,7 +19,7 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { FIREBASE_AUTH_TOKEN, FIRESTORE_TOKEN } from 'shared-models';
 import type { Admin, AdminDocument, AuthenticatedUser } from 'auth-models';
 import type { FirestoreId } from 'shared-models';
@@ -38,6 +38,7 @@ export class FirebaseAuthService implements OnDestroy {
   private readonly _error = signal<string | null>(null);
 
   private readonly _unsubscribeAuth: () => void;
+  private _unsubscribeAdmin?: () => void;
 
   // ── Public Signals (read-only) ────────────────────────────────────────────
   readonly currentUser = this._currentUser.asReadonly();
@@ -55,21 +56,58 @@ export class FirebaseAuthService implements OnDestroy {
     // Subscribe to Firebase Auth state changes on service initialization.
     this._unsubscribeAuth = onAuthStateChanged(
       this.auth,
-      async (firebaseUser) => {
-        this._isLoading.set(true);
+      (firebaseUser) => {
         this._error.set(null);
-        try {
-          if (firebaseUser) {
-            const authenticated = await this.#buildAuthenticatedUser(firebaseUser);
-            this._currentUser.set(authenticated);
-          } else {
-            this._currentUser.set(null);
-          }
-        } catch (err) {
-          const message = err instanceof Error ? err.message : 'Authentication error';
-          this._error.set(message);
+        
+        if (this._unsubscribeAdmin) {
+          this._unsubscribeAdmin();
+          this._unsubscribeAdmin = undefined;
+        }
+
+        if (firebaseUser) {
+          this._isLoading.set(true);
+          const adminDocRef = doc(this.firestore, ADMINS_COLLECTION, firebaseUser.uid);
+          
+          this._unsubscribeAdmin = onSnapshot(adminDocRef, (adminSnapshot) => {
+            let isAdmin = false;
+            let adminProfile: Admin | null = null;
+
+            if (adminSnapshot.exists()) {
+              isAdmin = true;
+              const data = adminSnapshot.data() as AdminDocument;
+              adminProfile = {
+                id: firebaseUser.uid as FirestoreId,
+                name: data.name ?? '',
+                surname: data.surname ?? '',
+                email: data.email ?? firebaseUser.email ?? '',
+                phone: data.phone ?? '',
+                role: data.role ?? 'ADMIN',
+              };
+            }
+
+            this._currentUser.set({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email ?? '',
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              isAdmin,
+              adminProfile,
+            });
+            this._isLoading.set(false);
+          }, (err) => {
+            console.error('Failed to read admin profile from Firestore:', err);
+            this._currentUser.set({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email ?? '',
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              isAdmin: false,
+              adminProfile: null,
+            });
+            this._isLoading.set(false);
+          });
+        } else {
           this._currentUser.set(null);
-        } finally {
           this._isLoading.set(false);
         }
       },
@@ -81,6 +119,9 @@ export class FirebaseAuthService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this._unsubscribeAdmin) {
+      this._unsubscribeAdmin();
+    }
     this._unsubscribeAuth();
   }
 
@@ -119,50 +160,5 @@ export class FirebaseAuthService implements OnDestroy {
     } finally {
       this._isLoading.set(false);
     }
-  }
-
-  // ── Private Helpers ────────────────────────────────────────────────────────
-
-  /**
-   * Builds the AuthenticatedUser by checking if the Firebase user's UID
-   * exists in the READ-ONLY `admins` Firestore collection.
-   *
-   * The admin document is keyed by Firebase Auth UID.
-   * This collection is NEVER writable from the app (enforced by Firestore rules).
-   */
-  async #buildAuthenticatedUser(firebaseUser: User): Promise<AuthenticatedUser> {
-    let isAdmin = false;
-    let adminProfile: Admin | null = null;
-
-    try {
-      const adminDocRef = doc(this.firestore, ADMINS_COLLECTION, firebaseUser.uid);
-      const adminSnapshot = await getDoc(adminDocRef);
-
-      if (adminSnapshot.exists()) {
-        isAdmin = true;
-        const data = adminSnapshot.data() as AdminDocument;
-        adminProfile = {
-          id: firebaseUser.uid as FirestoreId,
-          name: data.name ?? '',
-          surname: data.surname ?? '',
-          email: data.email ?? firebaseUser.email ?? '',
-          phone: data.phone ?? '',
-          role: data.role ?? 'ADMIN',
-        };
-      }
-    } catch (e) {
-      console.error('Failed to read admin profile from Firestore:', e);
-      // We catch this so the user is still authenticated (as non-admin)
-      // rather than breaking the entire auth flow.
-    }
-
-    return {
-      uid: firebaseUser.uid,
-      email: firebaseUser.email ?? '',
-      displayName: firebaseUser.displayName,
-      photoURL: firebaseUser.photoURL,
-      isAdmin,
-      adminProfile,
-    };
   }
 }
