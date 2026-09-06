@@ -80,6 +80,35 @@ export class TripApiService {
   }
 
   /**
+   * Returns a real-time Observable of trips that do not have a coordinator assigned.
+   * This is used by the public candidacy form, as unassigned trips are publicly readable.
+   */
+  getAvailableTrips$(): Observable<ReadonlyArray<Trip>> {
+    return new Observable<ReadonlyArray<Trip>>((observer) => {
+      const col = collection(this.firestore, TRIPS_COLLECTION);
+      const q = query(
+        col,
+        where('coordinatorId', '==', null)
+      );
+
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const trips = snapshot.docs
+            .map((docSnap) => mapSnapshotToTrip(docSnap))
+            .filter((t): t is Trip => t !== null);
+          // Sort client-side to avoid needing a composite index
+          trips.sort((a, b) => a.startDate.localeCompare(b.startDate));
+          observer.next(trips);
+        },
+        (err) => observer.error(err)
+      );
+
+      return () => unsubscribe();
+    }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+  }
+
+  /**
    * Returns a real-time Observable for a single trip by ID.
    * Emits null if the document does not exist.
    */

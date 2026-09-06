@@ -1,9 +1,9 @@
 describe('Coordinator Candidacy Flow', () => {
   beforeEach(() => {
     // Intercept Firestore queries for trips to return a mock trip
-    cy.intercept('POST', '**/google.firestore.v1.Firestore/Listen/**', (req) => {
-      // Mocking gRPC streams in Cypress is very complex. 
-      // For a basic E2E test, we'll just test the form validation logic and UI elements.
+    cy.intercept('POST', '**/google.firestore.v1.Firestore/Listen/**', {
+      statusCode: 400,
+      body: 'Mocked Error'
     }).as('firestoreListen');
 
     cy.visit('/public');

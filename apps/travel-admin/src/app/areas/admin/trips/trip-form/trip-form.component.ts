@@ -154,7 +154,7 @@ import { startWith } from 'rxjs/operators';
             </mat-card>
 
             <!-- SUPER_ADMIN only: Assign admins to trip -->
-            <mat-card *ngIf="isSuperAdmin() && !isEditMode" class="tha-card" style="border: 1px solid rgba(var(--tha-primary-rgb), 0.3); background: rgba(var(--tha-primary-rgb), 0.04);">
+            <mat-card *ngIf="isSuperAdmin()" class="tha-card" style="border: 1px solid rgba(var(--tha-primary-rgb), 0.3); background: rgba(var(--tha-primary-rgb), 0.04);">
               <mat-card-header>
                 <mat-icon mat-card-avatar style="color: var(--tha-primary);">admin_panel_settings</mat-icon>
                 <mat-card-title style="font-size: 1rem;">Assign Admins to Trip <span style="font-size: 0.75rem; opacity: 0.7;">(SUPER_ADMIN only)</span></mat-card-title>

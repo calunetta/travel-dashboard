@@ -13,7 +13,7 @@ describe('CandidacyFormComponent', () => {
 
   beforeEach(async () => {
     mockTripApi = {
-      getAll$: jest.fn().mockReturnValue(of([]))
+      getAvailableTrips$: jest.fn().mockReturnValue(of([]))
     };
     mockCoordApi = {
       submitCandidacy: jest.fn().mockResolvedValue(undefined)
@@ -29,10 +29,9 @@ describe('CandidacyFormComponent', () => {
     }).compileComponents();
   });
 
-  it('should filter out trips that already have a coordinator assigned or wrong nationality', () => {
-    mockTripApi.getAll$.mockReturnValue(of([
+  it('should filter out trips with wrong nationality', () => {
+    mockTripApi.getAvailableTrips$.mockReturnValue(of([
       { id: '1', destination: 'Bali', coordinatorId: null, nationality: Nationality.IT },
-      { id: '2', destination: 'Japan', coordinatorId: 'coord-123', nationality: Nationality.IT },
       { id: '3', destination: 'Peru', coordinatorId: null, nationality: Nationality.IT },
       { id: '4', destination: 'France', coordinatorId: null, nationality: Nationality.FR },
     ]));

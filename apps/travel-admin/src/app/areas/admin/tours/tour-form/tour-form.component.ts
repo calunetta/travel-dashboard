@@ -45,7 +45,7 @@ import { firstValueFrom } from 'rxjs';
         <mat-card-content>
           <form [formGroup]="form" (ngSubmit)="onSubmit()" class="tha-flex-col tha-gap-4">
             
-            <div class="tha-grid-2">
+            <div class="tha-grid-4">
               <mat-form-field appearance="outline">
                 <mat-label>Tour Code</mat-label>
                 <input matInput formControlName="tourWeRoadCode" placeholder="e.g. BALI" />
@@ -57,9 +57,7 @@ import { firstValueFrom } from 'rxjs';
                 <input matInput formControlName="tourName" placeholder="e.g. Bali Express" />
                 <mat-error *ngIf="form.get('tourName')?.hasError('required')">Name is required.</mat-error>
               </mat-form-field>
-            </div>
 
-            <div class="tha-grid-2">
               <mat-form-field appearance="outline">
                 <mat-label>Country / Destination</mat-label>
                 <input matInput formControlName="country" placeholder="e.g. Indonesia" />
@@ -86,7 +84,7 @@ import { firstValueFrom } from 'rxjs';
               </mat-form-field>
             </div>
 
-            <mat-card class="tha-card tha-mt-4" style="border: 1px solid rgba(var(--tha-primary-rgb), 0.3); background: rgba(var(--tha-primary-rgb), 0.04);">
+            <mat-card *ngIf="isSuperAdmin()" class="tha-card tha-mt-4" style="border: 1px solid rgba(var(--tha-primary-rgb), 0.3); background: rgba(var(--tha-primary-rgb), 0.04);">
               <mat-card-header>
                 <mat-icon mat-card-avatar style="color: var(--tha-primary);">admin_panel_settings</mat-icon>
                 <mat-card-title style="font-size: 1rem;">Assign Tour Admins <span style="font-size: 0.75rem; opacity: 0.7;">(SUPER_ADMIN only)</span></mat-card-title>
@@ -131,12 +129,13 @@ export class TourFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly tourApi = inject(TourApiService);
   private readonly adminApi = inject(AdminApiService);
-  private readonly authService = inject(FirebaseAuthService);
+  readonly authService = inject(FirebaseAuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
 
   readonly allAdmins$ = this.adminApi.getAll$();
+  readonly isSuperAdmin = this.authService.isSuperAdmin;
 
   isEditMode = false;
   tourId: FirestoreId | null = null;

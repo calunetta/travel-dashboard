@@ -715,3 +715,18 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **ICS Generation** — Used `ical-generator` to generate an ICS calendar event scheduled for exactly 1 month prior to the trip's `startDate`.
 3. **Email Delivery** — Implemented `nodemailer` to send an email to all `SUPER_ADMIN` users containing the `reminder.ics` attachment.
 4. **Validation** — TypeScript compilation for the `functions` package passes, and Angular tests passed successfully.
+
+
+---
+
+### ✅ Step 21 - PART 6: Bug Fixes and Final Polish
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `fix(ui): resolve grid layout, public visibility, and github actions`
+
+**Key Changes:**
+1. **Public Page:** Added `getAvailableTrips$` to `TripApiService` and updated `CandidacyFormComponent` to fix the bug where trips were not visible to unauthenticated users.
+2. **Edit Forms Grid Layout:** Standardized `TourFormComponent` to use `tha-grid-4`. 
+3. **Edit Forms Field Visibility:** Removed the `!isEditMode` constraint for the `SUPER_ADMIN` assignment fields in both `TripFormComponent` and `TourFormComponent` so they are now fully editable in edit mode.
+4. **GitHub Actions:** Added `workflow_dispatch` to `ci-cd.yml` and appended a step to explicitly deploy Firebase Functions alongside the Hosting build.

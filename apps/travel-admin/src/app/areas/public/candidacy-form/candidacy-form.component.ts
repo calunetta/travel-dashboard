@@ -175,13 +175,13 @@ export class CandidacyFormComponent {
 
   // Observable of trips without a coordinator assigned, filtered by selected nationality
   private readonly availableTrips$ = combineLatest([
-    this.tripApi.getAll$(),
+    this.tripApi.getAvailableTrips$(),
     this.form.controls.nationality.valueChanges.pipe(
       startWith(this.form.controls.nationality.value as Nationality)
     )
   ]).pipe(
     map(([trips, nationality]) => 
-      trips.filter((t) => !t.coordinatorId && t.nationality === nationality)
+      trips.filter((t) => t.nationality === nationality)
     ),
     catchError((err) => {
       console.error('Firestore failed to load trips:', err);
