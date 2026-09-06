@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -11,10 +11,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
-import { BehaviorSubject, map, catchError, of, combineLatest, startWith } from 'rxjs';
+import { BehaviorSubject, map, catchError, of, combineLatest, startWith, switchMap } from 'rxjs';
 
 import { TripApiService } from 'trips-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
+import { TourApiService } from 'tours-api-requests';
 import { AgePreference, CandidacyFormPayload } from 'coordinators-models';
 import { Trip } from 'trips-models';
 import { Nationality } from 'shared-models';
@@ -153,7 +154,9 @@ export class CandidacyFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly tripApi = inject(TripApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
+  private readonly tourApi = inject(TourApiService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
 
   readonly agePreferences = Object.values(AgePreference);
@@ -175,7 +178,17 @@ export class CandidacyFormComponent {
 
   // Observable of trips without a coordinator assigned, filtered by selected nationality
   private readonly availableTrips$ = combineLatest([
-    this.tripApi.getAvailableTrips$(),
+    this.route.paramMap.pipe(
+      map(params => params.get('tourWeRoadCode')),
+      switchMap(code => {
+        if (!code) return of(null);
+        return this.tourApi.getByWeRoadCode$(code);
+      }),
+      switchMap(tour => {
+        if (!tour) return of([] as Trip[]);
+        return this.tripApi.getAvailableTripsByTourId$(tour.id);
+      })
+    ),
     this.form.controls.nationality.valueChanges.pipe(
       startWith(this.form.controls.nationality.value as Nationality)
     )

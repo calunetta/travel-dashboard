@@ -43,6 +43,24 @@ export class TourApiService {
     });
   }
 
+  getByWeRoadCode$(tourWeRoadCode: string): Observable<Tour | null> {
+    return new Observable<Tour | null>((observer) => {
+      const collRef = collection(this.firestore, this.collectionName);
+      const q = query(collRef, where('tourWeRoadCode', '==', tourWeRoadCode));
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+          const doc = snapshot.docs[0];
+          observer.next(this.mapSnapshotToTour({ id: doc.id, ...doc.data() }));
+        } else {
+          observer.next(null);
+        }
+      }, (err) => observer.error(err));
+
+      return () => unsubscribe();
+    });
+  }
+
   async create(payload: CreateTourPayload): Promise<string> {
     const collRef = collection(this.firestore, this.collectionName);
     const newDocRef = doc(collRef);

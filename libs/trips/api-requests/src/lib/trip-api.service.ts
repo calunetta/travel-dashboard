@@ -108,6 +108,32 @@ export class TripApiService {
     }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
   }
 
+  getAvailableTripsByTourId$(tourId: FirestoreId): Observable<ReadonlyArray<Trip>> {
+    return new Observable<ReadonlyArray<Trip>>((observer) => {
+      const col = collection(this.firestore, TRIPS_COLLECTION);
+      const q = query(
+        col,
+        where('tourId', '==', tourId),
+        where('coordinatorId', '==', null)
+      );
+
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const trips = snapshot.docs
+            .map((docSnap) => mapSnapshotToTrip(docSnap))
+            .filter((t): t is Trip => t !== null);
+          // Sort client-side to avoid needing a composite index
+          trips.sort((a, b) => a.startDate.localeCompare(b.startDate));
+          observer.next(trips);
+        },
+        (err) => observer.error(err)
+      );
+
+      return () => unsubscribe();
+    }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+  }
+
   /**
    * Returns a real-time Observable for a single trip by ID.
    * Emits null if the document does not exist.

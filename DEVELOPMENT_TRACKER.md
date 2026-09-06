@@ -763,3 +763,16 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **UnauthorizedComponent:** Added an Angular `effect` to observe the `isAdmin` signal. If an unauthorized user is granted access while viewing this page, they are seamlessly and automatically redirected to `/admin`.
 3. **Role Definition:** Verified that `AdminRole` is strictly typed as `'ADMIN' | 'SUPER_ADMIN'` in `admin.model.ts`.
 4. **Validation:** Angular testing, linting, and build passed successfully.
+
+### ✅ Step 25 - PART 2: Public Route Tour Slug & Filtering
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `feat(public): filter candidacy form trips by tour we road code`
+
+**Key Changes:**
+1. **Route Defs (`app.routes.ts`):** Modified the `/public` routes to properly accept a slug (`/:tourWeRoadCode`). Ensured `/public/success` comes first to prevent route shadowing.
+2. **Data Services (`tour-api.service.ts`, `trip-api.service.ts`):** Added a `getByWeRoadCode$` query to fetch tours by their slug, and `getAvailableTripsByTourId$` to fetch unassigned trips tied specifically to that tour ID.
+3. **Component Refactor (`candidacy-form.component.ts`):** Updated the reactive pipeline. The component now extracts the slug from the URL, fetches the corresponding tour, and restricts the trip selector strictly to the trips available for that exact tour.
+
+

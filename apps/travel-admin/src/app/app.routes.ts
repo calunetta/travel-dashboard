@@ -26,17 +26,17 @@ export const appRoutes: Routes = [
       ),
     children: [
       {
-        path: '',
-        loadComponent: () =>
-          import('./areas/public/candidacy-form/candidacy-form.component').then(
-            (m) => m.CandidacyFormComponent
-          ),
-      },
-      {
         path: 'success',
         loadComponent: () =>
           import('./areas/public/candidacy-success/candidacy-success.component').then(
             (m) => m.CandidacySuccessComponent
+          ),
+      },
+      {
+        path: ':tourWeRoadCode',
+        loadComponent: () =>
+          import('./areas/public/candidacy-form/candidacy-form.component').then(
+            (m) => m.CandidacyFormComponent
           ),
       },
     ],
