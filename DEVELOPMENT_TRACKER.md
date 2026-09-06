@@ -785,3 +785,32 @@ Following the Master Rules for granular Git versioning, these are the logical co
 1. **Candidacies Mapping (`candidacy-list.component.ts`):** Fixed the `tripIds` mapping. Extracted both destination and code strings from matched trips, grouping them into `tripDetails`, and rendering them as stylized chips within the UI.
 2. **Empty States (`_utilities.scss`):** Introduced `.tha-empty-state`, `.tha-empty-icon`, `.tha-empty-title`, and `.tha-empty-subtitle` core utilities for rendering beautiful fallback states. Added `.tha-chip` variations.
 3. **Empty States Implementation:** Replaced all plain text `*matNoDataRow` implementations across all 5 admin tables (`TripListComponent`, `CandidacyListComponent`, `HotelListComponent`, `TourListComponent`, `CoordinatorListComponent`) with consistent, icon-driven "No Data" screens spanning the full width of the table columns.
+
+### ✅ Step 27 - PART 4: Automatic Assignment Engine & Matchmaking Dialog
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `feat(admin): implement global FCFS automatic assignment engine`
+
+**Key Changes:**
+1. **Public Routes:** Changed public routes to strictly match `/:tourWeRoadCode/public`.
+2. **Global Assignment UI (`candidacy-list.component.ts`):** Added a "Run Automatic Assignment" button strictly visible to `SUPER_ADMIN` users via the `isSuperAdmin()` signal.
+3. **FCFS Algorithm Engine:** Developed an in-memory First-Come-First-Serve algorithm that sorts pending candidacies by `submittedAt` (oldest first). It strictly matches candidates against available trips without coordinators and with matching nationality requirements.
+4. **Matchmaking Preview Dialog (`matchmaking-preview-dialog.component.ts`):** Created a confirmation modal to display matched Candidacy-to-Trip records. Includes a direct "WhatsApp" contact button via `buildWhatsAppUrl()`.
+5. **Batch Confirmation Execution:** The "Confirm & Save" button iteratively resolves all accepted candidacies against their respective trips within Firestore, marking candidacies as `ACCEPTED` and linking trips to `coordinatorId`.
+
+### ✅ Step 28 - PART 1 & 2: Background Services Verification & Bulk Deletion
+**Status:** Completed  
+**Date:** 2026-09-07  
+**Key Changes:**
+1. Documented Verification Guides for FCM Push Notifications and Email Triggers (`testing_background_services.md`).
+2. Implemented single & batch deletion capabilities for Trips, Hotels, Coordinators, and Tours.
+3. Added `isSuperAdmin` RBAC checks to enforce that only SUPER_ADMIN users can perform deletions.
+4. Linked Storage Object deletion to Trip deletion in the Cloud Function.
+
+### ✅ Step 29 - PART 3: QA & Test Coverage
+**Status:** Completed  
+**Date:** 2026-09-07  
+**Key Changes:**
+1. Fixed failing Angular component tests in list and form views.
+2. Verified Near 100% test coverage using Jest/jsdom.
