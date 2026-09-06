@@ -814,3 +814,11 @@ Following the Master Rules for granular Git versioning, these are the logical co
 **Key Changes:**
 1. Fixed failing Angular component tests in list and form views.
 2. Verified Near 100% test coverage using Jest/jsdom.
+
+### ✅ Step 30 - PART 3: E2E Cypress Tests
+**Status:** Completed  
+**Date:** 2026-09-07  
+**Key Changes:**
+1. Fixed routing issues in `app.routes.ts` where wildcard routes were erroneously redirecting to the deprecated `/public` path instead of `/login`.
+2. Updated Cypress E2E specs (`app.cy.ts`, `candidacy-flow.cy.ts`) to align with the new dynamic `/:tourWeRoadCode/public` path.
+3. Successfully executed `npx nx e2e travel-admin-e2e`, verifying that 100% of the Cypress E2E test suite is passing.
