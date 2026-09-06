@@ -138,7 +138,7 @@ import { startWith } from 'rxjs/operators';
                   <mat-hint>Overrides calculated cost</mat-hint>
                 </mat-form-field>
                 <div class="tha-flex-col tha-mt-2 tha-full-width" style="grid-column: span 2;">
-                  <label class="tha-text-sm tha-font-bold tha-mb-2">Booking Receipt (Image)</label>
+                  <span class="tha-text-sm tha-font-bold tha-mb-2">Booking Receipt (Image)</span>
                   <input type="file" accept="image/*" (change)="onReceiptSelected($event)" #receiptInput style="display: none;" />
                   <div class="tha-flex-row tha-items-center tha-gap-4">
                     <button mat-stroked-button type="button" (click)="receiptInput.click()">

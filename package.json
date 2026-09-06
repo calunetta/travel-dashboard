@@ -6,6 +6,7 @@
     "postinstall": "node node_modules/@angular/cdk/schematics/utils/postinstall.js 2>/dev/null || true"
   },
   "private": true,
+  "packageManager": "yarn@1.22.22",
   "dependencies": {
     "@angular/animations": "~19.2.0",
     "@angular/cdk": "~19.2.0",

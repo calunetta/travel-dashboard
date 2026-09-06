@@ -730,3 +730,14 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **Edit Forms Grid Layout:** Standardized `TourFormComponent` to use `tha-grid-4`. 
 3. **Edit Forms Field Visibility:** Removed the `!isEditMode` constraint for the `SUPER_ADMIN` assignment fields in both `TripFormComponent` and `TourFormComponent` so they are now fully editable in edit mode.
 4. **GitHub Actions:** Added `workflow_dispatch` to `ci-cd.yml` and appended a step to explicitly deploy Firebase Functions alongside the Hosting build.
+
+### ✅ Step 22 - PART 1: Fix Yarn CI/CD Configuration
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `fix(ci): lock yarn version and remove legacy ignoreEngines`
+
+**Key Changes:**
+1. **Yarn Config:** Removed the `ignore-engines true` flag from `.yarnrc` which was crashing modern Yarn versions on GitHub Actions.
+2. **Package Manager Lock:** Added `"packageManager": "yarn@1.22.22"` to `package.json` to enforce Yarn Classic in the CI runner.
+3. **Lint Fixes:** Fixed a missing label association in `trip-form.component.ts` and updated `eslint.config.mjs` to correctly ignore compiled `functions/lib` outputs that were triggering false positive lint errors.
