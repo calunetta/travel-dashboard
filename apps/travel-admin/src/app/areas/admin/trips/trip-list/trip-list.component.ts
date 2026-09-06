@@ -18,11 +18,13 @@ import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { Trip } from 'trips-models';
 import { Observable, combineLatest, map } from 'rxjs';
+import { calculateHotelCost } from 'hotels-mapping-and-utils';
 
 /** View model that combines trip data with joined hotel and coordinator names for display. */
 interface TripViewModel extends Trip {
   coordinatorName: string | null;
   hotelName: string | null;
+  hotelCostEur: number | null;
 }
 
 @Component({
@@ -105,13 +107,21 @@ interface TripViewModel extends Trip {
             <ng-container matColumnDef="hotel">
               <th mat-header-cell *matHeaderCellDef> Hotel </th>
               <td mat-cell *matCellDef="let trip">
-                <div class="tha-flex-row" style="align-items: center; gap: 4px;">
-                  @if (trip.hotelName) {
-                    <mat-icon class="tha-text-success" style="font-size: 16px; width: 16px; height: 16px;">check_circle</mat-icon>
-                    <span class="tha-text-sm">{{ trip.hotelName }}</span>
-                  } @else {
-                    <mat-icon class="tha-text-muted" style="font-size: 16px; width: 16px; height: 16px;">cancel</mat-icon>
-                    <span class="tha-text-sm tha-text-muted">Unassigned</span>
+                <div class="tha-flex-col tha-gap-1">
+                  <div class="tha-flex-row" style="align-items: center; gap: 4px;">
+                    @if (trip.hotelName) {
+                      <mat-icon class="tha-text-success" style="font-size: 16px; width: 16px; height: 16px;">check_circle</mat-icon>
+                      <span class="tha-text-sm">{{ trip.hotelName }}</span>
+                    } @else {
+                      <mat-icon class="tha-text-muted" style="font-size: 16px; width: 16px; height: 16px;">cancel</mat-icon>
+                      <span class="tha-text-sm tha-text-muted">Unassigned</span>
+                    }
+                  </div>
+                  @if (trip.hotelCostEur !== null) {
+                    <span class="tha-text-xs tha-text-muted tha-ml-5">
+                      €{{ trip.hotelCostEur | number:'1.2-2' }}
+                      <span *ngIf="trip.manualHotelCost !== null" title="Manual override">*</span>
+                    </span>
                   }
                 </div>
               </td>
@@ -178,10 +188,18 @@ export class TripListComponent implements AfterViewInit {
             const hotel = hotels.find((h) => h.id === trip.hotelId);
             const coordinator = coordinators.find((c) => c.id === trip.coordinatorId);
             
+            let hotelCostEur: number | null = null;
+            if (trip.manualHotelCost !== null) {
+              hotelCostEur = trip.manualHotelCost;
+            } else if (hotel) {
+              hotelCostEur = calculateHotelCost(hotel, trip).grandTotalEur;
+            }
+            
             return {
               ...trip,
               hotelName: hotel ? hotel.name : null,
               coordinatorName: coordinator ? `${coordinator.name} ${coordinator.surname}` : null,
+              hotelCostEur
             } as TripViewModel;
           });
         })

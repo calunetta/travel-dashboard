@@ -132,6 +132,11 @@ import { startWith } from 'rxjs/operators';
                   <mat-label>Booking Method</mat-label>
                   <input matInput formControlName="hotelBookingMethod" placeholder="e.g. Credit Card, Booking.com" />
                 </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Manual Hotel Cost (€)</mat-label>
+                  <input matInput type="number" formControlName="manualHotelCost" placeholder="e.g. 500" />
+                  <mat-hint>Overrides calculated cost</mat-hint>
+                </mat-form-field>
                 <div class="tha-flex-col tha-mt-2 tha-full-width" style="grid-column: span 2;">
                   <label class="tha-text-sm tha-font-bold tha-mb-2">Booking Receipt (Image)</label>
                   <input type="file" accept="image/*" (change)="onReceiptSelected($event)" #receiptInput style="display: none;" />
@@ -255,6 +260,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
     coordinatorId: [null as FirestoreId | null],
     hotelBookedBy: [''],
     hotelBookingMethod: [''],
+    manualHotelCost: [null as number | null],
     hotelBookingReceiptUrl: [''],
     notes: [''],
     weRoadTourSlug: [''],
@@ -339,6 +345,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
           coordinatorId: trip.coordinatorId,
           hotelBookedBy: trip.hotelBookedBy,
           hotelBookingMethod: trip.hotelBookingMethod,
+          manualHotelCost: trip.manualHotelCost,
           hotelBookingReceiptUrl: trip.hotelBookingReceiptUrl,
           notes: trip.notes,
           weRoadTourSlug: trip.weRoadTourSlug,
@@ -405,6 +412,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
           coordinatorId: formVal.coordinatorId ?? null,
           hotelBookedBy: formVal.hotelBookedBy ?? null,
           hotelBookingMethod: formVal.hotelBookingMethod ?? null,
+          manualHotelCost: formVal.manualHotelCost ?? null,
           hotelBookingReceiptUrl: receiptUrl ?? null,
           notes: formVal.notes ?? '',
           weRoadTourSlug: formVal.weRoadTourSlug ?? null,
@@ -431,6 +439,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
           coordinatorId: formVal.coordinatorId ?? null,
           hotelBookedBy: formVal.hotelBookedBy ?? null,
           hotelBookingMethod: formVal.hotelBookingMethod ?? null,
+          manualHotelCost: formVal.manualHotelCost ?? null,
           hotelBookingReceiptUrl: receiptUrl ?? null,
           notes: formVal.notes ?? '',
           weRoadTourSlug: formVal.weRoadTourSlug ?? null,

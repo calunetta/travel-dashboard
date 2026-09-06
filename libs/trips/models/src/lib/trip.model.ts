@@ -78,6 +78,7 @@ export interface Trip {
   /** Raw URL from WeRoad API */
   readonly weRoadTourSlug: string | null;
   readonly nationality: Nationality;
+  readonly manualHotelCost: number | null;
   readonly documents: ReadonlyArray<TripDocument>;
   readonly tourId: FirestoreId;
   readonly adminIds: ReadonlyArray<FirestoreId>;
@@ -112,6 +113,7 @@ export interface TripFirestoreDocument {
   readonly facebookGroupUrl: string | null;
   readonly weRoadTourSlug: string | null;
   readonly nationality: string;
+  readonly manualHotelCost: number | null;
   readonly documents: ReadonlyArray<{
     readonly id: string;
     readonly name: string;

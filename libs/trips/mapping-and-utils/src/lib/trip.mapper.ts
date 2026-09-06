@@ -67,6 +67,7 @@ export function mapSnapshotToTrip(
     facebookGroupUrl: data.facebookGroupUrl ?? null,
     weRoadTourSlug: data.weRoadTourSlug ?? null,
     nationality: (data.nationality as Nationality) ?? NationalityEnum.IT,
+    manualHotelCost: typeof data.manualHotelCost === 'number' ? data.manualHotelCost : null,
     tourId: (data.tourId ?? '') as FirestoreId,
     adminIds: Array.isArray(data.adminIds) ? (data.adminIds as FirestoreId[]) : [],
     documents: documents.map((d) => ({
@@ -116,6 +117,7 @@ export function mapCreatePayloadToFirestore(
     facebookGroupUrl: payload.facebookGroupUrl,
     weRoadTourSlug: payload.weRoadTourSlug,
     nationality: payload.nationality,
+    manualHotelCost: payload.manualHotelCost,
     tourId: payload.tourId,
     adminIds: payload.adminIds,
     documents: payload.documents.map((d) => ({
@@ -162,6 +164,7 @@ export function mapUpdatePayloadToFirestore(
   if (payload.facebookGroupUrl !== undefined) update['facebookGroupUrl'] = payload.facebookGroupUrl;
   if (payload.weRoadTourSlug !== undefined) update['weRoadTourSlug'] = payload.weRoadTourSlug;
   if (payload.nationality !== undefined) update['nationality'] = payload.nationality;
+  if (payload.manualHotelCost !== undefined) update['manualHotelCost'] = payload.manualHotelCost;
   if (payload.tourId !== undefined) update['tourId'] = payload.tourId;
   if (payload.adminIds !== undefined) update['adminIds'] = payload.adminIds;
   if (payload.documents !== undefined) {
@@ -205,6 +208,7 @@ export function createDefaultTripPayload(): CreateTripPayload {
     facebookGroupUrl: null,
     weRoadTourSlug: null,
     nationality: NationalityEnum.IT,
+    manualHotelCost: null,
     tourId: '' as FirestoreId,
     adminIds: [],
     documents: [],

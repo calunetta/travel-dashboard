@@ -686,3 +686,32 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **CandidacyFormComponent** — Fixed the API query for trips. Instead of strict `null` checks for `coordinatorId`, it now properly checks for falsy values to accurately filter available trips.
 3. **TripDetailComponent** — Fixed unbalanced HTML tags introduced during the grid refactoring in Part 2.
 4. **Validation** — Executed `nx test travel-admin` and `nx e2e travel-admin-e2e`. All unit and e2e tests passed successfully, confirming zero regressions.
+
+---
+
+### ✅ Step 19 - PART 4: New Feature: Hotel Costs & Overrides
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `feat(trips): implement manualHotelCost override and calculate display costs`
+
+**Key Changes:**
+1. **Model & Mapper** — Added `manualHotelCost` to `Trip` and `TripFirestoreDocument`. Updated `trip.mapper.ts` to handle Snapshot, Create, and Update flows for this field.
+2. **Trip Form** — Updated `TripFormComponent` to include a manual input field for hotel costs.
+3. **Trip Views** — Updated `TripDetailComponent` and `TripsListComponent` to display the `manualHotelCost` if present, alongside the calculated cost using `calculateHotelCost`.
+4. **Validation** — Fixed TypeScript error in CSV Import Dialog related to the new field. Executed `nx test travel-admin` and `nx e2e travel-admin-e2e`. All tests passed successfully.
+
+
+---
+
+### ✅ Step 20 - PART 5: New Feature: Gmail Calendar Notifications
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `feat(functions): implement onTripCreated trigger for email calendar notifications`
+
+**Key Changes:**
+1. **Firebase Functions** — Added `onTripCreated` to `functions/src/index.ts`.
+2. **ICS Generation** — Used `ical-generator` to generate an ICS calendar event scheduled for exactly 1 month prior to the trip's `startDate`.
+3. **Email Delivery** — Implemented `nodemailer` to send an email to all `SUPER_ADMIN` users containing the `reminder.ics` attachment.
+4. **Validation** — TypeScript compilation for the `functions` package passes, and Angular tests passed successfully.

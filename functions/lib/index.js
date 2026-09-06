@@ -1,8 +1,46 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkUpcomingTripsCron = exports.onDocumentStatusChanged = exports.onTripDocumentUploaded = void 0;
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
+exports.onTripCreated = exports.checkUpcomingTripsCron = exports.onDocumentStatusChanged = exports.onTripDocumentUploaded = void 0;
+const functions = __importStar(require("firebase-functions"));
+const admin = __importStar(require("firebase-admin"));
+const nodemailer = __importStar(require("nodemailer"));
+const ical_generator_1 = __importDefault(require("ical-generator"));
 admin.initializeApp();
 const db = admin.firestore();
 const messaging = admin.messaging();
@@ -110,5 +148,58 @@ exports.checkUpcomingTripsCron = functions.pubsub.schedule('every day 00:00').on
             }
         }
     }
+});
+exports.onTripCreated = functions.firestore
+    .document('trips/{tripId}')
+    .onCreate(async (snap, context) => {
+    const tripData = snap.data();
+    if (!tripData || !tripData.startDate)
+        return;
+    // 1. Calculate 1 month prior to startDate
+    const startDate = new Date(tripData.startDate);
+    const reminderDate = new Date(startDate);
+    reminderDate.setMonth(reminderDate.getMonth() - 1);
+    // 2. Generate .ics attachment
+    const calendar = (0, ical_generator_1.default)({ name: 'Trip Reminders' });
+    calendar.createEvent({
+        start: reminderDate,
+        end: new Date(reminderDate.getTime() + 60 * 60 * 1000), // 1 hour event
+        summary: `Reminder: Trip ${tripData.destination} starts in 1 month`,
+        description: `Trip Code: ${tripData.code}\nDates: ${tripData.startDate} to ${tripData.endDate}`,
+    });
+    const icsContent = calendar.toString();
+    // 3. Find SUPER_ADMIN emails
+    const superAdminsSnapshot = await db.collection('admins').where('role', '==', 'SUPER_ADMIN').get();
+    const emails = [];
+    superAdminsSnapshot.forEach(doc => {
+        const email = doc.data().email;
+        if (email) {
+            emails.push(email);
+        }
+    });
+    if (emails.length === 0)
+        return;
+    // 4. Send email
+    const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+        port: Number(process.env.SMTP_PORT) || 587,
+        auth: {
+            user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
+            pass: process.env.SMTP_PASS || 'ethereal.pass',
+        },
+    });
+    await transporter.sendMail({
+        from: '"Travel Admin" <noreply@travelhandling.com>',
+        to: emails.join(', '),
+        subject: `New Trip Created: ${tripData.destination}`,
+        text: `A new trip to ${tripData.destination} has been created. Attached is a calendar reminder for 1 month prior to the start date.`,
+        attachments: [
+            {
+                filename: 'reminder.ics',
+                content: icsContent,
+                contentType: 'text/calendar'
+            }
+        ]
+    });
 });
 //# sourceMappingURL=index.js.map

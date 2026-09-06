@@ -1,5 +1,7 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import * as nodemailer from 'nodemailer';
+import ical from 'ical-generator';
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -141,3 +143,62 @@ export const checkUpcomingTripsCron = functions.pubsub.schedule('every day 00:00
     }
   }
 });
+
+export const onTripCreated = functions.firestore
+  .document('trips/{tripId}')
+  .onCreate(async (snap, context) => {
+    const tripData = snap.data();
+    if (!tripData || !tripData.startDate) return;
+    
+    // 1. Calculate 1 month prior to startDate
+    const startDate = new Date(tripData.startDate);
+    const reminderDate = new Date(startDate);
+    reminderDate.setMonth(reminderDate.getMonth() - 1);
+    
+    // 2. Generate .ics attachment
+    const calendar = ical({ name: 'Trip Reminders' });
+    calendar.createEvent({
+      start: reminderDate,
+      end: new Date(reminderDate.getTime() + 60 * 60 * 1000), // 1 hour event
+      summary: `Reminder: Trip ${tripData.destination} starts in 1 month`,
+      description: `Trip Code: ${tripData.code}\nDates: ${tripData.startDate} to ${tripData.endDate}`,
+    });
+    
+    const icsContent = calendar.toString();
+    
+    // 3. Find SUPER_ADMIN emails
+    const superAdminsSnapshot = await db.collection('admins').where('role', '==', 'SUPER_ADMIN').get();
+    const emails: string[] = [];
+    superAdminsSnapshot.forEach(doc => {
+      const email = doc.data().email;
+      if (email) {
+        emails.push(email);
+      }
+    });
+    
+    if (emails.length === 0) return;
+    
+    // 4. Send email
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+      port: Number(process.env.SMTP_PORT) || 587,
+      auth: {
+        user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
+        pass: process.env.SMTP_PASS || 'ethereal.pass',
+      },
+    });
+    
+    await transporter.sendMail({
+      from: '"Travel Admin" <noreply@travelhandling.com>',
+      to: emails.join(', '),
+      subject: `New Trip Created: ${tripData.destination}`,
+      text: `A new trip to ${tripData.destination} has been created. Attached is a calendar reminder for 1 month prior to the start date.`,
+      attachments: [
+        {
+          filename: 'reminder.ics',
+          content: icsContent,
+          contentType: 'text/calendar'
+        }
+      ]
+    });
+  });

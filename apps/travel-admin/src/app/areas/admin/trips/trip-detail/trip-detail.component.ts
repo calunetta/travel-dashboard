@@ -5,6 +5,7 @@ import {
   inject,
   OnInit,
   signal,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -30,6 +31,7 @@ import { FirestoreId } from 'shared-models';
 import { Trip, TripDocument } from 'trips-models';
 import { switchMap, shareReplay } from 'rxjs';
 import { RoomType } from 'trips-models';
+import { calculateHotelCost } from 'hotels-mapping-and-utils';
 
 @Component({
   selector: 'tha-trip-detail',
@@ -123,8 +125,28 @@ import { RoomType } from 'trips-models';
                 <mat-card-header>
                   <mat-icon mat-card-avatar style="color: #9c27b0;">hotel</mat-icon>
                   <mat-card-title>Hotel</mat-card-title>
-                  <mat-card-subtitle>{{ hotel()?.name ?? 'Unassigned' }}</mat-card-subtitle>
+                  <mat-card-subtitle>
+                    {{ hotel()?.name ?? 'Unassigned' }}
+                  </mat-card-subtitle>
                 </mat-card-header>
+                <mat-card-content *ngIf="t.hotelId" class="tha-pt-4">
+                  <div *ngIf="t.manualHotelCost !== null; else autoCost">
+                    <p class="tha-text-sm tha-font-bold">Hotel Cost (Manual Override):</p>
+                    <p class="tha-text-xl tha-text-primary">€{{ t.manualHotelCost | number:'1.2-2' }}</p>
+                  </div>
+                  <ng-template #autoCost>
+                    <div *ngIf="hotelCost() as cost">
+                      <p class="tha-text-sm tha-font-bold">Calculated Hotel Cost:</p>
+                      <p class="tha-text-xl tha-text-primary">€{{ cost.grandTotalEur | number:'1.2-2' }}</p>
+                      <p class="tha-text-xs tha-text-muted" *ngIf="cost.appliedPricingRange">
+                        Based on pricing range: {{ cost.appliedPricingRange.fromDate | date:'shortDate' }} - {{ cost.appliedPricingRange.toDate | date:'shortDate' }}
+                      </p>
+                      <p class="tha-text-xs tha-text-muted tha-mt-1" *ngIf="!cost.appliedPricingRange && cost.hotelId">
+                        No matching pricing range found for this trip's dates.
+                      </p>
+                    </div>
+                  </ng-template>
+                </mat-card-content>
                 <mat-card-actions *ngIf="t.hotelId" align="end">
                   <button mat-button color="primary" [routerLink]="['/admin/hotels', t.hotelId, 'edit']">View Hotel</button>
                 </mat-card-actions>
@@ -333,6 +355,15 @@ export class TripDetailComponent implements OnInit {
     })
   );
   readonly hotel = toSignal(this.hotel$, { initialValue: null });
+
+  readonly hotelCost = computed(() => {
+    const h = this.hotel();
+    const t = this.trip();
+    if (h && t) {
+      return calculateHotelCost(h, t);
+    }
+    return null;
+  });
 
   // Upload state
   readonly uploading = signal(false);

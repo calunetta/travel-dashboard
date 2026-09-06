@@ -338,6 +338,7 @@ export class CsvImportDialogComponent {
           hotelBookedBy: null,
           hotelBookingMethod: null,
           hotelBookingReceiptUrl: null,
+          manualHotelCost: null,
           facebookGroupUrl: null,
 
           weRoadTourSlug: tour.tourWeRoadCode,
