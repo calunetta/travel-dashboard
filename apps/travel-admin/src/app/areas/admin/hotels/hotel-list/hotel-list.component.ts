@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatSortModule, MatSort } from '@angular/material/sort';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
@@ -17,6 +17,7 @@ import { Hotel } from 'hotels-models';
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,

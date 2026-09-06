@@ -672,3 +672,17 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **TripDetailComponent** — Removed `mat-tab-group` and consolidated Overview, Room Composition, and Documents into a single, cohesive view using `tha-grid-2`. 
 3. **TripFormComponent** — Refactored the form layout to use `tha-grid-3` and `tha-grid-4` to eliminate wasted vertical space and align fields side-by-side.
 4. **Validation** — Executed `nx test travel-admin`. All 19 unit tests passed successfully.
+
+---
+
+### ✅ Step 18 - Bug Fixes (Buttons & Public Logic)
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `fix: add routerlink to hotel list and fix candidacy form trip query`
+
+**Key Changes:**
+1. **HotelListComponent** — Imported `RouterLink` to fix the "New Hotel" button routing which was broken due to missing imports.
+2. **CandidacyFormComponent** — Fixed the API query for trips. Instead of strict `null` checks for `coordinatorId`, it now properly checks for falsy values to accurately filter available trips.
+3. **TripDetailComponent** — Fixed unbalanced HTML tags introduced during the grid refactoring in Part 2.
+4. **Validation** — Executed `nx test travel-admin` and `nx e2e travel-admin-e2e`. All unit and e2e tests passed successfully, confirming zero regressions.

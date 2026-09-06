@@ -181,7 +181,7 @@ export class CandidacyFormComponent {
     )
   ]).pipe(
     map(([trips, nationality]) => 
-      trips.filter((t) => t.coordinatorId === null && t.nationality === nationality)
+      trips.filter((t) => !t.coordinatorId && t.nationality === nationality)
     ),
     catchError((err) => {
       console.error('Firestore failed to load trips:', err);

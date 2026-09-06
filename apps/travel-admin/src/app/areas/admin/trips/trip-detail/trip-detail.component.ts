@@ -104,10 +104,8 @@ import { RoomType } from 'trips-models';
                   <mat-icon>public</mat-icon> View on WeRoad
                 </a>
               </div>
-            </div>
+              <mat-divider class="tha-my-6"></mat-divider>
 
-            <!-- Right Col -->
-            <div>
               <h3 class="tha-text-lg tha-font-bold tha-mb-4">Assignments</h3>
               
               <mat-card class="tha-mb-4" style="box-shadow: none; border: 1px solid var(--tha-border);">
@@ -143,9 +141,9 @@ import { RoomType } from 'trips-models';
               <mat-card-title>Room Composition</mat-card-title>
             </mat-card-header>
             <mat-card-content class="tha-pt-4">
-            <p class="tha-text-muted tha-mb-6">Adjust the number of rooms needed for this trip. This determines the hotel cost calculation.</p>
-            
-            <div class="tha-grid-4 tha-gap-4">
+              <p class="tha-text-muted tha-mb-6">Adjust the number of rooms needed for this trip. This determines the hotel cost calculation.</p>
+              
+              <div class="tha-grid-4 tha-gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>Single Rooms</mat-label>
                 <input matInput type="number" min="0" [(ngModel)]="rooms.SINGLE" (change)="saveRooms()" />
@@ -170,6 +168,7 @@ import { RoomType } from 'trips-models';
                 <mat-label>Extra Beds</mat-label>
                 <input matInput type="number" min="0" [(ngModel)]="rooms.EXTRA_BED" (change)="saveRooms()" />
               </mat-form-field>
+              </div>
             </mat-card-content>
           </mat-card>
 
