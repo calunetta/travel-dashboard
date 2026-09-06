@@ -42,19 +42,19 @@ $tha-info-500:    #0277bd;
 $tha-info-100:    #b3e5fc;
 
 // ── Surface / Background ──────────────────────────────────────────────────────
-// Light theme
-$tha-bg-light:        #f5f7fa;
-$tha-surface-light:   #ffffff;
-$tha-surface-variant-light: #eef2f7;
-$tha-on-surface-light: #1a2035;
-$tha-on-surface-variant-light: #546e8a;
+// Light theme (Cyber-Minimalist Light)
+$tha-bg-light:        #F8FAFC;
+$tha-surface-light:   #F1F5F9;
+$tha-surface-variant-light: #E2E8F0;
+$tha-on-surface-light: #1E293B; // Dark charcoal
+$tha-on-surface-variant-light: #475569;
 
-// Dark theme (Futuristic Corporate)
-$tha-bg-dark:         #050505; // almost pure black
-$tha-surface-dark:    #0a0a0f;
-$tha-surface-variant-dark: #12121c;
-$tha-on-surface-dark: #f8f9fa;
-$tha-on-surface-variant-dark: #8b9bb4;
+// Dark theme (Cyber-Minimalist Dark)
+$tha-bg-dark:         #0F172A; // Deep dark-slate
+$tha-surface-dark:    #1E293B;
+$tha-surface-variant-dark: #334155;
+$tha-on-surface-dark: #F1F5F9; // Ice gray
+$tha-on-surface-variant-dark: #94A3B8;
 
 // ── Typography ────────────────────────────────────────────────────────────────
 $tha-font-family-base: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;

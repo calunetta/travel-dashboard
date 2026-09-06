@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
+import { TourApiService } from 'tours-api-requests';
 import { CandidacyStatus } from 'coordinators-models';
 
 @Component({
@@ -61,6 +62,19 @@ import { CandidacyStatus } from 'coordinators-models';
           </div>
         </mat-card>
 
+        <!-- Active Tours -->
+        <mat-card class="dashboard-card tha-transition-normal" routerLink="/admin/tours">
+          <div class="card-content tha-flex-row">
+            <div class="card-text">
+              <div class="card-label">Active Tours</div>
+              <div class="card-value">{{ toursCount() ?? '-' }}</div>
+            </div>
+            <div class="icon-container info-icon" style="background: rgba(0, 188, 212, 0.1); color: #00bcd4;">
+              <mat-icon>explore</mat-icon>
+            </div>
+          </div>
+        </mat-card>
+
         <!-- Registered Hotels -->
         <mat-card class="dashboard-card tha-transition-normal" routerLink="/admin/hotels">
           <div class="card-content tha-flex-row">
@@ -80,6 +94,9 @@ import { CandidacyStatus } from 'coordinators-models';
       <div class="tha-grid-4">
         <button mat-flat-button color="primary" class="quick-action-btn primary-btn" routerLink="/admin/trips/new">
           <mat-icon>add</mat-icon> Create New Trip
+        </button>
+        <button mat-stroked-button color="primary" class="quick-action-btn secondary-btn" routerLink="/admin/tours/new">
+          <mat-icon>explore</mat-icon> Create Tour
         </button>
         <button mat-stroked-button color="primary" class="quick-action-btn secondary-btn" routerLink="/admin/hotels/new">
           <mat-icon>add_business</mat-icon> Add Hotel
@@ -202,6 +219,7 @@ export class DashboardComponent {
   private readonly tripApi = inject(TripApiService);
   private readonly hotelApi = inject(HotelApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
+  private readonly tourApi = inject(TourApiService);
 
   readonly activeTripsCount = toSignal(
     this.tripApi.getAll$().pipe(
@@ -215,6 +233,11 @@ export class DashboardComponent {
 
   readonly hotelsCount = toSignal(
     this.hotelApi.getAll$().pipe(map(hotels => hotels.length)),
+    { initialValue: null }
+  );
+
+  readonly toursCount = toSignal(
+    this.tourApi.getAll$().pipe(map(tours => tours.length)),
     { initialValue: null }
   );
 

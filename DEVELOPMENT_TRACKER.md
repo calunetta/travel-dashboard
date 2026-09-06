@@ -644,3 +644,17 @@ Following the Master Rules for granular Git versioning, these are the logical co
 2. **TripFormComponent** — Refactored to leverage `TripStorageService` for the `hotelBookingReceiptUrl` flow.
 3. **Testing** — Implemented unit tests for the image receipt validation flow. Sidenav `BreakpointObserver` tests were already fully covered and passing.
 
+
+---
+
+### ✅ Step 16 - Cyber-Minimalist Overhaul (Part 1)
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `feat(ui): implement cyber-minimalist styles and improve table routing`
+
+**Key Changes:**
+1. **Design System** — Updated `_tokens.scss` with Cyber-Minimalist colors (deep dark-slate, soft cyan/indigo accents, ice gray text). Modified `_utilities.scss` to use an 8px minimum gap (`tha-gap-2`) and added translucent card styles with soft box-shadows.
+2. **Table Navigation** — Added `tha-clickable-row` functionality to `ToursListComponent`, `HotelsListComponent`, and `CoordinatorsListComponent` allowing users to click anywhere on a row to navigate to the respective detail/edit page.
+3. **Dashboard Enhancements** — Refactored `DashboardComponent` to include a "Tours" statistics card and a "Create Tour" button in the Quick Actions section.
+4. **Validation** — Executed `nx test travel-admin`. All 19 unit tests passed successfully.

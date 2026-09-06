@@ -63,8 +63,8 @@ export interface Trip {
   readonly endDate: ISODateString;
   /** Unique code generated from Tour WeRoadCode and start date */
   readonly code: string;
-  /** Fixed at 8 days per business rule. */
-  readonly durationDays: 8;
+  /** Duration in days */
+  readonly durationDays: number;
   readonly notes: string;
   readonly roomComposition: RoomComposition;
   readonly coordinatorId: FirestoreId | null;
@@ -94,7 +94,7 @@ export interface TripFirestoreDocument {
   readonly startDate: string;
   readonly endDate: string;
   readonly code: string;
-  readonly durationDays: 8;
+  readonly durationDays: number;
   readonly notes: string;
   readonly roomComposition: {
     readonly SINGLE: number;

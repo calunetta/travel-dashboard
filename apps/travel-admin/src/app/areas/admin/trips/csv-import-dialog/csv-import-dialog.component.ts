@@ -329,7 +329,7 @@ export class CsvImportDialogComponent {
           startDate: row.startDate,
           endDate: resolvedEndDate,
           code: TripCodeGenerator.generateCode(tour.tourWeRoadCode, row.startDate, []),
-          durationDays: tour.tourLength as 8,
+          durationDays: tour.tourLength,
           notes: row.notes + (row.bookedBy ? ` (Booked by: ${row.bookedBy})` : ''),
           roomComposition: DEFAULT_ROOM_COMPOSITION,
           coordinatorId: null, // Set during import phase
@@ -339,7 +339,8 @@ export class CsvImportDialogComponent {
           hotelBookingMethod: null,
           hotelBookingReceiptUrl: null,
           facebookGroupUrl: null,
-          weRoadTourSlug: '',
+
+          weRoadTourSlug: tour.tourWeRoadCode,
           nationality: natUpper as Nationality,
           documents: [],
           tourId: tour.id,

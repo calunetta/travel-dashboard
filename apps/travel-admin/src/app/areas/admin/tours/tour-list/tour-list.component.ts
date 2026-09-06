@@ -84,7 +84,10 @@ import { Observable } from 'rxjs';
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="tha-table-row"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                class="tha-table-row-hover tha-clickable-row"
+                (click)="navigateToTour(row.id)">
+            </tr>
           </table>
         }
         
@@ -102,13 +105,12 @@ import { Observable } from 'rxjs';
   `,
   styles: [`
     :host { display: block; }
-    .tha-table-row:hover { background: rgba(0,0,0,0.02); }
-    .dark-theme .tha-table-row:hover { background: rgba(255,255,255,0.02); }
   `]
 })
 export class TourListComponent implements OnInit {
   private readonly tourApi = inject(TourApiService);
   private readonly authService = inject(FirebaseAuthService);
+  private readonly router = inject(Router);
 
   readonly isSuperAdmin = this.authService.isSuperAdmin;
   readonly displayedColumns = ['tourWeRoadCode', 'tourName', 'country', 'tourLength', 'actions'];
@@ -117,5 +119,9 @@ export class TourListComponent implements OnInit {
 
   ngOnInit() {
     this.tours$ = this.tourApi.getAll$();
+  }
+
+  navigateToTour(id: string) {
+    this.router.navigate(['/admin/tours', id, 'edit']);
   }
 }

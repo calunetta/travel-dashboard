@@ -64,22 +64,22 @@
 .tha-card {
   background: var(--tha-surface);
   border-radius: var(--tha-radius-lg);
-  box-shadow: var(--tha-shadow-sm);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.05);
   padding: var(--tha-spacing-6);
   transition: all var(--tha-transition-normal);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 
   .dark-theme & {
-    background: rgba(10, 10, 15, 0.6);
+    background: rgba(30, 41, 59, 0.6);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(139, 155, 180, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   &:hover { 
-    box-shadow: var(--tha-shadow-md); 
-    border-color: rgba(var(--tha-primary-500-rgb, 63, 123, 217), 0.3);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15); 
+    border-color: rgba(59, 130, 246, 0.4);
   }
 }
 
