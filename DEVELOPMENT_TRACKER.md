@@ -741,3 +741,13 @@ Following the Master Rules for granular Git versioning, these are the logical co
 1. **Yarn Config:** Removed the `ignore-engines true` flag from `.yarnrc` which was crashing modern Yarn versions on GitHub Actions.
 2. **Package Manager Lock:** Added `"packageManager": "yarn@1.22.22"` to `package.json` to enforce Yarn Classic in the CI runner.
 3. **Lint Fixes:** Fixed a missing label association in `trip-form.component.ts` and updated `eslint.config.mjs` to correctly ignore compiled `functions/lib` outputs that were triggering false positive lint errors.
+
+### ✅ Step 23 - PART 1: Fix GitHub Actions & Firebase Hosting Configuration
+
+**Status:** Completed  
+**Date:** 2026-09-06  
+**Commit:** `fix(ci): sync firebase hosting public dir and github actions build command`
+
+**Key Changes:**
+1. **Firebase Hosting Configuration:** Updated `firebase.json` to set `hosting.public` to `dist/apps/travel-admin`, matching the exact output of the Nx browser builder.
+2. **GitHub Actions Workflow:** Updated `.github/workflows/ci-cd.yml` to remove the standalone build step and instead leverage the native `build_command` input in `FirebaseExtended/action-hosting-deploy@v0` to correctly orchestrate the build process right before deployment.

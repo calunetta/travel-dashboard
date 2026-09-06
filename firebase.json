@@ -7,7 +7,7 @@
     "rules": "storage.rules"
   },
   "hosting": {
-    "public": "dist/apps/travel-admin/browser",
+    "public": "dist/apps/travel-admin",
     "ignore": [
       "firebase.json",
       "**/.*",

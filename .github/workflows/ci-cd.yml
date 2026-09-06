@@ -34,9 +34,6 @@ jobs:
       - name: Unit Tests (Jest)
         run: yarn nx test travel-admin
 
-      - name: Build Application (Production)
-        run: yarn nx build travel-admin --configuration=production
-
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -44,6 +41,7 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TRAVEL_DASHBOARD_F98A3 }}'
           channelId: live
           projectId: travel-dashboard-f98a3
+          build_command: 'yarn nx build travel-admin --configuration=production'
 
       - name: Deploy Firebase Functions
         uses: w9jds/firebase-action@master
