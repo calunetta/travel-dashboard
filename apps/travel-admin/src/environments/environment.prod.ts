@@ -14,7 +14,8 @@ export const environment = {
     storageBucket: "travel-dashboard-f98a3.firebasestorage.app",
     messagingSenderId: "156926373440",
     appId: "1:156926373440:web:350d2caf98a6ec89a8b9a5",
-    measurementId: "G-C1KCEZ0CS3"
+    measurementId: "G-C1KCEZ0CS3",
+    vapidKey: "BOhyd6MjMK-IatlIAndWClzxZpzTaL6Dkrt-W0BOYCdgrlbqVTCpAW8o-I2B3JkVDswV3Mf04_yD8muvjlEgqOI",
   },
   weRoadApiBaseUrl: 'https://api-catalog.weroad.it',
 };
