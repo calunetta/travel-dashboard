@@ -838,3 +838,6 @@ Following the Master Rules for granular Git versioning, these are the logical co
 3. Validated that Cloud Function logic correctly targets `SUPER_ADMIN` users, checks `PAID` statuses, and calculates dates for cron triggers.
 4. Added `npm ci` step inside the `functions` folder to the GitHub Actions CI/CD pipeline to fix deployment failures.
 5. Provided a detailed manual configuration guide for SMTP and FCM setup.
+
+## Notification System UX Iteration - Part 1
+- **Native Gmail Calendar Invites & Email Enrichment**: Refactored `onTripCreated` Cloud Function to use `icalEvent` instead of attachments. Fetches relational `Tour` data to enrich the calendar invite and email body with the Tour Name, Destination, Trip Code, Start Date, End Date, and a deep link to the Admin Dashboard. Updated `index.spec.ts` to mock Relational data fetches and verify the icalEvent payload.

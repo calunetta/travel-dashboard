@@ -37,7 +37,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.onTripDeleted = exports.onTripCreated = exports.checkUpcomingTripsCron = exports.onDocumentStatusChanged = exports.onTripDocumentUploaded = void 0;
-const functions = __importStar(require("firebase-functions/v1"));
+const firestore_1 = require("firebase-functions/v2/firestore");
+const scheduler_1 = require("firebase-functions/v2/scheduler");
+const v2_1 = require("firebase-functions/v2");
 const admin = __importStar(require("firebase-admin"));
 const nodemailer = __importStar(require("nodemailer"));
 const ical_generator_1 = __importDefault(require("ical-generator"));
@@ -46,11 +48,10 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 const messaging = admin.messaging();
-exports.onTripDocumentUploaded = functions.firestore
-    .document('trips/{tripId}')
-    .onUpdate(async (change, context) => {
-    const beforeData = change.before.data();
-    const afterData = change.after.data();
+(0, v2_1.setGlobalOptions)({ region: 'europe-west1' });
+exports.onTripDocumentUploaded = (0, firestore_1.onDocumentUpdated)('trips/{tripId}', async (event) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
     const beforeDocs = beforeData.documents || [];
     const afterDocs = afterData.documents || [];
     // Check if a new document was added
@@ -80,11 +81,9 @@ exports.onTripDocumentUploaded = functions.firestore
         }
     }
 });
-exports.onDocumentStatusChanged = functions.firestore
-    .document('trips/{tripId}')
-    .onUpdate(async (change, context) => {
-    const beforeData = change.before.data();
-    const afterData = change.after.data();
+exports.onDocumentStatusChanged = (0, firestore_1.onDocumentUpdated)('trips/{tripId}', async (event) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
     const beforeDocs = beforeData.documents || [];
     const afterDocs = afterData.documents || [];
     let statusChangedToPaid = false;
@@ -116,7 +115,7 @@ exports.onDocumentStatusChanged = functions.firestore
         }
     }
 });
-exports.checkUpcomingTripsCron = functions.pubsub.schedule('every day 00:00').onRun(async (context) => {
+exports.checkUpcomingTripsCron = (0, scheduler_1.onSchedule)('every day 00:00', async (event) => {
     const today = new Date();
     const nextWeek = new Date(today);
     nextWeek.setDate(today.getDate() + 7);
@@ -151,26 +150,36 @@ exports.checkUpcomingTripsCron = functions.pubsub.schedule('every day 00:00').on
         }
     }
 });
-exports.onTripCreated = functions.firestore
-    .document('trips/{tripId}')
-    .onCreate(async (snap, context) => {
-    const tripData = snap.data();
+exports.onTripCreated = (0, firestore_1.onDocumentCreated)('trips/{tripId}', async (event) => {
+    const tripData = event.data?.data();
     if (!tripData || !tripData.startDate)
         return;
-    // 1. Calculate 1 month prior to startDate
+    // 1. Fetch Relational Data (Tour)
+    let tourName = 'Unknown Tour';
+    const tourId = tripData.tourId;
+    if (tourId) {
+        const tourDoc = await db.collection('tours').doc(tourId).get();
+        if (tourDoc.exists) {
+            tourName = tourDoc.data()?.tourName || 'Unknown Tour';
+        }
+    }
+    // 2. Calculate 1 month prior to startDate
     const startDate = new Date(tripData.startDate);
     const reminderDate = new Date(startDate);
     reminderDate.setMonth(reminderDate.getMonth() - 1);
-    // 2. Generate .ics attachment
-    const calendar = (0, ical_generator_1.default)({ name: 'Trip Reminders' });
+    // 3. Generate native calendar event
+    const calendar = (0, ical_generator_1.default)({ name: 'Trip Reminders', method: 'REQUEST' });
+    const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
+    const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
     calendar.createEvent({
         start: reminderDate,
         end: new Date(reminderDate.getTime() + 60 * 60 * 1000), // 1 hour event
-        summary: `Reminder: Trip ${tripData.destination} starts in 1 month`,
-        description: `Trip Code: ${tripData.code}\nDates: ${tripData.startDate} to ${tripData.endDate}`,
+        summary: `Reminder: Trip ${tourName} - ${tripData.destination} starts in 1 month`,
+        description: `Tour Name: ${tourName}\\nDestination: ${tripData.destination}\\nTrip Code: ${tripData.code}\\nDates: ${tripData.startDate} to ${tripData.endDate}\\n\\nView in Admin: ${tripUrl}`,
+        organizer: { name: 'Travel Admin', email: 'noreply@travelhandling.com' }
     });
     const icsContent = calendar.toString();
-    // 3. Find SUPER_ADMIN emails
+    // 4. Find SUPER_ADMIN emails
     const superAdminsSnapshot = await db.collection('admins').where('role', '==', 'SUPER_ADMIN').get();
     const emails = [];
     superAdminsSnapshot.forEach((doc) => {
@@ -181,7 +190,7 @@ exports.onTripCreated = functions.firestore
     });
     if (emails.length === 0)
         return;
-    // 4. Send email
+    // 5. Send email
     const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.ethereal.email',
         port: Number(process.env.SMTP_PORT) || 587,
@@ -190,24 +199,30 @@ exports.onTripCreated = functions.firestore
             pass: process.env.SMTP_PASS || 'ethereal.pass',
         },
     });
+    const htmlBody = `
+      <h2>New Trip Created</h2>
+      <p>A new trip has been created. Please review the details below:</p>
+      <ul>
+        <li><strong>Tour:</strong> ${tourName}</li>
+        <li><strong>Destination:</strong> ${tripData.destination}</li>
+        <li><strong>Trip Code:</strong> ${tripData.code}</li>
+        <li><strong>Dates:</strong> ${tripData.startDate} to ${tripData.endDate}</li>
+      </ul>
+      <p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>
+    `;
     await transporter.sendMail({
         from: '"Travel Admin" <noreply@travelhandling.com>',
         to: emails.join(', '),
-        subject: `New Trip Created: ${tripData.destination}`,
-        text: `A new trip to ${tripData.destination} has been created. Attached is a calendar reminder for 1 month prior to the start date.`,
-        attachments: [
-            {
-                filename: 'reminder.ics',
-                content: icsContent,
-                contentType: 'text/calendar'
-            }
-        ]
+        subject: `New Trip Created: ${tourName} - ${tripData.destination}`,
+        html: htmlBody,
+        icalEvent: {
+            method: 'request',
+            content: icsContent
+        }
     });
 });
-exports.onTripDeleted = functions.firestore
-    .document('trips/{tripId}')
-    .onDelete(async (snap, context) => {
-    const tripId = context.params.tripId;
+exports.onTripDeleted = (0, firestore_1.onDocumentDeleted)('trips/{tripId}', async (event) => {
+    const tripId = event.params.tripId;
     try {
         const bucket = admin.storage().bucket();
         await bucket.deleteFiles({

@@ -36,9 +36,10 @@ jest.mock('firebase-admin', () => ({
         })),
     })),
 }));
+const sendMailMock = jest.fn().mockResolvedValue(true);
 jest.mock('nodemailer', () => ({
     createTransport: jest.fn(() => ({
-        sendMail: jest.fn().mockResolvedValue(true),
+        sendMail: sendMailMock,
     })),
 }));
 // Import our functions AFTER mocking
@@ -52,7 +53,7 @@ describe('onTripDocumentUploaded', () => {
         const beforeSnap = { data: () => ({ documents: [{ id: 'doc1' }] }) };
         const afterSnap = { data: () => ({ documents: [{ id: 'doc1' }] }) };
         const change = { before: beforeSnap, after: afterSnap };
-        await index_1.onTripDocumentUploaded.run(change, { params: { tripId: '123' } });
+        await index_1.onTripDocumentUploaded.run({ data: change, params: { tripId: '123' } });
         expect(sendEachForMulticastMock).not.toHaveBeenCalled();
     });
     it('should send notification to admins if a new document is added', async () => {
@@ -66,7 +67,7 @@ describe('onTripDocumentUploaded', () => {
         };
         const change = { before: beforeSnap, after: afterSnap };
         dbDocGetMock.mockResolvedValue({ data: () => ({ fcmToken: 'token123' }) });
-        await index_1.onTripDocumentUploaded.run(change, { params: { tripId: '123' } });
+        await index_1.onTripDocumentUploaded.run({ data: change, params: { tripId: '123' } });
         expect(sendEachForMulticastMock).toHaveBeenCalledWith(expect.objectContaining({
             tokens: ['token123'],
             notification: expect.objectContaining({
@@ -80,7 +81,7 @@ describe('onDocumentStatusChanged', () => {
         const beforeSnap = { data: () => ({ documents: [{ id: 'doc1', paymentStatus: 'TO_BE_PAID' }] }) };
         const afterSnap = { data: () => ({ documents: [{ id: 'doc1', paymentStatus: 'TO_BE_PAID' }] }) };
         const change = { before: beforeSnap, after: afterSnap };
-        await index_1.onDocumentStatusChanged.run(change, { params: { tripId: '123' } });
+        await index_1.onDocumentStatusChanged.run({ data: change, params: { tripId: '123' } });
         expect(sendEachForMulticastMock).not.toHaveBeenCalled();
     });
     it('should notify SUPER_ADMINs if document status changes to PAID', async () => {
@@ -93,7 +94,7 @@ describe('onDocumentStatusChanged', () => {
         };
         const change = { before: beforeSnap, after: afterSnap };
         dbGetMock.mockResolvedValue([{ data: () => ({ fcmToken: 'superToken1' }) }]);
-        await index_1.onDocumentStatusChanged.run(change, { params: { tripId: '123' } });
+        await index_1.onDocumentStatusChanged.run({ data: change, params: { tripId: '123' } });
         expect(sendEachForMulticastMock).toHaveBeenCalledWith(expect.objectContaining({
             tokens: ['superToken1'],
             notification: expect.objectContaining({
@@ -103,17 +104,29 @@ describe('onDocumentStatusChanged', () => {
     });
 });
 describe('onTripCreated', () => {
-    it('should send an email with an ics attachment to SUPER_ADMINs', async () => {
+    it('should send an email with an icalEvent attachment to SUPER_ADMINs', async () => {
         const snap = {
             data: () => ({
+                tourId: 'tour123',
                 destination: 'Japan',
                 code: 'JP-2026',
                 startDate: '2026-10-01',
                 endDate: '2026-10-15'
             })
         };
-        dbGetMock.mockResolvedValue([{ data: () => ({ email: 'super@example.com' }) }]);
-        await index_1.onTripCreated.run(snap, {});
+        // Mock the get() call to return super admin, and also the tour fetch
+        dbDocGetMock.mockResolvedValueOnce({ exists: true, data: () => ({ tourName: 'Awesome Japan Tour' }) }); // Tour mock
+        dbGetMock.mockResolvedValueOnce([{ data: () => ({ email: 'super@example.com' }) }]); // Admin mock
+        await index_1.onTripCreated.run({ data: snap, params: { tripId: 'trip_123' } });
+        expect(sendMailMock).toHaveBeenCalledWith(expect.objectContaining({
+            to: 'super@example.com',
+            subject: 'New Trip Created: Awesome Japan Tour - Japan',
+            html: expect.stringContaining('Awesome Japan Tour'),
+            icalEvent: expect.objectContaining({
+                method: 'request',
+                content: expect.any(String)
+            })
+        }));
     });
 });
 describe('checkUpcomingTripsCron', () => {
@@ -133,7 +146,7 @@ describe('checkUpcomingTripsCron', () => {
         dbDocGetMock.mockResolvedValue({
             data: () => ({ fcmToken: 'adminToken1' })
         });
-        await index_1.checkUpcomingTripsCron.run({}, {});
+        await index_1.checkUpcomingTripsCron.run({ data: {} });
         expect(sendEachForMulticastMock).toHaveBeenCalledWith(expect.objectContaining({
             tokens: ['adminToken1'],
             notification: expect.objectContaining({
@@ -145,7 +158,7 @@ describe('checkUpcomingTripsCron', () => {
 describe('onTripDeleted', () => {
     it('should delete files from storage', async () => {
         const snap = { data: () => ({}) };
-        await index_1.onTripDeleted.run(snap, { params: { tripId: '123' } });
+        await index_1.onTripDeleted.run({ data: snap, params: { tripId: '123' } });
         expect(deleteFilesMock).toHaveBeenCalledWith({
             prefix: 'trips/123/documents/'
         });

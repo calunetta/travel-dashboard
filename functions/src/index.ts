@@ -1,4 +1,6 @@
-import * as functions from 'firebase-functions/v1';
+import { onDocumentUpdated, onDocumentCreated, onDocumentDeleted } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import { setGlobalOptions } from "firebase-functions/v2";
 import * as admin from 'firebase-admin';
 import * as nodemailer from 'nodemailer';
 import ical from 'ical-generator';
@@ -9,11 +11,11 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const messaging = admin.messaging();
 
-export const onTripDocumentUploaded = functions.firestore
-  .document('trips/{tripId}')
-  .onUpdate(async (change: any, context: any) => {
-    const beforeData = change.before.data();
-    const afterData = change.after.data();
+setGlobalOptions({ region: 'europe-west1' });
+
+export const onTripDocumentUploaded = onDocumentUpdated('trips/{tripId}', async (event: any) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
 
     interface TripDoc {
       id: string;
@@ -58,11 +60,9 @@ export const onTripDocumentUploaded = functions.firestore
     }
   });
 
-export const onDocumentStatusChanged = functions.firestore
-  .document('trips/{tripId}')
-  .onUpdate(async (change: any, context: any) => {
-    const beforeData = change.before.data();
-    const afterData = change.after.data();
+export const onDocumentStatusChanged = onDocumentUpdated('trips/{tripId}', async (event: any) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
 
     interface TripDoc {
       id: string;
@@ -107,7 +107,7 @@ export const onDocumentStatusChanged = functions.firestore
     }
   });
 
-export const checkUpcomingTripsCron = functions.pubsub.schedule('every day 00:00').onRun(async (context: any) => {
+export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event: any) => {
   const today = new Date();
   const nextWeek = new Date(today);
   nextWeek.setDate(today.getDate() + 7);
@@ -146,29 +146,41 @@ export const checkUpcomingTripsCron = functions.pubsub.schedule('every day 00:00
   }
 });
 
-export const onTripCreated = functions.firestore
-  .document('trips/{tripId}')
-  .onCreate(async (snap: any, context: any) => {
-    const tripData = snap.data();
+export const onTripCreated = onDocumentCreated('trips/{tripId}', async (event: any) => {
+    const tripData = event.data?.data();
     if (!tripData || !tripData.startDate) return;
     
-    // 1. Calculate 1 month prior to startDate
+    // 1. Fetch Relational Data (Tour)
+    let tourName = 'Unknown Tour';
+    const tourId = tripData.tourId;
+    if (tourId) {
+      const tourDoc = await db.collection('tours').doc(tourId).get();
+      if (tourDoc.exists) {
+        tourName = tourDoc.data()?.tourName || 'Unknown Tour';
+      }
+    }
+
+    // 2. Calculate 1 month prior to startDate
     const startDate = new Date(tripData.startDate);
     const reminderDate = new Date(startDate);
     reminderDate.setMonth(reminderDate.getMonth() - 1);
     
-    // 2. Generate .ics attachment
-    const calendar = ical({ name: 'Trip Reminders' });
+    // 3. Generate native calendar event
+    const calendar = ical({ name: 'Trip Reminders', method: 'REQUEST' as any });
+    const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
+    const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
+    
     calendar.createEvent({
       start: reminderDate,
       end: new Date(reminderDate.getTime() + 60 * 60 * 1000), // 1 hour event
-      summary: `Reminder: Trip ${tripData.destination} starts in 1 month`,
-      description: `Trip Code: ${tripData.code}\nDates: ${tripData.startDate} to ${tripData.endDate}`,
+      summary: `Reminder: Trip ${tourName} - ${tripData.destination} starts in 1 month`,
+      description: `Tour Name: ${tourName}\\nDestination: ${tripData.destination}\\nTrip Code: ${tripData.code}\\nDates: ${tripData.startDate} to ${tripData.endDate}\\n\\nView in Admin: ${tripUrl}`,
+      organizer: { name: 'Travel Admin', email: 'noreply@travelhandling.com' }
     });
     
     const icsContent = calendar.toString();
     
-    // 3. Find SUPER_ADMIN emails
+    // 4. Find SUPER_ADMIN emails
     const superAdminsSnapshot = await db.collection('admins').where('role', '==', 'SUPER_ADMIN').get();
     const emails: string[] = [];
     superAdminsSnapshot.forEach((doc: any) => {
@@ -180,7 +192,7 @@ export const onTripCreated = functions.firestore
     
     if (emails.length === 0) return;
     
-    // 4. Send email
+    // 5. Send email
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.ethereal.email',
       port: Number(process.env.SMTP_PORT) || 587,
@@ -190,25 +202,32 @@ export const onTripCreated = functions.firestore
       },
     });
     
+    const htmlBody = `
+      <h2>New Trip Created</h2>
+      <p>A new trip has been created. Please review the details below:</p>
+      <ul>
+        <li><strong>Tour:</strong> ${tourName}</li>
+        <li><strong>Destination:</strong> ${tripData.destination}</li>
+        <li><strong>Trip Code:</strong> ${tripData.code}</li>
+        <li><strong>Dates:</strong> ${tripData.startDate} to ${tripData.endDate}</li>
+      </ul>
+      <p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>
+    `;
+
     await transporter.sendMail({
       from: '"Travel Admin" <noreply@travelhandling.com>',
       to: emails.join(', '),
-      subject: `New Trip Created: ${tripData.destination}`,
-      text: `A new trip to ${tripData.destination} has been created. Attached is a calendar reminder for 1 month prior to the start date.`,
-      attachments: [
-        {
-          filename: 'reminder.ics',
-          content: icsContent,
-          contentType: 'text/calendar'
-        }
-      ]
+      subject: `New Trip Created: ${tourName} - ${tripData.destination}`,
+      html: htmlBody,
+      icalEvent: {
+        method: 'request',
+        content: icsContent
+      }
     });
   });
 
-export const onTripDeleted = functions.firestore
-  .document('trips/{tripId}')
-  .onDelete(async (snap: any, context: any) => {
-    const tripId = context.params.tripId;
+export const onTripDeleted = onDocumentDeleted('trips/{tripId}', async (event: any) => {
+    const tripId = event.params.tripId;
     try {
       const bucket = admin.storage().bucket();
       await bucket.deleteFiles({

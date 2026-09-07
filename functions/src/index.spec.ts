@@ -11,20 +11,11 @@ jest.mock('firebase-admin', () => ({
   initializeApp: jest.fn(),
   firestore: jest.fn(() => ({
     collection: jest.fn((colName) => {
-      if (colName === 'admins') {
-        return {
-          doc: jest.fn(() => ({ get: dbDocGetMock })),
-          where: dbWhereMock,
-          get: dbGetMock,
-        };
-      }
-      if (colName === 'trips') {
-        return {
-          where: dbWhereMock,
-          get: dbGetMock,
-        };
-      }
-      return {};
+      return {
+        doc: jest.fn(() => ({ get: dbDocGetMock })),
+        where: dbWhereMock,
+        get: dbGetMock,
+      };
     })
   })),
   messaging: jest.fn(() => ({
@@ -37,9 +28,10 @@ jest.mock('firebase-admin', () => ({
   })),
 }));
 
+const sendMailMock = jest.fn().mockResolvedValue(true);
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn(() => ({
-    sendMail: jest.fn().mockResolvedValue(true),
+    sendMail: sendMailMock,
   })),
 }));
 
@@ -64,7 +56,7 @@ import {
       const afterSnap = { data: () => ({ documents: [{ id: 'doc1' }] }) };
       const change = { before: beforeSnap, after: afterSnap };
       
-      await onTripDocumentUploaded.run(change as any, { params: { tripId: '123' } } as any);
+      await onTripDocumentUploaded.run({ data: change, params: { tripId: '123' } } as any);
       expect(sendEachForMulticastMock).not.toHaveBeenCalled();
     });
 
@@ -81,7 +73,7 @@ import {
       
       dbDocGetMock.mockResolvedValue({ data: () => ({ fcmToken: 'token123' }) });
       
-      await onTripDocumentUploaded.run(change as any, { params: { tripId: '123' } } as any);
+      await onTripDocumentUploaded.run({ data: change, params: { tripId: '123' } } as any);
       
       expect(sendEachForMulticastMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -100,7 +92,7 @@ import {
       const afterSnap = { data: () => ({ documents: [{ id: 'doc1', paymentStatus: 'TO_BE_PAID' }] }) };
       const change = { before: beforeSnap, after: afterSnap };
       
-      await onDocumentStatusChanged.run(change as any, { params: { tripId: '123' } } as any);
+      await onDocumentStatusChanged.run({ data: change, params: { tripId: '123' } } as any);
       expect(sendEachForMulticastMock).not.toHaveBeenCalled();
     });
 
@@ -116,7 +108,7 @@ import {
       
       dbGetMock.mockResolvedValue([{ data: () => ({ fcmToken: 'superToken1' }) }]);
       
-      await onDocumentStatusChanged.run(change as any, { params: { tripId: '123' } } as any);
+      await onDocumentStatusChanged.run({ data: change, params: { tripId: '123' } } as any);
 
       expect(sendEachForMulticastMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -130,9 +122,10 @@ import {
   });
 
   describe('onTripCreated', () => {
-    it('should send an email with an ics attachment to SUPER_ADMINs', async () => {
+    it('should send an email with an icalEvent attachment to SUPER_ADMINs', async () => {
       const snap = { 
         data: () => ({ 
+          tourId: 'tour123',
           destination: 'Japan',
           code: 'JP-2026',
           startDate: '2026-10-01',
@@ -140,8 +133,23 @@ import {
         }) 
       };
 
-      dbGetMock.mockResolvedValue([{ data: () => ({ email: 'super@example.com' }) }]);
-      await onTripCreated.run(snap as any, {} as any);
+      // Mock the get() call to return super admin, and also the tour fetch
+      dbDocGetMock.mockResolvedValueOnce({ exists: true, data: () => ({ tourName: 'Awesome Japan Tour' }) }); // Tour mock
+      dbGetMock.mockResolvedValueOnce([{ data: () => ({ email: 'super@example.com' }) }]); // Admin mock
+      
+      await onTripCreated.run({ data: snap, params: { tripId: 'trip_123' } } as any);
+
+      expect(sendMailMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'super@example.com',
+          subject: 'New Trip Created: Awesome Japan Tour - Japan',
+          html: expect.stringContaining('Awesome Japan Tour'),
+          icalEvent: expect.objectContaining({
+            method: 'request',
+            content: expect.any(String)
+          })
+        })
+      );
     });
   });
 
@@ -164,7 +172,7 @@ import {
         data: () => ({ fcmToken: 'adminToken1' })
       });
 
-      await checkUpcomingTripsCron.run({} as any, {} as any);
+      await checkUpcomingTripsCron.run({ data: {} } as any);
 
       expect(sendEachForMulticastMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -180,7 +188,7 @@ import {
   describe('onTripDeleted', () => {
     it('should delete files from storage', async () => {
       const snap = { data: () => ({}) };
-      await onTripDeleted.run(snap as any, { params: { tripId: '123' } } as any);
+      await onTripDeleted.run({ data: snap, params: { tripId: '123' } } as any);
       
       expect(deleteFilesMock).toHaveBeenCalledWith({
         prefix: 'trips/123/documents/'
