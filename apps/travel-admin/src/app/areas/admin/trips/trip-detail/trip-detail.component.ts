@@ -28,7 +28,7 @@ import { TripApiService, TripStorageService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { FirestoreId } from 'shared-models';
-import { Trip, TripDocument } from 'trips-models';
+import { TripDocument } from 'trips-models';
 import { switchMap, shareReplay } from 'rxjs';
 import { RoomType } from 'trips-models';
 import { calculateHotelCost } from 'hotels-mapping-and-utils';
@@ -290,7 +290,7 @@ import { calculateHotelCost } from 'hotels-mapping-and-utils';
                         <button
                           mat-icon-button
                           color="warn"
-                          (click)="deleteDocument(t.id, doc, t.documents)"
+                          (click)="deleteDocument(t.id, doc)"
                           [disabled]="deletingDocId() === doc.id"
                           aria-label="Delete document"
                           matTooltip="Delete document"
@@ -472,8 +472,7 @@ export class TripDetailComponent implements OnInit {
 
   async deleteDocument(
     tripId: FirestoreId,
-    document: TripDocument,
-    currentDocuments: ReadonlyArray<TripDocument>
+    document: TripDocument
   ): Promise<void> {
     this.deletingDocId.set(document.id);
     try {

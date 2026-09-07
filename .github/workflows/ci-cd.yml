@@ -48,6 +48,13 @@ jobs:
       - name: Install Firebase Functions Dependencies
         run: cd functions && npm ci
 
+      - name: Generate .env for Firebase Functions
+        run: |
+          echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> functions/.env
+          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> functions/.env
+          echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> functions/.env
+          echo "SMTP_PASS=${{ secrets.SMTP_PASS }}" >> functions/.env
+
       - name: Deploy Firebase Functions
         uses: w9jds/firebase-action@master
         with:

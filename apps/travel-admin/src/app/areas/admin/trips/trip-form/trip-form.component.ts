@@ -24,7 +24,7 @@ import { CreateTripPayload, UpdateTripPayload, DEFAULT_ROOM_COMPOSITION } from '
 import type { Tour } from 'tours-models';
 import type { Admin } from 'auth-models';
 import { FirestoreId, Nationality, FIREBASE_STORAGE_TOKEN } from 'shared-models';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
 import { Subscription, firstValueFrom, combineLatest } from 'rxjs';
 import { startWith } from 'rxjs/operators';
 
