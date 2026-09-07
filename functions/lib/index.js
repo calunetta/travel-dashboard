@@ -36,12 +36,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onTripCreated = exports.checkUpcomingTripsCron = exports.onDocumentStatusChanged = exports.onTripDocumentUploaded = void 0;
-const functions = __importStar(require("firebase-functions"));
+exports.onTripDeleted = exports.onTripCreated = exports.checkUpcomingTripsCron = exports.onDocumentStatusChanged = exports.onTripDocumentUploaded = void 0;
+const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const nodemailer = __importStar(require("nodemailer"));
 const ical_generator_1 = __importDefault(require("ical-generator"));
-admin.initializeApp();
+if (!admin.apps.length) {
+    admin.initializeApp();
+}
 const db = admin.firestore();
 const messaging = admin.messaging();
 exports.onTripDocumentUploaded = functions.firestore
@@ -97,7 +99,7 @@ exports.onDocumentStatusChanged = functions.firestore
         // Find all super admins
         const superAdminsSnapshot = await db.collection('admins').where('role', '==', 'SUPER_ADMIN').get();
         const tokens = [];
-        superAdminsSnapshot.forEach(doc => {
+        superAdminsSnapshot.forEach((doc) => {
             const token = doc.data().fcmToken;
             if (token) {
                 tokens.push(token);
@@ -171,7 +173,7 @@ exports.onTripCreated = functions.firestore
     // 3. Find SUPER_ADMIN emails
     const superAdminsSnapshot = await db.collection('admins').where('role', '==', 'SUPER_ADMIN').get();
     const emails = [];
-    superAdminsSnapshot.forEach(doc => {
+    superAdminsSnapshot.forEach((doc) => {
         const email = doc.data().email;
         if (email) {
             emails.push(email);
@@ -201,5 +203,20 @@ exports.onTripCreated = functions.firestore
             }
         ]
     });
+});
+exports.onTripDeleted = functions.firestore
+    .document('trips/{tripId}')
+    .onDelete(async (snap, context) => {
+    const tripId = context.params.tripId;
+    try {
+        const bucket = admin.storage().bucket();
+        await bucket.deleteFiles({
+            prefix: `trips/${tripId}/documents/`
+        });
+        console.log(`Successfully deleted storage files for trip: ${tripId}`);
+    }
+    catch (error) {
+        console.error(`Failed to delete storage files for trip: ${tripId}`, error);
+    }
 });
 //# sourceMappingURL=index.js.map
