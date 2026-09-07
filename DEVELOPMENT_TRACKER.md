@@ -841,3 +841,10 @@ Following the Master Rules for granular Git versioning, these are the logical co
 
 ## Notification System UX Iteration - Part 1
 - **Native Gmail Calendar Invites & Email Enrichment**: Refactored `onTripCreated` Cloud Function to use `icalEvent` instead of attachments. Fetches relational `Tour` data to enrich the calendar invite and email body with the Tour Name, Destination, Trip Code, Start Date, End Date, and a deep link to the Admin Dashboard. Updated `index.spec.ts` to mock Relational data fetches and verify the icalEvent payload.
+
+## Notification System UX Iteration - Part 2
+- **Enriched Push Notifications & Deep Links**: Updated FCM push notifications in `checkUpcomingTripsCron`, `onTripDocumentUploaded`, and `onDocumentStatusChanged`. Added `webpush.fcmOptions.link` to all payloads so notifications open the specific Trip View in the browser. Included the assigned Coordinator's Name, Email, and Phone in the `checkUpcomingTripsCron` missing documents alert. Added the uploader's name (coordinator) and the Trip Code to the `onTripDocumentUploaded` notification body. Verified with updated `index.spec.ts` unit tests.
+
+## Notification System UX Iteration - Part 3 & 4
+- **Part 3 (Document Rejection Flow)**: Skipped as per user request.
+- **Part 4 (Testing)**: Validated full test coverage for email enrichment and push notifications in Jest (`functions/src/index.spec.ts`). No new Cypress UI tests were required since the rejection flow was skipped and no frontend UI was altered. Also updated outdated mock schemas in Cypress test suites (`admin-trips.cy.ts`, `candidacy-flow.cy.ts`).

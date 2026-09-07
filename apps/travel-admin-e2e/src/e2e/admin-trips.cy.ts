@@ -30,7 +30,8 @@ describe('Admin Trips Flow', () => {
                   name: 'projects/travel-handling-app/databases/(default)/documents/trips/mock-trip-1',
                   fields: {
                     destination: { stringValue: 'Japan' },
-                    tourWeRoadCode: { stringValue: 'JP-2026' },
+                    code: { stringValue: 'JP-2026' },
+                    tourId: { stringValue: 'tour123' },
                     startDate: { stringValue: '2026-12-01' },
                     endDate: { stringValue: '2026-12-15' },
                     status: { stringValue: 'PUBLISHED' },

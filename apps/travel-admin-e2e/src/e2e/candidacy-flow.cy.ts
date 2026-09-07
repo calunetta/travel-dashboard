@@ -35,6 +35,8 @@ describe('Coordinator Candidacy Flow & Admin Assignment', () => {
                   name: 'projects/travel-handling-app/databases/(default)/documents/trips/mock-trip',
                   fields: {
                     destination: { stringValue: 'Japan' },
+                    code: { stringValue: 'JP-2026' },
+                    tourId: { stringValue: 'tour123' },
                     status: { stringValue: 'PUBLISHED' },
                     nationality: { stringValue: 'IT' },
                     startDate: { stringValue: '2026-10-01' },

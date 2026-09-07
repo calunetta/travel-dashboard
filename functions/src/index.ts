@@ -35,6 +35,18 @@ export const onTripDocumentUploaded = onDocumentUpdated('trips/{tripId}', async 
       );
 
       if (addedDocs.length > 0) {
+        let uploaderName = 'Unknown Uploader';
+        if (afterData.coordinatorId) {
+          const coordDoc = await db.collection('coordinators').doc(afterData.coordinatorId).get();
+          if (coordDoc.exists) {
+            const cData = coordDoc.data();
+            uploaderName = `${cData?.name} ${cData?.surname}`;
+          }
+        }
+
+        const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
+        const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
+
         const adminIds = afterData.adminIds || [];
         if (adminIds.length > 0) {
           const tokens: string[] = [];
@@ -51,8 +63,13 @@ export const onTripDocumentUploaded = onDocumentUpdated('trips/{tripId}', async 
               tokens,
               notification: {
                 title: 'New Trip Document',
-                body: `A new document has been uploaded for trip ${afterData.destination}.`,
+                body: `A new document has been uploaded for trip ${afterData.destination} (${afterData.code}) by ${uploaderName}.`,
               },
+              webpush: {
+                fcmOptions: {
+                  link: tripUrl
+                }
+              }
             });
           }
         }
@@ -95,6 +112,9 @@ export const onDocumentStatusChanged = onDocumentUpdated('trips/{tripId}', async
         }
       });
 
+      const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
+      const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
+
       if (tokens.length > 0) {
         await messaging.sendEachForMulticast({
           tokens,
@@ -102,6 +122,11 @@ export const onDocumentStatusChanged = onDocumentUpdated('trips/{tripId}', async
             title: 'Payment Completed',
             body: `A document for trip ${afterData.destination} has been paid.`,
           },
+          webpush: {
+            fcmOptions: {
+              link: tripUrl
+            }
+          }
         });
       }
     }
@@ -121,6 +146,18 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
     const data = doc.data();
     const docs = data.documents || [];
     if (docs.length === 0) {
+      let coordInfo = 'No coordinator assigned';
+      if (data.coordinatorId) {
+        const coordDoc = await db.collection('coordinators').doc(data.coordinatorId).get();
+        if (coordDoc.exists) {
+          const cData = coordDoc.data();
+          coordInfo = `Name: ${cData?.name} ${cData?.surname}, Email: ${cData?.email}, Phone: ${cData?.phone}`;
+        }
+      }
+
+      const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
+      const tripUrl = `https://${adminDomain}/admin/trips/${doc.id}`;
+
       const adminIds = data.adminIds || [];
       if (adminIds.length > 0) {
         const tokens: string[] = [];
@@ -137,8 +174,13 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
             tokens,
             notification: {
               title: 'Action Required: Missing Documents',
-              body: `The trip ${data.destination} starts in exactly one week and has no documents uploaded!`,
+              body: `The trip ${data.destination} starts in exactly one week and has no documents uploaded!\\nCoordinator: ${coordInfo}`,
             },
+            webpush: {
+              fcmOptions: {
+                link: tripUrl
+              }
+            }
           });
         }
       }
