@@ -107,4 +107,19 @@ export class TourApiService {
       updatedAt: data.updatedAt ? timestampToIso(data.updatedAt) : '',
     };
   }
+
+  async delete(id: FirestoreId): Promise<void> {
+    const docRef = doc(this.firestore, `${this.collectionName}/${id}`);
+    const { deleteDoc } = await import('firebase/firestore');
+    await deleteDoc(docRef);
+  }
+
+  async deleteMany(ids: FirestoreId[]): Promise<void> {
+    const { writeBatch } = await import('firebase/firestore');
+    const batch = writeBatch(this.firestore);
+    ids.forEach(id => {
+      batch.delete(doc(this.firestore, this.collectionName, id));
+    });
+    await batch.commit();
+  }
 }

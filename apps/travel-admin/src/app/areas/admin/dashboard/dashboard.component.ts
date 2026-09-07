@@ -41,7 +41,6 @@ import { CandidacyStatus } from 'coordinators-models';
           <div class="card-content tha-flex-row">
             <div class="card-text">
               <div class="card-label">Pending Candidacies</div>
-              <div class="card-value">{{ pendingCandidaciesCount() ?? '-' }}</div>
             </div>
             <div class="icon-container warning-icon">
               <mat-icon>assignment_late</mat-icon>
@@ -54,7 +53,6 @@ import { CandidacyStatus } from 'coordinators-models';
           <div class="card-content tha-flex-row">
             <div class="card-text">
               <div class="card-label">Coordinators</div>
-              <div class="card-value">{{ coordinatorsCount() ?? '-' }}</div>
             </div>
             <div class="icon-container success-icon">
               <mat-icon>group</mat-icon>
@@ -238,18 +236,6 @@ export class DashboardComponent {
 
   readonly toursCount = toSignal(
     this.tourApi.getAll$().pipe(map(tours => tours.length)),
-    { initialValue: null }
-  );
-
-  readonly coordinatorsCount = toSignal(
-    this.coordinatorApi.getAll$().pipe(map(c => c.length)),
-    { initialValue: null }
-  );
-
-  readonly pendingCandidaciesCount = toSignal(
-    this.coordinatorApi.getAllCandidacies$().pipe(
-      map(candidacies => candidacies.filter(c => c.status === CandidacyStatus.PENDING).length)
-    ),
     { initialValue: null }
   );
 }

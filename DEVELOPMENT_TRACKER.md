@@ -812,6 +812,12 @@ Following the Master Rules for granular Git versioning, these are the logical co
 **Status:** Completed  
 **Date:** 2026-09-07  
 **Key Changes:**
+### Phase 3: E2E Testing & Coverage
+- [x] **Task 31**: Write Cypress tests for Admin login/RBAC bypass and Navigation.
+- [x] **Task 32**: Implement `admin-trips.cy.ts` (CSV import, batch delete).
+- [x] **Task 33**: Implement `candidacy-flow.cy.ts` (Public form submission, Admin matchmaking assignment).
+- [x] **Task 34**: Create `smoke.cy.ts` (Visit all major routes, verify empty state rendering).
+- [x] **Task 35**: Execute `nx e2e travel-admin-e2e` to verify full coverage and correct stream mocking for `onSnapshot` queries.
 1. Fixed failing Angular component tests in list and form views.
 2. Verified Near 100% test coverage using Jest/jsdom.
 
@@ -822,3 +828,13 @@ Following the Master Rules for granular Git versioning, these are the logical co
 1. Fixed routing issues in `app.routes.ts` where wildcard routes were erroneously redirecting to the deprecated `/public` path instead of `/login`.
 2. Updated Cypress E2E specs (`app.cy.ts`, `candidacy-flow.cy.ts`) to align with the new dynamic `/:tourWeRoadCode/public` path.
 3. Successfully executed `npx nx e2e travel-admin-e2e`, verifying that 100% of the Cypress E2E test suite is passing.
+
+### ✅ Step 31 - PART 4: Cloud Functions Unit Testing & CI/CD Fixes
+**Status:** Completed  
+**Date:** 2026-09-07  
+**Key Changes:**
+1. Initialized `jest` and `firebase-functions-test` in the `functions` directory.
+2. Wrote full unit test coverage (`index.spec.ts`) for the 5 Cloud Functions (onTripDocumentUploaded, onDocumentStatusChanged, onTripCreated, onTripDeleted, checkUpcomingTripsCron).
+3. Validated that Cloud Function logic correctly targets `SUPER_ADMIN` users, checks `PAID` statuses, and calculates dates for cron triggers.
+4. Added `npm ci` step inside the `functions` folder to the GitHub Actions CI/CD pipeline to fix deployment failures.
+5. Provided a detailed manual configuration guide for SMTP and FCM setup.

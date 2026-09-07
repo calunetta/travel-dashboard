@@ -54,7 +54,7 @@ import { shareReplay, switchMap, map } from 'rxjs';
       <mat-tab-group animationDuration="0ms" class="tha-card tha-shadow-sm" style="background: var(--tha-surface);">
         <!-- Profile Tab -->
         <mat-tab label="Profile">
-          <div class="tha-p-6 tha-grid-2" style="gap: var(--tha-spacing-8);">
+          <div class="tha-grid-2" style="gap: var(--tha-spacing-8);">
             
             <!-- Left Col: Details -->
             <div>
@@ -109,7 +109,7 @@ import { shareReplay, switchMap, map } from 'rxjs';
 
         <!-- Assignments Tab -->
         <mat-tab label="Assignments">
-          <div class="tha-p-6">
+          <div>
             <h3 class="tha-text-lg tha-font-bold tha-mb-4">Trip Assignments</h3>
             
             <div *ngIf="assignedTrips()?.length === 0" class="tha-text-muted tha-p-4 tha-text-center">

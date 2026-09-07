@@ -17,7 +17,13 @@ import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { Trip } from 'trips-models';
-import { Observable, combineLatest, map } from 'rxjs';
+import { Observable, combineLatest, map, firstValueFrom } from 'rxjs';
+import { SelectionModel } from '@angular/cdk/collections';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { ConfirmDialogComponent, type ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { FirebaseAuthService } from 'auth-api-requests';
 import { calculateHotelCost } from 'hotels-mapping-and-utils';
 
 /** View model that combines trip data with joined hotel and coordinator names for display. */
@@ -41,6 +47,9 @@ interface TripViewModel extends Trip {
     MatInputModule,
     MatFormFieldModule,
     MatDialogModule,
+    MatCheckboxModule,
+    MatMenuModule,
+    MatSnackBarModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -48,6 +57,14 @@ interface TripViewModel extends Trip {
       <div class="tha-flex-row tha-mb-6" style="justify-content: space-between; align-items: center;">
         <h1 class="tha-text-3xl tha-font-bold tha-mb-0">Trips</h1>
         <div class="tha-flex-row tha-gap-4">
+          <button 
+            *ngIf="isSuperAdmin() && selection.selected.length > 0"
+            mat-flat-button 
+            color="warn" 
+            (click)="deleteSelected()"
+          >
+            <mat-icon>delete</mat-icon> Delete Selected ({{ selection.selected.length }})
+          </button>
           <button mat-stroked-button color="primary" (click)="openBatchImport()">
             <mat-icon>upload_file</mat-icon> Batch Import (CSV)
           </button>
@@ -69,6 +86,30 @@ interface TripViewModel extends Trip {
         <div style="overflow-x: auto;">
           <table mat-table [dataSource]="dataSource" matSort class="tha-full-width">
             
+            <!-- Checkbox Column -->
+            <ng-container matColumnDef="select">
+              <th mat-header-cell *matHeaderCellDef style="width: 50px;">
+                <mat-checkbox 
+                  *ngIf="isSuperAdmin()"
+                  (change)="$event ? toggleAllRows() : null"
+                  [checked]="selection.hasValue() && isAllSelected()"
+                  [indeterminate]="selection.hasValue() && !isAllSelected()"
+                  color="primary"
+                >
+                </mat-checkbox>
+              </th>
+              <td mat-cell *matCellDef="let trip">
+                <mat-checkbox 
+                  *ngIf="isSuperAdmin()"
+                  (click)="$event.stopPropagation()"
+                  (change)="$event ? selection.toggle(trip) : null"
+                  [checked]="selection.isSelected(trip)"
+                  color="primary"
+                >
+                </mat-checkbox>
+              </td>
+            </ng-container>
+
             <!-- Destination Column -->
             <ng-container matColumnDef="destination">
               <th mat-header-cell *matHeaderCellDef mat-sort-header> Destination </th>
@@ -127,6 +168,27 @@ interface TripViewModel extends Trip {
               </td>
             </ng-container>
 
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef style="width: 50px; text-align: right;"></th>
+              <td mat-cell *matCellDef="let trip" style="text-align: right;">
+                <button 
+                  *ngIf="isSuperAdmin()"
+                  mat-icon-button 
+                  [matMenuTriggerFor]="menu" 
+                  (click)="$event.stopPropagation()"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu">
+                  <button mat-menu-item (click)="deleteSingle(trip, $event)" class="tha-text-error">
+                    <mat-icon class="tha-text-error">delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
 
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
@@ -137,7 +199,7 @@ interface TripViewModel extends Trip {
 
             <!-- Row shown when there is no matching data. -->
             <tr class="mat-row" *matNoDataRow>
-              <td class="mat-cell tha-empty-state-cell" colspan="4">
+              <td class="mat-cell tha-empty-state-cell" colspan="6">
                 <div class="tha-empty-state">
                   <mat-icon class="tha-empty-icon">flight_takeoff</mat-icon>
                   <h3 class="tha-empty-title">No trips found</h3>
@@ -170,11 +232,15 @@ export class TripListComponent implements AfterViewInit {
   private readonly tripApi = inject(TripApiService);
   private readonly hotelApi = inject(HotelApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
+  private readonly authService = inject(FirebaseAuthService);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
-  readonly displayedColumns: string[] = ['destination', 'dates', 'coordinator', 'hotel'];
+  readonly isSuperAdmin = this.authService.isSuperAdmin;
+  displayedColumns: string[] = ['destination', 'dates', 'coordinator', 'hotel'];
   readonly dataSource = new MatTableDataSource<TripViewModel>();
+  readonly selection = new SelectionModel<TripViewModel>(true, []);
 
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -220,6 +286,9 @@ export class TripListComponent implements AfterViewInit {
   }
 
   ngAfterViewInit() {
+    if (this.isSuperAdmin()) {
+      this.displayedColumns = ['select', ...this.displayedColumns, 'actions'];
+    }
     this.dataSource.sort = this.sort;
     this.dataSource.paginator = this.paginator;
   }
@@ -242,5 +311,67 @@ export class TripListComponent implements AfterViewInit {
       width: '800px',
       disableClose: true // don't close randomly if clicking outside while importing
     });
+  }
+
+  isAllSelected() {
+    const numSelected = this.selection.selected.length;
+    const numRows = this.dataSource.filteredData.length;
+    return numSelected === numRows;
+  }
+
+  toggleAllRows() {
+    if (this.isAllSelected()) {
+      this.selection.clear();
+      return;
+    }
+    this.selection.select(...this.dataSource.filteredData);
+  }
+
+  async deleteSingle(trip: TripViewModel, event: Event) {
+    event.stopPropagation();
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Trip',
+        message: `Are you sure you want to delete the trip to "${trip.destination}"? This action cannot be undone.`,
+        dangerous: true,
+        confirmLabel: 'Delete'
+      } as ConfirmDialogData
+    });
+
+    const confirmed = await firstValueFrom(dialogRef.afterClosed());
+    if (confirmed) {
+      try {
+        await this.tripApi.delete(trip.id);
+        this.selection.deselect(trip);
+        this.snackBar.open('Trip deleted successfully', 'Close', { duration: 3000 });
+      } catch (err) {
+        console.error(err);
+        this.snackBar.open('Failed to delete trip', 'Close', { duration: 3000 });
+      }
+    }
+  }
+
+  async deleteSelected() {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Multiple Trips',
+        message: `Are you sure you want to delete ${this.selection.selected.length} trips? This action cannot be undone.`,
+        dangerous: true,
+        confirmLabel: 'Delete All'
+      } as ConfirmDialogData
+    });
+
+    const confirmed = await firstValueFrom(dialogRef.afterClosed());
+    if (confirmed) {
+      try {
+        const ids = this.selection.selected.map(t => t.id);
+        await this.tripApi.deleteMany(ids);
+        this.selection.clear();
+        this.snackBar.open(`Successfully deleted ${ids.length} trips`, 'Close', { duration: 3000 });
+      } catch (err) {
+        console.error(err);
+        this.snackBar.open('Failed to batch delete trips', 'Close', { duration: 3000 });
+      }
+    }
   }
 }

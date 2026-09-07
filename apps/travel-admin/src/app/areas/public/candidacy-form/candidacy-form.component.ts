@@ -176,9 +176,8 @@ export class CandidacyFormComponent {
     notes: [''],
   });
 
-  // Observable of trips without a coordinator assigned, filtered by selected nationality
   private readonly availableTrips$ = combineLatest([
-    this.route.paramMap.pipe(
+    this.route.parent!.paramMap.pipe(
       map(params => params.get('tourWeRoadCode')),
       switchMap(code => {
         if (!code) return of(null);
@@ -233,7 +232,7 @@ export class CandidacyFormComponent {
       };
 
       await this.coordinatorApi.submitCandidacy(payload);
-      this.router.navigate(['/public/success']);
+      this.router.navigate(['../success'], { relativeTo: this.route });
     } catch (err) {
       console.error('Failed to submit candidacy', err);
       this.snackBar.open('An error occurred while submitting your candidacy.', 'Close', {

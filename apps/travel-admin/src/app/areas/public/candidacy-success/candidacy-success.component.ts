@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Location } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,9 +30,9 @@ import { RouterLink } from '@angular/router';
           </p>
         </mat-card-content>
         <mat-card-actions class="tha-flex-center tha-mt-6">
-          <a mat-flat-button color="primary" routerLink="/public">
+          <button mat-flat-button color="primary" (click)="goBack()">
             Submit Another Candidacy
-          </a>
+          </button>
         </mat-card-actions>
       </mat-card>
     </div>
@@ -45,4 +46,10 @@ import { RouterLink } from '@angular/router';
     `,
   ],
 })
-export class CandidacySuccessComponent {}
+export class CandidacySuccessComponent {
+  private readonly location = inject(Location);
+
+  goBack(): void {
+    this.location.back();
+  }
+}

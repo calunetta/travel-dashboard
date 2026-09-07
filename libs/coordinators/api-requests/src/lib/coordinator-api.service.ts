@@ -66,7 +66,11 @@ export class CoordinatorApiService {
     if (!this.allCoordinators$) {
       this.allCoordinators$ = new Observable<ReadonlyArray<Coordinator>>((observer) => {
       const col = collection(this.firestore, COORDINATORS_COLLECTION);
-      const q = query(col, orderBy('surname', 'asc'));
+      const q = query(
+        col, 
+        orderBy('createdAt', 'desc'),
+        limit(500)
+      );
 
       const unsubscribe = onSnapshot(
         q,
@@ -133,18 +137,25 @@ export class CoordinatorApiService {
 
   // ── Candidacies — Real-Time Reads ────────────────────────────────────────
 
-  private allCandidacies$?: Observable<ReadonlyArray<Candidacy>>;
-
   /**
-   * Returns a real-time Observable of all candidacies (admin view).
+   * Returns a real-time Observable of candidacies, filtered by status and limited.
    * Ordered by submittedAt descending (newest first).
-   * Cached using shareReplay to prevent multiple simultaneous snapshot listeners.
    */
-  getAllCandidacies$(): Observable<ReadonlyArray<Candidacy>> {
-    if (!this.allCandidacies$) {
-      this.allCandidacies$ = new Observable<ReadonlyArray<Candidacy>>((observer) => {
+  getCandidaciesByStatus$(status: CandidacyStatus | 'ALL', maxLimit = 200): Observable<ReadonlyArray<Candidacy>> {
+    return new Observable<ReadonlyArray<Candidacy>>((observer) => {
       const col = collection(this.firestore, CANDIDACIES_COLLECTION);
-      const q = query(col, orderBy('submittedAt', 'desc'));
+      
+      let q;
+      if (status === 'ALL') {
+        q = query(col, orderBy('submittedAt', 'desc'), limit(maxLimit));
+      } else {
+        q = query(
+          col, 
+          where('status', '==', status), 
+          orderBy('submittedAt', 'desc'), 
+          limit(maxLimit)
+        );
+      }
 
       const unsubscribe = onSnapshot(
         q,
@@ -158,9 +169,7 @@ export class CoordinatorApiService {
       );
 
       return () => unsubscribe();
-    }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
-    }
-    return this.allCandidacies$;
+    });
   }
 
   /**
@@ -439,5 +448,41 @@ export class CoordinatorApiService {
 
     const newRef: DocumentReference = await addDoc(col, newCoordinator);
     return newRef.id as FirestoreId;
+  }
+
+  /**
+   * Permanently deletes multiple coordinator documents in a single batch.
+   */
+  async deleteManyCoordinators(coordinatorIds: FirestoreId[]): Promise<void> {
+    const { writeBatch } = await import('firebase/firestore');
+    const batch = writeBatch(this.firestore);
+    
+    coordinatorIds.forEach(id => {
+      batch.delete(doc(this.firestore, COORDINATORS_COLLECTION, id));
+    });
+    
+    await batch.commit();
+  }
+
+  /**
+   * Permanently deletes a candidacy document.
+   */
+  async deleteCandidacy(candidacyId: FirestoreId): Promise<void> {
+    const docRef = doc(this.firestore, CANDIDACIES_COLLECTION, candidacyId);
+    await deleteDoc(docRef);
+  }
+
+  /**
+   * Permanently deletes multiple candidacy documents in a single batch.
+   */
+  async deleteManyCandidacies(candidacyIds: FirestoreId[]): Promise<void> {
+    const { writeBatch } = await import('firebase/firestore');
+    const batch = writeBatch(this.firestore);
+    
+    candidacyIds.forEach(id => {
+      batch.delete(doc(this.firestore, CANDIDACIES_COLLECTION, id));
+    });
+    
+    await batch.commit();
   }
 }

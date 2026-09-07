@@ -49,7 +49,7 @@ import { startWith } from 'rxjs/operators';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="tha-page tha-animate-fade-in" style="max-width: 800px; margin: 0 auto;">
+    <div class="tha-page tha-animate-fade-in">
       <div class="tha-flex-row tha-flex-col-sm tha-mb-6" style="gap: var(--tha-spacing-4);">
         <button mat-icon-button routerLink="/admin/trips" aria-label="Back to Trips">
           <mat-icon>arrow_back</mat-icon>
@@ -384,7 +384,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
           this.submitting = false;
           return;
         }
-        
+
         // Use temp ID if creating a new trip
         const targetTripId = this.tripId || ('pending_creation' as FirestoreId);
         receiptUrl = await this.tripStorage.uploadReceipt(targetTripId, this.selectedReceiptFile);

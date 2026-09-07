@@ -79,34 +79,7 @@ export class TripApiService {
     return this.allTrips$;
   }
 
-  /**
-   * Returns a real-time Observable of trips that do not have a coordinator assigned.
-   * This is used by the public candidacy form, as unassigned trips are publicly readable.
-   */
-  getAvailableTrips$(): Observable<ReadonlyArray<Trip>> {
-    return new Observable<ReadonlyArray<Trip>>((observer) => {
-      const col = collection(this.firestore, TRIPS_COLLECTION);
-      const q = query(
-        col,
-        where('coordinatorId', '==', null)
-      );
 
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          const trips = snapshot.docs
-            .map((docSnap) => mapSnapshotToTrip(docSnap))
-            .filter((t): t is Trip => t !== null);
-          // Sort client-side to avoid needing a composite index
-          trips.sort((a, b) => a.startDate.localeCompare(b.startDate));
-          observer.next(trips);
-        },
-        (err) => observer.error(err)
-      );
-
-      return () => unsubscribe();
-    }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
-  }
 
   getAvailableTripsByTourId$(tourId: FirestoreId): Observable<ReadonlyArray<Trip>> {
     return new Observable<ReadonlyArray<Trip>>((observer) => {
@@ -275,6 +248,23 @@ export class TripApiService {
         ? { ...d, paymentStatus: d.paymentStatus === 'PAID' ? 'TO_BE_PAID' as const : 'PAID' as const }
         : d
     );
-    await this.update({ id: tripId, documents: updatedDocuments });
+    await updateDoc(doc(this.firestore, TRIPS_COLLECTION, tripId), {
+      documents: updatedDocuments,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  /**
+   * Permanently deletes multiple trip documents in a single batch.
+   */
+  async deleteMany(tripIds: FirestoreId[]): Promise<void> {
+    const { writeBatch } = await import('firebase/firestore');
+    const batch = writeBatch(this.firestore);
+    
+    tripIds.forEach(id => {
+      batch.delete(doc(this.firestore, TRIPS_COLLECTION, id));
+    });
+    
+    await batch.commit();
   }
 }

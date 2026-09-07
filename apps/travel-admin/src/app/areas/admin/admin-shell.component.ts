@@ -80,12 +80,6 @@ import { environment } from '../../../environments/environment';
             <span matListItemTitle>Calendar</span>
           </a>
 
-          <mat-divider></mat-divider>
-
-          <a mat-list-item routerLink="/public" target="_blank">
-            <mat-icon matListItemIcon>open_in_new</mat-icon>
-            <span matListItemTitle>Public Form</span>
-          </a>
         </mat-nav-list>
       </mat-sidenav>
 
@@ -117,7 +111,7 @@ import { environment } from '../../../environments/environment';
         </mat-toolbar>
 
         <!-- Router Outlet -->
-        <main class="tha-flex-1 tha-p-6" style="overflow-y: auto;">
+        <main class="tha-flex-1" style="overflow-y: auto;">
           <router-outlet></router-outlet>
         </main>
       </mat-sidenav-content>
@@ -161,7 +155,7 @@ export class AdminShellComponent {
         const token = await getToken(this.messaging, {
           vapidKey: (environment.firebase as any).vapidKey
         });
-        
+
         const user = this.authService.currentUser();
         if (token && user) {
           await this.adminApi.updateFcmToken(user.uid as FirestoreId, token);

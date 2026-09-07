@@ -5,60 +5,166 @@
 @use './tokens' as tokens;
 
 // ── Layout ────────────────────────────────────────────────────────────────────
-.tha-flex        { display: flex; }
-.tha-flex-col    { display: flex; flex-direction: column; }
-.tha-flex-center { display: flex; align-items: center; justify-content: center; }
-.tha-flex-between{ display: flex; align-items: center; justify-content: space-between; }
-.tha-flex-start  { display: flex; align-items: center; justify-content: flex-start; }
-.tha-flex-end    { display: flex; align-items: center; justify-content: flex-end; }
-.tha-flex-wrap   { flex-wrap: wrap; }
-.tha-flex-1      { flex: 1; }
-.tha-flex-shrink-0 { flex-shrink: 0; }
+.tha-flex {
+  display: flex;
+}
 
-.tha-grid-auto   { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--tha-spacing-4); }
-.tha-grid-2      { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--tha-spacing-4); }
-.tha-grid-3      { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--tha-spacing-4); }
-.tha-grid-4      { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--tha-spacing-4); }
-.tha-grid-5      { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--tha-spacing-4); }
+.tha-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.tha-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tha-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tha-flex-start {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.tha-flex-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.tha-flex-wrap {
+  flex-wrap: wrap;
+}
+
+.tha-flex-1 {
+  flex: 1;
+}
+
+.tha-flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+.tha-grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--tha-spacing-4);
+}
+
+.tha-grid-2 {
+  display: grid;
+  gap: var(--tha-spacing-4);
+}
+
+.tha-grid-3 {
+  display: grid;
+  gap: var(--tha-spacing-4);
+}
+
+.tha-grid-4 {
+  display: grid;
+  gap: var(--tha-spacing-4);
+}
+
+.tha-grid-5 {
+  display: grid;
+  gap: var(--tha-spacing-4);
+}
 
 // Responsive Grids & Flex (Mobile: < 768px)
 @media (max-width: 768px) {
+
   .tha-grid-2,
   .tha-grid-3,
   .tha-grid-4,
   .tha-grid-5 {
     grid-template-columns: 1fr;
   }
-  
+
   .tha-flex-col-sm {
     display: flex;
     flex-direction: column;
     align-items: flex-start !important;
   }
-  .tha-flex-col-sm > * {
+
+  .tha-flex-col-sm>* {
     width: 100%;
   }
 }
 
-.tha-full-width  { width: 100%; }
-.tha-full-height { height: 100%; }
+.tha-full-width {
+  width: 100%;
+}
+
+.tha-full-height {
+  height: 100%;
+}
 
 // ── Spacing Utilities ─────────────────────────────────────────────────────────
-.tha-gap-1  { gap: var(--tha-spacing-1); }
-.tha-gap-2  { gap: var(--tha-spacing-2); }
-.tha-gap-3  { gap: var(--tha-spacing-3); }
-.tha-gap-4  { gap: var(--tha-spacing-4); }
-.tha-gap-6  { gap: var(--tha-spacing-6); }
-.tha-gap-8  { gap: var(--tha-spacing-8); }
-.tha-p-4    { padding: var(--tha-spacing-4); }
-.tha-p-6    { padding: var(--tha-spacing-6); }
-.tha-p-8    { padding: var(--tha-spacing-8); }
-.tha-mt-2   { margin-top: var(--tha-spacing-2); }
-.tha-mt-4   { margin-top: var(--tha-spacing-4); }
-.tha-mt-6   { margin-top: var(--tha-spacing-6); }
-.tha-mb-2   { margin-bottom: var(--tha-spacing-2); }
-.tha-mb-4   { margin-bottom: var(--tha-spacing-4); }
-.tha-mb-6   { margin-bottom: var(--tha-spacing-6); }
+.tha-gap-1 {
+  gap: var(--tha-spacing-1);
+}
+
+.tha-gap-2 {
+  gap: var(--tha-spacing-2);
+}
+
+.tha-gap-3 {
+  gap: var(--tha-spacing-3);
+}
+
+.tha-gap-4 {
+  gap: var(--tha-spacing-4);
+}
+
+.tha-gap-6 {
+  gap: var(--tha-spacing-6);
+}
+
+.tha-gap-8 {
+  gap: var(--tha-spacing-8);
+}
+
+.tha-p-4 {
+  padding: var(--tha-spacing-4);
+}
+
+.tha-p-6 {
+  padding: var(--tha-spacing-6);
+}
+
+.tha-p-8 {
+  padding: var(--tha-spacing-8);
+}
+
+.tha-mt-2 {
+  margin-top: var(--tha-spacing-2);
+}
+
+.tha-mt-4 {
+  margin-top: var(--tha-spacing-4);
+}
+
+.tha-mt-6 {
+  margin-top: var(--tha-spacing-6);
+}
+
+.tha-mb-2 {
+  margin-bottom: var(--tha-spacing-2);
+}
+
+.tha-mb-4 {
+  margin-bottom: var(--tha-spacing-4);
+}
+
+.tha-mb-6 {
+  margin-bottom: var(--tha-spacing-6);
+}
 
 // ── Surface Cards ─────────────────────────────────────────────────────────────
 .tha-card {
@@ -77,8 +183,8 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  &:hover { 
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15); 
+  &:hover {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
     border-color: rgba(59, 130, 246, 0.4);
   }
 }
@@ -103,18 +209,53 @@
   letter-spacing: 0.04em;
   white-space: nowrap;
 
-  &--draft     { background: var(--tha-surface-variant); color: var(--tha-on-surface-variant); }
-  &--published { background: var(--tha-info-bg); color: var(--tha-info); }
-  &--full      { background: var(--tha-success-bg); color: var(--tha-success); }
-  &--completed { background: var(--tha-success-bg); color: var(--tha-success); }
-  &--cancelled { background: var(--tha-error-bg); color: var(--tha-error); }
-  &--pending   { background: var(--tha-warning-bg); color: var(--tha-warning); }
-  &--assigned  { background: var(--tha-success-bg); color: var(--tha-success); }
-  &--rejected  { background: var(--tha-error-bg); color: var(--tha-error); }
-  &--manual    {
+  &--draft {
+    background: var(--tha-surface-variant);
+    color: var(--tha-on-surface-variant);
+  }
+
+  &--published {
+    background: var(--tha-info-bg);
+    color: var(--tha-info);
+  }
+
+  &--full {
+    background: var(--tha-success-bg);
+    color: var(--tha-success);
+  }
+
+  &--completed {
+    background: var(--tha-success-bg);
+    color: var(--tha-success);
+  }
+
+  &--cancelled {
+    background: var(--tha-error-bg);
+    color: var(--tha-error);
+  }
+
+  &--pending {
+    background: var(--tha-warning-bg);
+    color: var(--tha-warning);
+  }
+
+  &--assigned {
+    background: var(--tha-success-bg);
+    color: var(--tha-success);
+  }
+
+  &--rejected {
+    background: var(--tha-error-bg);
+    color: var(--tha-error);
+  }
+
+  &--manual {
     background: var(--tha-accent-700);
     color: rgba(0, 0, 0, 0.87);
-    &::before { content: '★ '; }
+
+    &::before {
+      content: '★ ';
+    }
   }
 }
 
@@ -133,7 +274,10 @@
   margin-bottom: var(--tha-spacing-6);
   gap: var(--tha-spacing-4);
 
-  h1, h2 { flex: 1; }
+  h1,
+  h2 {
+    flex: 1;
+  }
 }
 
 // ── Divider ───────────────────────────────────────────────────────────────────
@@ -182,23 +326,52 @@
 
 // ── Animations ────────────────────────────────────────────────────────────────
 @keyframes tha-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes tha-slide-in-left {
-  from { opacity: 0; transform: translateX(-16px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes tha-scale-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.tha-animate-fade-in      { animation: tha-fade-in      var(--tha-transition-normal) ease forwards; }
-.tha-animate-slide-left   { animation: tha-slide-in-left var(--tha-transition-normal) ease forwards; }
-.tha-animate-scale-in     { animation: tha-scale-in     var(--tha-transition-normal) ease forwards; }
+.tha-animate-fade-in {
+  animation: tha-fade-in var(--tha-transition-normal) ease forwards;
+}
+
+.tha-animate-slide-left {
+  animation: tha-slide-in-left var(--tha-transition-normal) ease forwards;
+}
+
+.tha-animate-scale-in {
+  animation: tha-scale-in var(--tha-transition-normal) ease forwards;
+}
 
 // ── Global Alignment Fixes (Task 3) ───────────────────────────────────────────
 .mdc-button__label,
@@ -208,6 +381,7 @@
   align-items: center !important;
   gap: 8px !important;
 }
+
 .mat-mdc-list-item-icon {
   margin-right: 0 !important; // override material default if gap is used
 }
@@ -273,4 +447,8 @@
 .tha-chip-sm {
   padding: 2px 8px;
   font-size: var(--tha-font-size-xs);
+}
+
+.mat-mdc-card-content {
+  display: grid !important;
 }

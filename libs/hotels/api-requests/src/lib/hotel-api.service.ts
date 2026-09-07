@@ -171,4 +171,18 @@ export class HotelApiService {
     const docRef = doc(this.firestore, HOTELS_COLLECTION, hotelId);
     await deleteDoc(docRef);
   }
+
+  /**
+   * Permanently deletes multiple hotel documents in a single batch.
+   */
+  async deleteMany(hotelIds: FirestoreId[]): Promise<void> {
+    const { writeBatch } = await import('firebase/firestore');
+    const batch = writeBatch(this.firestore);
+    
+    hotelIds.forEach(id => {
+      batch.delete(doc(this.firestore, HOTELS_COLLECTION, id));
+    });
+    
+    await batch.commit();
+  }
 }

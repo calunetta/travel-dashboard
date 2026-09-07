@@ -3,13 +3,15 @@ import * as admin from 'firebase-admin';
 import * as nodemailer from 'nodemailer';
 import ical from 'ical-generator';
 
-admin.initializeApp();
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 const db = admin.firestore();
 const messaging = admin.messaging();
 
 export const onTripDocumentUploaded = functions.firestore
   .document('trips/{tripId}')
-  .onUpdate(async (change, context) => {
+  .onUpdate(async (change: any, context: any) => {
     const beforeData = change.before.data();
     const afterData = change.after.data();
 
@@ -58,7 +60,7 @@ export const onTripDocumentUploaded = functions.firestore
 
 export const onDocumentStatusChanged = functions.firestore
   .document('trips/{tripId}')
-  .onUpdate(async (change, context) => {
+  .onUpdate(async (change: any, context: any) => {
     const beforeData = change.before.data();
     const afterData = change.after.data();
 
@@ -86,7 +88,7 @@ export const onDocumentStatusChanged = functions.firestore
       // Find all super admins
       const superAdminsSnapshot = await db.collection('admins').where('role', '==', 'SUPER_ADMIN').get();
       const tokens: string[] = [];
-      superAdminsSnapshot.forEach(doc => {
+      superAdminsSnapshot.forEach((doc: any) => {
         const token = doc.data().fcmToken;
         if (token) {
           tokens.push(token);
@@ -105,7 +107,7 @@ export const onDocumentStatusChanged = functions.firestore
     }
   });
 
-export const checkUpcomingTripsCron = functions.pubsub.schedule('every day 00:00').onRun(async (context) => {
+export const checkUpcomingTripsCron = functions.pubsub.schedule('every day 00:00').onRun(async (context: any) => {
   const today = new Date();
   const nextWeek = new Date(today);
   nextWeek.setDate(today.getDate() + 7);
@@ -146,7 +148,7 @@ export const checkUpcomingTripsCron = functions.pubsub.schedule('every day 00:00
 
 export const onTripCreated = functions.firestore
   .document('trips/{tripId}')
-  .onCreate(async (snap, context) => {
+  .onCreate(async (snap: any, context: any) => {
     const tripData = snap.data();
     if (!tripData || !tripData.startDate) return;
     
@@ -169,7 +171,7 @@ export const onTripCreated = functions.firestore
     // 3. Find SUPER_ADMIN emails
     const superAdminsSnapshot = await db.collection('admins').where('role', '==', 'SUPER_ADMIN').get();
     const emails: string[] = [];
-    superAdminsSnapshot.forEach(doc => {
+    superAdminsSnapshot.forEach((doc: any) => {
       const email = doc.data().email;
       if (email) {
         emails.push(email);
@@ -201,4 +203,19 @@ export const onTripCreated = functions.firestore
         }
       ]
     });
+  });
+
+export const onTripDeleted = functions.firestore
+  .document('trips/{tripId}')
+  .onDelete(async (snap: any, context: any) => {
+    const tripId = context.params.tripId;
+    try {
+      const bucket = admin.storage().bucket();
+      await bucket.deleteFiles({
+        prefix: `trips/${tripId}/documents/`
+      });
+      console.log(`Successfully deleted storage files for trip: ${tripId}`);
+    } catch (error) {
+      console.error(`Failed to delete storage files for trip: ${tripId}`, error);
+    }
   });

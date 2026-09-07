@@ -32,7 +32,10 @@ describe('CandidacyFormComponent', () => {
         { provide: TourApiService, useValue: mockTourApi },
         { 
           provide: ActivatedRoute, 
-          useValue: { paramMap: of({ get: () => 'some-tour-slug' }) } 
+          useValue: { 
+            parent: { paramMap: of({ get: () => 'some-tour-slug' }) },
+            paramMap: of({ get: () => 'some-tour-slug' })
+          } 
         }
       ]
     }).compileComponents();
