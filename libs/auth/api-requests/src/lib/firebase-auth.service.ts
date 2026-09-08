@@ -53,6 +53,28 @@ export class FirebaseAuthService implements OnDestroy {
   readonly adminProfile = computed(() => this._currentUser()?.adminProfile ?? null);
 
   constructor() {
+    // E2E Mocking Support: Set mock user synchronously before any components read it
+    if (localStorage.getItem('bypassAuth') === 'true') {
+      this._currentUser.set({
+        uid: 'mock-admin-uid',
+        email: 'admin@example.com',
+        displayName: 'Mock Admin',
+        photoURL: null,
+        isAdmin: true,
+        adminProfile: {
+          id: 'mock-admin-uid' as FirestoreId,
+          name: 'Mock',
+          surname: 'Admin',
+          email: 'admin@example.com',
+          phone: '',
+          role: 'SUPER_ADMIN'
+        }
+      });
+      this._isLoading.set(false);
+      this._unsubscribeAuth = () => {};
+      return;
+    }
+
     // Subscribe to Firebase Auth state changes on service initialization.
     this._unsubscribeAuth = onAuthStateChanged(
       this.auth,

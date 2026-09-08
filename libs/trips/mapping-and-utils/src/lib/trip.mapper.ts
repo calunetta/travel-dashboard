@@ -48,6 +48,7 @@ export function mapSnapshotToTrip(
 
   const roomCompositionRaw = data.roomComposition ?? {};
   const documents = Array.isArray(data.documents) ? data.documents : [];
+  const checklist = Array.isArray(data.checklist) ? data.checklist : [];
 
   return {
     id,
@@ -76,6 +77,11 @@ export function mapSnapshotToTrip(
       url: d.url,
       uploadedAt: d.uploadedAt,
       paymentStatus: (d.paymentStatus === 'PAID' ? 'PAID' : 'TO_BE_PAID') as DocumentPaymentStatus,
+    })),
+    checklist: checklist.map((c) => ({
+      id: c.id,
+      task: c.task,
+      isCompleted: c.isCompleted ?? false,
     })),
     createdAt: timestampToIso(data.createdAt),
     updatedAt: timestampToIso(data.updatedAt),
@@ -127,6 +133,11 @@ export function mapCreatePayloadToFirestore(
       uploadedAt: d.uploadedAt,
       paymentStatus: d.paymentStatus,
     })),
+    checklist: [
+      { id: 'default-1', task: 'Confirm Hotel', isCompleted: false },
+      { id: 'default-2', task: 'Send Briefing Email', isCompleted: false },
+      { id: 'default-3', task: 'Book Transfers', isCompleted: false }
+    ],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -146,6 +157,7 @@ export function mapUpdatePayloadToFirestore(
   if (payload.endDate !== undefined) update['endDate'] = payload.endDate;
   if (payload.code !== undefined) update['code'] = payload.code;
   if (payload.notes !== undefined) update['notes'] = payload.notes;
+  if (payload.checklist !== undefined) update['checklist'] = payload.checklist;
   if (payload.roomComposition !== undefined) {
     update['roomComposition'] = {
       SINGLE: payload.roomComposition[RoomType.SINGLE],
@@ -212,5 +224,10 @@ export function createDefaultTripPayload(): CreateTripPayload {
     tourId: '' as FirestoreId,
     adminIds: [],
     documents: [],
+    checklist: [
+      { id: 'default-1', task: 'Confirm Hotel', isCompleted: false },
+      { id: 'default-2', task: 'Send Briefing Email', isCompleted: false },
+      { id: 'default-3', task: 'Book Transfers', isCompleted: false }
+    ],
   };
 }

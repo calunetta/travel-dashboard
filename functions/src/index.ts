@@ -134,54 +134,89 @@ export const onDocumentStatusChanged = onDocumentUpdated('trips/{tripId}', async
 
 export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event: any) => {
   const today = new Date();
+  
+  // T-7 Calculation
   const nextWeek = new Date(today);
   nextWeek.setDate(today.getDate() + 7);
   const nextWeekIso = nextWeek.toISOString().split('T')[0];
 
+  // T-1 to T-3 Calculation
+  const next1To3DaysIso: string[] = [];
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    next1To3DaysIso.push(d.toISOString().split('T')[0]);
+  }
+
   const tripsSnapshot = await db.collection('trips')
-    .where('startDate', '==', nextWeekIso)
+    .where('startDate', '>=', next1To3DaysIso[0])
+    .where('startDate', '<=', nextWeekIso)
     .get();
+
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+    port: Number(process.env.SMTP_PORT) || 587,
+    auth: {
+      user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
+      pass: process.env.SMTP_PASS || 'ethereal.pass',
+    },
+  });
 
   for (const doc of tripsSnapshot.docs) {
     const data = doc.data();
     const docs = data.documents || [];
-    if (docs.length === 0) {
-      let coordInfo = 'No coordinator assigned';
+    const startDate = data.startDate;
+
+    // 1. T-7: Missing Documents Alert to Coordinator (via Email)
+    if (startDate === nextWeekIso && docs.length === 0) {
       if (data.coordinatorId) {
         const coordDoc = await db.collection('coordinators').doc(data.coordinatorId).get();
         if (coordDoc.exists) {
           const cData = coordDoc.data();
-          coordInfo = `Name: ${cData?.name} ${cData?.surname}, Email: ${cData?.email}, Phone: ${cData?.phone}`;
-        }
-      }
-
-      const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
-      const tripUrl = `https://${adminDomain}/admin/trips/${doc.id}`;
-
-      const adminIds = data.adminIds || [];
-      if (adminIds.length > 0) {
-        const tokens: string[] = [];
-        for (const adminId of adminIds) {
-          const adminDoc = await db.collection('admins').doc(adminId).get();
-          const token = adminDoc.data()?.fcmToken;
-          if (token) {
-            tokens.push(token);
+          if (cData?.email) {
+            await transporter.sendMail({
+              from: '"Travel Admin" <noreply@travelhandling.com>',
+              to: cData.email,
+              subject: `URGENT: Missing Documents for Trip ${data.destination}`,
+              html: `<p>Hi ${cData.name},</p><p>Your trip to <strong>${data.destination}</strong> starts in 7 days, but no documents have been uploaded yet. Please upload them immediately.</p>`,
+            });
           }
         }
+      }
+    }
 
-        if (tokens.length > 0) {
-          await messaging.sendEachForMulticast({
-            tokens,
-            notification: {
-              title: 'Action Required: Missing Documents',
-              body: `The trip ${data.destination} starts in exactly one week and has no documents uploaded!\\nCoordinator: ${coordInfo}`,
-            },
-            webpush: {
-              fcmOptions: {
-                link: tripUrl
-              }
+    // 2. T-1 to T-3: Unpaid Documents Warning to Admins (via Push)
+    if (next1To3DaysIso.includes(startDate)) {
+      const hasUnpaidDocs = docs.some((d: any) => d.paymentStatus === 'TO_BE_PAID');
+      if (hasUnpaidDocs) {
+        const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
+        const tripUrl = `https://${adminDomain}/admin/trips/${doc.id}`;
+
+        const adminIds = data.adminIds || [];
+        if (adminIds.length > 0) {
+          const tokens: string[] = [];
+          for (const adminId of adminIds) {
+            const adminDoc = await db.collection('admins').doc(adminId).get();
+            const token = adminDoc.data()?.fcmToken;
+            if (token) {
+              tokens.push(token);
             }
-          });
+          }
+
+          if (tokens.length > 0) {
+            await messaging.sendEachForMulticast({
+              tokens,
+              notification: {
+                title: 'URGENT: Unpaid Documents',
+                body: `Trip ${data.destination} starts very soon but has unpaid documents!`,
+              },
+              webpush: {
+                fcmOptions: {
+                  link: tripUrl
+                }
+              }
+            });
+          }
         }
       }
     }
@@ -280,3 +315,49 @@ export const onTripDeleted = onDocumentDeleted('trips/{tripId}', async (event: a
       console.error(`Failed to delete storage files for trip: ${tripId}`, error);
     }
   });
+
+export const onAssignmentCreated = onDocumentCreated('trips/{tripId}/assignments/{assignmentId}', async (event: any) => {
+  const assignmentData = event.data?.data();
+  if (!assignmentData || assignmentData.assignmentType !== 'AUTOMATIC') return;
+
+  const tripId = event.params.tripId;
+  const coordinatorId = assignmentData.coordinatorId;
+  if (!coordinatorId) return;
+
+  // Fetch coordinator
+  const coordDoc = await db.collection('coordinators').doc(coordinatorId).get();
+  if (!coordDoc.exists) return;
+  const cData = coordDoc.data();
+  if (!cData?.email) return;
+
+  // Fetch trip
+  const tripDoc = await db.collection('trips').doc(tripId).get();
+  if (!tripDoc.exists) return;
+  const tData = tripDoc.data();
+
+  // Send Match Confirmation Email
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+    port: Number(process.env.SMTP_PORT) || 587,
+    auth: {
+      user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
+      pass: process.env.SMTP_PASS || 'ethereal.pass',
+    },
+  });
+
+  const htmlBody = `
+    <h2>Match Confirmation!</h2>
+    <p>Hi ${cData.name},</p>
+    <p>Great news! You have been automatically assigned to the trip <strong>${tData?.destination}</strong> (${tData?.code}).</p>
+    <p>Dates: ${tData?.startDate} to ${tData?.endDate}</p>
+    <p>Please log in to your dashboard to review the details and start uploading your documents.</p>
+  `;
+
+  await transporter.sendMail({
+    from: '"Travel Admin" <noreply@travelhandling.com>',
+    to: cData.email,
+    subject: `Trip Match Confirmation: ${tData?.destination}`,
+    html: htmlBody,
+  });
+});
+

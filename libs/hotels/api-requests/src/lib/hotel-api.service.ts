@@ -19,6 +19,7 @@ import {
   type DocumentReference,
 } from 'firebase/firestore';
 import { Observable, shareReplay } from 'rxjs';
+import { AuditLoggerService } from 'shared-api-requests';
 import { FirebaseAuthService } from 'auth-api-requests';
 import { FIRESTORE_TOKEN } from 'shared-models';
 import type { FirestoreId } from 'shared-models';
@@ -34,6 +35,7 @@ const HOTELS_COLLECTION = 'hotels';
 export class HotelApiService {
   private readonly firestore = inject(FIRESTORE_TOKEN);
   private readonly auth = inject(FirebaseAuthService);
+  private readonly auditLogger = inject(AuditLoggerService);
 
   // ── Real-Time Reads ────────────────────────────────────────────────────────
 
@@ -170,6 +172,14 @@ export class HotelApiService {
   async delete(hotelId: FirestoreId): Promise<void> {
     const docRef = doc(this.firestore, HOTELS_COLLECTION, hotelId);
     await deleteDoc(docRef);
+    
+    this.auditLogger.logAction(
+      'OTHER', // Wait, action enum has DELETE_TRIP, MANUAL_HOTEL_COST_OVERRIDE, DELETE_COORDINATOR, OTHER. We will use 'OTHER' or add 'DELETE_HOTEL'. 
+      HOTELS_COLLECTION,
+      hotelId,
+      this.auth.currentUser()?.uid ?? 'unknown',
+      { deletedEntity: 'HOTEL' }
+    );
   }
 
   /**

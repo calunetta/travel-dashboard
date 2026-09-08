@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onTripDeleted = exports.onTripCreated = exports.checkUpcomingTripsCron = exports.onDocumentStatusChanged = exports.onTripDocumentUploaded = void 0;
+exports.onAssignmentCreated = exports.onTripDeleted = exports.onTripCreated = exports.checkUpcomingTripsCron = exports.onDocumentStatusChanged = exports.onTripDocumentUploaded = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const v2_1 = require("firebase-functions/v2");
@@ -58,6 +58,16 @@ exports.onTripDocumentUploaded = (0, firestore_1.onDocumentUpdated)('trips/{trip
     if (afterDocs.length > beforeDocs.length) {
         const addedDocs = afterDocs.filter((ad) => !beforeDocs.some((bd) => bd.id === ad.id));
         if (addedDocs.length > 0) {
+            let uploaderName = 'Unknown Uploader';
+            if (afterData.coordinatorId) {
+                const coordDoc = await db.collection('coordinators').doc(afterData.coordinatorId).get();
+                if (coordDoc.exists) {
+                    const cData = coordDoc.data();
+                    uploaderName = `${cData?.name} ${cData?.surname}`;
+                }
+            }
+            const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
+            const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
             const adminIds = afterData.adminIds || [];
             if (adminIds.length > 0) {
                 const tokens = [];
@@ -73,8 +83,13 @@ exports.onTripDocumentUploaded = (0, firestore_1.onDocumentUpdated)('trips/{trip
                         tokens,
                         notification: {
                             title: 'New Trip Document',
-                            body: `A new document has been uploaded for trip ${afterData.destination}.`,
+                            body: `A new document has been uploaded for trip ${afterData.destination} (${afterData.code}) by ${uploaderName}.`,
                         },
+                        webpush: {
+                            fcmOptions: {
+                                link: tripUrl
+                            }
+                        }
                     });
                 }
             }
@@ -104,6 +119,8 @@ exports.onDocumentStatusChanged = (0, firestore_1.onDocumentUpdated)('trips/{tri
                 tokens.push(token);
             }
         });
+        const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
+        const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
         if (tokens.length > 0) {
             await messaging.sendEachForMulticast({
                 tokens,
@@ -111,40 +128,91 @@ exports.onDocumentStatusChanged = (0, firestore_1.onDocumentUpdated)('trips/{tri
                     title: 'Payment Completed',
                     body: `A document for trip ${afterData.destination} has been paid.`,
                 },
+                webpush: {
+                    fcmOptions: {
+                        link: tripUrl
+                    }
+                }
             });
         }
     }
 });
 exports.checkUpcomingTripsCron = (0, scheduler_1.onSchedule)('every day 00:00', async (event) => {
     const today = new Date();
+    // T-7 Calculation
     const nextWeek = new Date(today);
     nextWeek.setDate(today.getDate() + 7);
     const nextWeekIso = nextWeek.toISOString().split('T')[0];
+    // T-1 to T-3 Calculation
+    const next1To3DaysIso = [];
+    for (let i = 1; i <= 3; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        next1To3DaysIso.push(d.toISOString().split('T')[0]);
+    }
     const tripsSnapshot = await db.collection('trips')
-        .where('startDate', '==', nextWeekIso)
+        .where('startDate', '>=', next1To3DaysIso[0])
+        .where('startDate', '<=', nextWeekIso)
         .get();
+    const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+        port: Number(process.env.SMTP_PORT) || 587,
+        auth: {
+            user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
+            pass: process.env.SMTP_PASS || 'ethereal.pass',
+        },
+    });
     for (const doc of tripsSnapshot.docs) {
         const data = doc.data();
         const docs = data.documents || [];
-        if (docs.length === 0) {
-            const adminIds = data.adminIds || [];
-            if (adminIds.length > 0) {
-                const tokens = [];
-                for (const adminId of adminIds) {
-                    const adminDoc = await db.collection('admins').doc(adminId).get();
-                    const token = adminDoc.data()?.fcmToken;
-                    if (token) {
-                        tokens.push(token);
+        const startDate = data.startDate;
+        // 1. T-7: Missing Documents Alert to Coordinator (via Email)
+        if (startDate === nextWeekIso && docs.length === 0) {
+            if (data.coordinatorId) {
+                const coordDoc = await db.collection('coordinators').doc(data.coordinatorId).get();
+                if (coordDoc.exists) {
+                    const cData = coordDoc.data();
+                    if (cData?.email) {
+                        await transporter.sendMail({
+                            from: '"Travel Admin" <noreply@travelhandling.com>',
+                            to: cData.email,
+                            subject: `URGENT: Missing Documents for Trip ${data.destination}`,
+                            html: `<p>Hi ${cData.name},</p><p>Your trip to <strong>${data.destination}</strong> starts in 7 days, but no documents have been uploaded yet. Please upload them immediately.</p>`,
+                        });
                     }
                 }
-                if (tokens.length > 0) {
-                    await messaging.sendEachForMulticast({
-                        tokens,
-                        notification: {
-                            title: 'Action Required: Missing Documents',
-                            body: `The trip ${data.destination} starts in exactly one week and has no documents uploaded!`,
-                        },
-                    });
+            }
+        }
+        // 2. T-1 to T-3: Unpaid Documents Warning to Admins (via Push)
+        if (next1To3DaysIso.includes(startDate)) {
+            const hasUnpaidDocs = docs.some((d) => d.paymentStatus === 'TO_BE_PAID');
+            if (hasUnpaidDocs) {
+                const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
+                const tripUrl = `https://${adminDomain}/admin/trips/${doc.id}`;
+                const adminIds = data.adminIds || [];
+                if (adminIds.length > 0) {
+                    const tokens = [];
+                    for (const adminId of adminIds) {
+                        const adminDoc = await db.collection('admins').doc(adminId).get();
+                        const token = adminDoc.data()?.fcmToken;
+                        if (token) {
+                            tokens.push(token);
+                        }
+                    }
+                    if (tokens.length > 0) {
+                        await messaging.sendEachForMulticast({
+                            tokens,
+                            notification: {
+                                title: 'URGENT: Unpaid Documents',
+                                body: `Trip ${data.destination} starts very soon but has unpaid documents!`,
+                            },
+                            webpush: {
+                                fcmOptions: {
+                                    link: tripUrl
+                                }
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -233,5 +301,48 @@ exports.onTripDeleted = (0, firestore_1.onDocumentDeleted)('trips/{tripId}', asy
     catch (error) {
         console.error(`Failed to delete storage files for trip: ${tripId}`, error);
     }
+});
+exports.onAssignmentCreated = (0, firestore_1.onDocumentCreated)('trips/{tripId}/assignments/{assignmentId}', async (event) => {
+    const assignmentData = event.data?.data();
+    if (!assignmentData || assignmentData.assignmentType !== 'AUTOMATIC')
+        return;
+    const tripId = event.params.tripId;
+    const coordinatorId = assignmentData.coordinatorId;
+    if (!coordinatorId)
+        return;
+    // Fetch coordinator
+    const coordDoc = await db.collection('coordinators').doc(coordinatorId).get();
+    if (!coordDoc.exists)
+        return;
+    const cData = coordDoc.data();
+    if (!cData?.email)
+        return;
+    // Fetch trip
+    const tripDoc = await db.collection('trips').doc(tripId).get();
+    if (!tripDoc.exists)
+        return;
+    const tData = tripDoc.data();
+    // Send Match Confirmation Email
+    const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+        port: Number(process.env.SMTP_PORT) || 587,
+        auth: {
+            user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
+            pass: process.env.SMTP_PASS || 'ethereal.pass',
+        },
+    });
+    const htmlBody = `
+    <h2>Match Confirmation!</h2>
+    <p>Hi ${cData.name},</p>
+    <p>Great news! You have been automatically assigned to the trip <strong>${tData?.destination}</strong> (${tData?.code}).</p>
+    <p>Dates: ${tData?.startDate} to ${tData?.endDate}</p>
+    <p>Please log in to your dashboard to review the details and start uploading your documents.</p>
+  `;
+    await transporter.sendMail({
+        from: '"Travel Admin" <noreply@travelhandling.com>',
+        to: cData.email,
+        subject: `Trip Match Confirmation: ${tData?.destination}`,
+        html: htmlBody,
+    });
 });
 //# sourceMappingURL=index.js.map

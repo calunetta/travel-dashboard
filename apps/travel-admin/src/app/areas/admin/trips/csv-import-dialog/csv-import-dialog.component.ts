@@ -346,6 +346,11 @@ export class CsvImportDialogComponent {
           documents: [],
           tourId: tour.id,
           adminIds: tour.adminIds, // Denormalize
+          checklist: [
+            { id: 'default-1', task: 'Confirm Hotel', isCompleted: false },
+            { id: 'default-2', task: 'Send Briefing Email', isCompleted: false },
+            { id: 'default-3', task: 'Book Transfers', isCompleted: false }
+          ],
         };
       }
 

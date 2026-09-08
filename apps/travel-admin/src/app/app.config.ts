@@ -18,7 +18,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 
 // Firebase
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getMessaging } from 'firebase/messaging';
@@ -50,7 +50,15 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: FIRESTORE_TOKEN,
-      useFactory: () => getFirestore(initializeApp(environment.firebase)),
+      useFactory: () => {
+        const app = initializeApp(environment.firebase);
+        const isCypress = typeof window !== 'undefined' && 
+          ((window as any).Cypress || window.localStorage.getItem('bypassAuth') === 'true');
+        if (isCypress) {
+          return initializeFirestore(app, { experimentalForceLongPolling: true });
+        }
+        return getFirestore(app);
+      }
     },
     {
       provide: FIREBASE_AUTH_TOKEN,

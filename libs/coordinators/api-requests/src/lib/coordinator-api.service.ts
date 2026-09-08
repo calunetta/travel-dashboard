@@ -374,6 +374,7 @@ export class CoordinatorApiService {
         surname: firestoreData.surname,
         phone: firestoreData.phone,
         agePreference: firestoreData.agePreference,
+        nationality: firestoreData.nationality,
         notes: firestoreData.notes,
         updatedAt: serverTimestamp(),
       });
@@ -424,13 +425,19 @@ export class CoordinatorApiService {
     const snapshot = await getDocs(q);
 
     if (!snapshot.empty) {
-      const existingRef = snapshot.docs[0].ref;
-      await updateDoc(existingRef, {
-        name,
-        surname,
-        phone,
+      const existingDoc = snapshot.docs[0];
+      const existingData = existingDoc.data();
+      const existingRef = existingDoc.ref;
+      
+      const update: Record<string, any> = {
         updatedAt: serverTimestamp(),
-      });
+      };
+      
+      if (!existingData['name'] && name) update['name'] = name;
+      if (!existingData['surname'] && surname) update['surname'] = surname;
+      if (!existingData['phone'] && phone) update['phone'] = phone;
+
+      await updateDoc(existingRef, update);
       return existingRef.id as FirestoreId;
     }
 

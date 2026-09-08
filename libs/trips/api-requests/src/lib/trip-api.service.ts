@@ -25,6 +25,7 @@ import {
 import { Observable, shareReplay } from 'rxjs';
 import { serverTimestamp } from 'firebase/firestore';
 import { FirebaseAuthService } from 'auth-api-requests';
+import { AuditLoggerService } from 'shared-api-requests';
 import { FIRESTORE_TOKEN } from 'shared-models';
 import type { FirestoreId } from 'shared-models';
 import type { Trip, CreateTripPayload, UpdateTripPayload, TripDocument } from 'trips-models';
@@ -40,6 +41,7 @@ const TRIPS_COLLECTION = 'trips';
 export class TripApiService {
   private readonly firestore = inject(FIRESTORE_TOKEN);
   private readonly auth = inject(FirebaseAuthService);
+  private readonly auditLogger = inject(AuditLoggerService);
 
   // ── Real-Time Reads ────────────────────────────────────────────────────────
 
@@ -149,6 +151,16 @@ export class TripApiService {
     const docRef = doc(this.firestore, TRIPS_COLLECTION, id);
     const firestoreData = mapUpdatePayloadToFirestore(rest);
     await updateDoc(docRef, firestoreData as Record<string, any>);
+    
+    if (payload.manualHotelCost !== undefined) {
+      this.auditLogger.logAction(
+        'MANUAL_HOTEL_COST_OVERRIDE',
+        TRIPS_COLLECTION,
+        id,
+        this.auth.currentUser()?.uid ?? 'unknown',
+        { newCost: payload.manualHotelCost }
+      );
+    }
   }
 
   /**
@@ -158,6 +170,13 @@ export class TripApiService {
   async delete(tripId: FirestoreId): Promise<void> {
     const docRef = doc(this.firestore, TRIPS_COLLECTION, tripId);
     await deleteDoc(docRef);
+    
+    this.auditLogger.logAction(
+      'DELETE_TRIP',
+      TRIPS_COLLECTION,
+      tripId,
+      this.auth.currentUser()?.uid ?? 'unknown'
+    );
   }
 
   /**

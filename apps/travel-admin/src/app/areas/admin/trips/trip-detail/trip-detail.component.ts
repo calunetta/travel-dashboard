@@ -22,6 +22,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { TripApiService, TripStorageService } from 'trips-api-requests';
@@ -52,6 +53,7 @@ import { calculateHotelCost } from 'hotels-mapping-and-utils';
     MatChipsModule,
     MatTooltipModule,
     MatSnackBarModule,
+    MatCheckboxModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -190,6 +192,26 @@ import { calculateHotelCost } from 'hotels-mapping-and-utils';
                 <mat-label>Extra Beds</mat-label>
                 <input matInput type="number" min="0" [(ngModel)]="rooms.EXTRA_BED" (change)="saveRooms()" />
               </mat-form-field>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Operational Kanban / Checklist -->
+          <mat-card class="tha-card tha-shadow-sm">
+            <mat-card-header>
+              <mat-card-title>Operational Kanban</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="tha-pt-4">
+              <div class="tha-flex-col tha-gap-2">
+                <mat-checkbox 
+                  *ngFor="let item of t.checklist" 
+                  [checked]="item.isCompleted"
+                  (change)="toggleChecklistItem(t.id, item, t.checklist)">
+                  {{ item.task }}
+                </mat-checkbox>
+                <div *ngIf="!t.checklist || t.checklist.length === 0" class="tha-text-muted tha-text-sm">
+                  No checklist items available.
+                </div>
               </div>
             </mat-card-content>
           </mat-card>
@@ -500,6 +522,27 @@ export class TripDetailComponent implements OnInit {
     } catch (err: unknown) {
       console.error('Failed to toggle payment status', err);
       this.snackBar.open('Failed to update payment status.', 'Close', { duration: 3000 });
+    }
+  }
+
+  // ── Checklist Toggle ────────────────────────────────────────────────────────
+
+  async toggleChecklistItem(
+    tripId: FirestoreId,
+    item: { id: string; task: string; isCompleted: boolean },
+    currentChecklist: ReadonlyArray<{ id: string; task: string; isCompleted: boolean }>
+  ): Promise<void> {
+    try {
+      const updatedChecklist = currentChecklist.map((c) =>
+        c.id === item.id ? { ...c, isCompleted: !c.isCompleted } : c
+      );
+      await this.tripApi.update({
+        id: tripId,
+        checklist: updatedChecklist,
+      });
+    } catch (err: unknown) {
+      console.error('Failed to toggle checklist item', err);
+      this.snackBar.open('Failed to update checklist.', 'Close', { duration: 3000 });
     }
   }
 }

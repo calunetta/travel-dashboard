@@ -1,66 +1,115 @@
 describe('Coordinator Candidacy Flow & Admin Assignment', () => {
   it('should allow submitting a candidacy when trips are available', () => {
     cy.intercept('POST', '**/google.firestore.v1.Firestore/Listen/**', (req) => {
-      if (JSON.stringify(req.body).includes('tourWeRoadCode')) {
-        req.reply({
-          statusCode: 200,
-          body: [
-            {
-              documentChange: {
-                document: {
-                  name: 'projects/travel-handling-app/databases/(default)/documents/tours/mock-tour',
-                  fields: {
-                    tourName: { stringValue: 'Japan Mock Tour' },
-                    tourWeRoadCode: { stringValue: 'mock-tour-code' },
-                    country: { stringValue: 'Japan' }
-                  },
-                  createTime: '2023-01-01T00:00:00Z',
-                  updateTime: '2023-01-01T00:00:00Z'
+      const responses = [];
+      let targetId = -1;
+      let collectionId = '';
+      let docNameQuery = '';
+
+      try {
+        let bodyStr = '';
+        if (typeof req.body === 'string') {
+          bodyStr = decodeURIComponent(req.body);
+        } else if (req.body && typeof req.body === 'object') {
+          if (req.body.req0__data__) {
+            bodyStr = Object.values(req.body).join('');
+          } else {
+            bodyStr = JSON.stringify(req.body);
+          }
+        }
+
+        const colMatch = /"collectionId"\s*:\s*"([^"]+)"/.exec(bodyStr);
+        const targetMatch = /"targetId"\s*:\s*(\d+)/.exec(bodyStr);
+        const docMatch = /"documents"\s*:\s*\["([^"]+)"\]/.exec(bodyStr);
+        if (colMatch) collectionId = colMatch[1];
+        if (targetMatch) targetId = parseInt(targetMatch[1]);
+        if (docMatch) {
+            docNameQuery = docMatch[1];
+            collectionId = docNameQuery.split('/')[5] || '';
+        }
+      } catch (e) {
+        console.error('Error parsing Listen body', e);
+      }
+
+      if (targetId !== -1) {
+        if (collectionId === 'trips') {
+          responses.push({
+            documentChange: {
+              document: {
+                name: docNameQuery || 'projects/travel-handling-app/databases/(default)/documents/trips/trip123',
+                fields: {
+                  destination: { stringValue: 'Japan' },
+                  code: { stringValue: 'JP-2026' },
+                  startDate: { stringValue: '2026-05-01' },
+                  endDate: { stringValue: '2026-05-15' },
+                  status: { stringValue: 'PUBLISHED' },
+                  tourId: { stringValue: 'tour123' },
+                  coordinatorId: { nullValue: null },
+                  adminIds: { arrayValue: { values: [{ stringValue: 'mock-admin-uid' }] } },
+                  checklist: {
+                    arrayValue: {
+                      values: [
+                        {
+                          mapValue: {
+                            fields: {
+                              id: { stringValue: 'default-1' },
+                              task: { stringValue: 'Confirm Hotel' },
+                              isCompleted: { booleanValue: false }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
                 },
-                targetIds: [req.body.addTarget?.targetId ?? 1]
-              }
-            },
-            {
-              targetChange: { targetChangeType: 'CURRENT', targetIds: [req.body.addTarget?.targetId ?? 1] }
+                createTime: '2023-01-01T00:00:00Z',
+                updateTime: '2023-01-01T00:00:00Z'
+              },
+              targetIds: [targetId]
             }
-          ]
-        });
-      } else if (JSON.stringify(req.body).includes('trips')) {
-        req.reply({
-          statusCode: 200,
-          body: [
-            {
-              documentChange: {
-                document: {
-                  name: 'projects/travel-handling-app/databases/(default)/documents/trips/mock-trip',
-                  fields: {
-                    destination: { stringValue: 'Japan' },
-                    code: { stringValue: 'JP-2026' },
-                    tourId: { stringValue: 'tour123' },
-                    status: { stringValue: 'PUBLISHED' },
-                    nationality: { stringValue: 'IT' },
-                    startDate: { stringValue: '2026-10-01' },
-                    endDate: { stringValue: '2026-10-15' }
-                  },
-                  createTime: '2023-01-01T00:00:00Z',
-                  updateTime: '2023-01-01T00:00:00Z'
+          });
+        } else if (collectionId === 'tours') {
+          responses.push({
+            documentChange: {
+              document: {
+                name: docNameQuery || 'projects/travel-handling-app/databases/(default)/documents/tours/tour123',
+                fields: {
+                  tourWeRoadCode: { stringValue: 'mock-tour-code' },
+                  country: { stringValue: 'Japan' },
+                  tourLength: { integerValue: 14 },
+                  nationalities: { arrayValue: { values: [{ stringValue: 'IT' }] } },
+                  adminIds: { arrayValue: { values: [{ stringValue: 'mock-admin-uid' }] } }
                 },
-                targetIds: [req.body.addTarget?.targetId ?? 1]
-              }
-            },
-            {
-              targetChange: { targetChangeType: 'CURRENT', targetIds: [req.body.addTarget?.targetId ?? 1] }
+                createTime: '2023-01-01T00:00:00Z',
+                updateTime: '2023-01-01T00:00:00Z'
+              },
+              targetIds: [targetId]
             }
-          ]
-        });
-      } else {
-        req.reply({
-          statusCode: 200,
-          body: [
-            { targetChange: { targetChangeType: 'CURRENT', targetIds: [req.body.addTarget?.targetId ?? 1] } }
-          ]
+          });
+        } else if (collectionId === 'admins' || collectionId === 'users') {
+          responses.push({
+            documentChange: {
+              document: {
+                name: docNameQuery || 'projects/travel-handling-app/databases/(default)/documents/admins/mock-admin-uid',
+                fields: { role: { stringValue: 'SUPER_ADMIN' } },
+                createTime: '2023-01-01T00:00:00Z',
+                updateTime: '2023-01-01T00:00:00Z'
+              },
+              targetIds: [targetId]
+            }
+          });
+        }
+
+        // Add the CURRENT targetChange regardless of whether we had documents
+        responses.push({
+          targetChange: { targetChangeType: 'CURRENT', targetIds: [targetId] }
         });
       }
+
+      req.reply({
+        statusCode: 200,
+        body: responses
+      });
     }).as('firestoreListen');
 
     cy.intercept('POST', '**/google.firestore.v1.Firestore/Write/**', {
@@ -71,7 +120,11 @@ describe('Coordinator Candidacy Flow & Admin Assignment', () => {
       }
     }).as('firestoreWrite');
 
-    cy.visit('/mock-tour-code/public');
+    cy.visit('/mock-tour-code/public', {
+      onBeforeLoad(win) {
+        win.localStorage.setItem('bypassAuth', 'true');
+      }
+    });
 
     // Wait for the Listen
     cy.wait('@firestoreListen');
@@ -97,83 +150,115 @@ describe('Coordinator Candidacy Flow & Admin Assignment', () => {
 
   it('should allow admin to auto-assign pending candidacies', () => {
     cy.intercept('POST', '**/google.firestore.v1.Firestore/Listen/**', (req) => {
-      if (JSON.stringify(req.body).includes('admins')) {
-        req.reply({
-          statusCode: 200,
-          body: [
-            {
-              documentChange: {
-                document: {
-                  name: req.body.addTarget?.documents?.documents[0] ?? 'mock',
-                  fields: { role: { stringValue: 'SUPER_ADMIN' } },
-                  createTime: '2023-01-01T00:00:00Z',
-                  updateTime: '2023-01-01T00:00:00Z'
-                },
-                targetIds: [req.body.addTarget?.targetId ?? 1]
-              }
-            },
-            {
-              targetChange: { targetChangeType: 'CURRENT', targetIds: [req.body.addTarget?.targetId ?? 1] }
-            }
-          ]
-        });
-      } else if (JSON.stringify(req.body).includes('candidacies')) {
-        req.reply({
-          statusCode: 200,
-          body: [
-            {
-              documentChange: {
-                document: {
-                  name: 'projects/travel-handling-app/databases/(default)/documents/candidacies/mock-candidacy',
-                  fields: {
-                    name: { stringValue: 'John' },
-                    surname: { stringValue: 'Doe' },
-                    status: { stringValue: 'PENDING' },
-                    nationality: { stringValue: 'IT' },
-                    tripId: { stringValue: 'mock-trip' }
-                  },
-                  createTime: '2026-01-01T00:00:00Z',
-                  updateTime: '2026-01-01T00:00:00Z'
-                },
-                targetIds: [req.body.addTarget?.targetId ?? 1]
-              }
-            },
-            {
-              targetChange: { targetChangeType: 'CURRENT', targetIds: [req.body.addTarget?.targetId ?? 1] }
-            }
-          ]
-        });
-      } else if (JSON.stringify(req.body).includes('trips')) {
-        req.reply({
-          statusCode: 200,
-          body: [
-            {
-              documentChange: {
-                document: {
-                  name: 'projects/travel-handling-app/databases/(default)/documents/trips/mock-trip',
-                  fields: {
-                    destination: { stringValue: 'Japan' },
-                    nationality: { stringValue: 'IT' },
-                    startDate: { stringValue: '2026-10-01' },
-                    endDate: { stringValue: '2026-10-15' }
+      const responses = [];
+      let targetId = -1;
+      let collectionId = '';
+      let docNameQuery = '';
+
+      try {
+        let bodyStr = '';
+        if (typeof req.body === 'string') {
+          bodyStr = decodeURIComponent(req.body);
+        } else if (req.body && typeof req.body === 'object') {
+          if (req.body.req0__data__) {
+            bodyStr = Object.values(req.body).join('');
+          } else {
+            bodyStr = JSON.stringify(req.body);
+          }
+        }
+
+        const colMatch = /"collectionId"\s*:\s*"([^"]+)"/.exec(bodyStr);
+        const targetMatch = /"targetId"\s*:\s*(\d+)/.exec(bodyStr);
+        const docMatch = /"documents"\s*:\s*\["([^"]+)"\]/.exec(bodyStr);
+        if (colMatch) collectionId = colMatch[1];
+        if (targetMatch) targetId = parseInt(targetMatch[1]);
+        if (docMatch) {
+            docNameQuery = docMatch[1];
+            collectionId = docNameQuery.split('/')[5] || '';
+        }
+      } catch (e) {
+        console.error('Error parsing Listen body', e);
+      }
+
+      if (targetId !== -1) {
+        if (collectionId === 'trips') {
+          responses.push({
+            documentChange: {
+              document: {
+                name: docNameQuery || 'projects/travel-handling-app/databases/(default)/documents/trips/trip123',
+                fields: {
+                  destination: { stringValue: 'Japan' },
+                  code: { stringValue: 'JP-2026' },
+                  startDate: { stringValue: '2026-05-01' },
+                  endDate: { stringValue: '2026-05-15' },
+                  status: { stringValue: 'PUBLISHED' },
+                  tourId: { stringValue: 'tour123' },
+                  coordinatorId: { nullValue: null },
+                  adminIds: { arrayValue: { values: [{ stringValue: 'mock-admin-uid' }] } },
+                  checklist: {
+                    arrayValue: {
+                      values: [
+                        {
+                          mapValue: {
+                            fields: {
+                              id: { stringValue: 'default-1' },
+                              task: { stringValue: 'Confirm Hotel' },
+                              isCompleted: { booleanValue: false }
+                            }
+                          }
+                        }
+                      ]
+                    }
                   }
                 },
-                targetIds: [req.body.addTarget?.targetId ?? 1]
-              }
-            },
-            {
-              targetChange: { targetChangeType: 'CURRENT', targetIds: [req.body.addTarget?.targetId ?? 1] }
+                createTime: '2023-01-01T00:00:00Z',
+                updateTime: '2023-01-01T00:00:00Z'
+              },
+              targetIds: [targetId]
             }
-          ]
-        });
-      } else {
-        req.reply({
-          statusCode: 200,
-          body: [
-            { targetChange: { targetChangeType: 'CURRENT', targetIds: [req.body.addTarget?.targetId ?? 1] } }
-          ]
+          });
+        } else if (collectionId === 'tours') {
+          responses.push({
+            documentChange: {
+              document: {
+                name: docNameQuery || 'projects/travel-handling-app/databases/(default)/documents/tours/tour123',
+                fields: {
+                  tourWeRoadCode: { stringValue: 'mock-tour-code' },
+                  country: { stringValue: 'Japan' },
+                  tourLength: { integerValue: 14 },
+                  nationalities: { arrayValue: { values: [{ stringValue: 'IT' }] } },
+                  adminIds: { arrayValue: { values: [{ stringValue: 'mock-admin-uid' }] } }
+                },
+                createTime: '2023-01-01T00:00:00Z',
+                updateTime: '2023-01-01T00:00:00Z'
+              },
+              targetIds: [targetId]
+            }
+          });
+        } else if (collectionId === 'admins' || collectionId === 'users') {
+          responses.push({
+            documentChange: {
+              document: {
+                name: docNameQuery || 'projects/travel-handling-app/databases/(default)/documents/admins/mock-admin-uid',
+                fields: { role: { stringValue: 'SUPER_ADMIN' } },
+                createTime: '2023-01-01T00:00:00Z',
+                updateTime: '2023-01-01T00:00:00Z'
+              },
+              targetIds: [targetId]
+            }
+          });
+        }
+
+        // Add the CURRENT targetChange regardless of whether we had documents
+        responses.push({
+          targetChange: { targetChangeType: 'CURRENT', targetIds: [targetId] }
         });
       }
+
+      req.reply({
+        statusCode: 200,
+        body: responses
+      });
     }).as('firestoreListen');
 
     cy.intercept('POST', '**/google.firestore.v1.Firestore/Write/**', {
@@ -200,8 +285,8 @@ describe('Coordinator Candidacy Flow & Admin Assignment', () => {
 
     cy.wait('@firestoreListen');
     
-    // Use cy.get('button').contains('Run Automatic Assignment') instead of cy.contains on the whole page to specifically target the button
-    cy.get('button').contains('Run Automatic Assignment').click();
+    // Use cy.contains('button', 'Run Automatic Assignment')
+    cy.contains('button', 'Run Automatic Assignment').click();
     
     cy.get('mat-dialog-container').should('be.visible');
     cy.get('mat-dialog-container button').contains('Confirm').click();

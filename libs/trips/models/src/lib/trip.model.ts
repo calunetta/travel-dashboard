@@ -52,6 +52,12 @@ export interface TripDocument {
   readonly paymentStatus: DocumentPaymentStatus;
 }
 
+export interface TripChecklistItem {
+  readonly id: string;
+  readonly task: string;
+  readonly isCompleted: boolean;
+}
+
 /**
  * Core Trip domain model.
  * Duration is always 8 days by business rule.
@@ -80,6 +86,7 @@ export interface Trip {
   readonly nationality: Nationality;
   readonly manualHotelCost: number | null;
   readonly documents: ReadonlyArray<TripDocument>;
+  readonly checklist: ReadonlyArray<TripChecklistItem>;
   readonly tourId: FirestoreId;
   readonly adminIds: ReadonlyArray<FirestoreId>;
   readonly createdAt: ISODateString;
@@ -120,6 +127,11 @@ export interface TripFirestoreDocument {
     readonly url: string;
     readonly uploadedAt: string;
     readonly paymentStatus: string;
+  }>;
+  readonly checklist: ReadonlyArray<{
+    readonly id: string;
+    readonly task: string;
+    readonly isCompleted: boolean;
   }>;
   readonly tourId: string;
   readonly adminIds: ReadonlyArray<string>;

@@ -848,3 +848,26 @@ Following the Master Rules for granular Git versioning, these are the logical co
 ## Notification System UX Iteration - Part 3 & 4
 - **Part 3 (Document Rejection Flow)**: Skipped as per user request.
 - **Part 4 (Testing)**: Validated full test coverage for email enrichment and push notifications in Jest (`functions/src/index.spec.ts`). No new Cypress UI tests were required since the rejection flow was skipped and no frontend UI was altered. Also updated outdated mock schemas in Cypress test suites (`admin-trips.cy.ts`, `candidacy-flow.cy.ts`).
+
+## Massive Iteration - Part 1
+- **Coordinator Data Enrichment & Upsert Engine**: Updated `CoordinatorApiService`. The `upsertCoordinatorFromCsv` method now uses `email` as a unique key to perform a PATCH update, filling only fields that are missing in the existing profile. The `#upsertCoordinatorFromCandidacy` method unconditionally overwrites the coordinator's phone, age preference, and nationality with the latest ones from an accepted candidacy. Added Jest unit tests for the upsert logic.
+
+## Massive Iteration - Part 2
+- **Operational Kanban / Pre-Trip Checklists**: Added `checklist` array to the `Trip` model in `libs/trips/models`. Updated `trip.mapper.ts` to inject default checklist items ("Confirm Hotel", "Send Briefing Email", "Book Transfers") into the `CreateTripPayload`. Updated `TripDetailComponent` to display an Operational Kanban card using `MatCheckbox` and immediately write back state changes (toggle `isCompleted`) to Firestore using `TripApiService.update`.
+
+## Massive Iteration - Part 3
+- **Role-Based Audit Logging**: Created `AuditLog` interface in `libs/shared/models`. Generated a new Nx library `libs/shared/api-requests` containing `AuditLoggerService`. Added Firestore rules to lock down `/audit_logs` collection exclusively to `SUPER_ADMIN` (read and create, no modifications). Injected `AuditLoggerService` into `TripApiService` and `HotelApiService` to silently log `DELETE_TRIP`, `MANUAL_HOTEL_COST_OVERRIDE`, and `OTHER` (for hotel deletions). Implemented unit tests for the logging service.
+
+## Massive Iteration - Part 4
+- **Advanced Notifications & Cron Jobs**: Updated `functions/src/index.ts`. Modified `checkUpcomingTripsCron` to detect trips 7 days away with missing documents and send an urgent email to the coordinator. Enhanced the same cron to detect trips 1-3 days away with unpaid documents and push a warning to Tour Admins via FCM. Created a new Firestore `onDocumentCreated` trigger `onAssignmentCreated` on the `assignments` subcollection to automatically email a "Match Confirmation" to the coordinator when assigned automatically (`AssignmentType.AUTOMATIC`).
+
+## Massive Iteration - Part 5 (E2E Test Suite Stabilization)
+**Status**: BLOCKED / KNOWN ISSUE
+- **Firestore WebChannel Mocking**: Refactored the `cy.intercept` logic in `admin-trip-detail.cy.ts`, `admin-trips.cy.ts`, and `candidacy-flow.cy.ts` to cleanly parse Firestore SDK payloads, specifically handling both clean JSON and `req0__data__` URL-encoded payloads used in long-polling mode.
+- **Blocker**: The AngularFire / Firestore SDK's usage of the WebChannel protocol makes mocking the `Listen` RPC incredibly brittle in Cypress without using a real Firebase Emulator. Despite correctly returning the JSON mock structure (including `adminIds`, `coordinatorId: { nullValue: null }`, and accurate `collectionId` matches), the stream fails to trigger the UI updates reliably in the test runner.
+- **Recommendation**: Switch to the Firebase Local Emulator Suite for E2E tests instead of attempting to mock the `google.firestore.v1.Firestore/Listen` HTTP calls.
+
+## Massive Iteration - Part 6 (Development Tracker Update)
+**Status**: COMPLETED
+- Logged all completed tasks from Parts 1 through 5 in this development tracker.
+- Documented the architecture changes (Coordinator upsert logic, Trip checklists, Audit logging, Gen 2 Firebase Triggers).

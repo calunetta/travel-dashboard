@@ -34,6 +34,7 @@
       ],
       "hotels-models": ["libs/hotels/models/src/index.ts"],
       "hotels-ui": ["libs/hotels/ui/src/index.ts"],
+      "shared-api-requests": ["libs/shared/api-requests/src/index.ts"],
       "shared-mapping-and-utils": [
         "libs/shared/mapping-and-utils/src/index.ts"
       ],

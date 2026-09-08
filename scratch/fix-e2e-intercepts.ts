@@ -1,35 +1,40 @@
-describe('Admin Trips Flow', () => {
-  beforeEach(() => {
-    // Intercept admins fetch to mock SUPER_ADMIN role
+import * as fs from 'fs';
+import * as path from 'path';
+
+const files = [
+  'apps/travel-admin-e2e/src/e2e/admin-trips.cy.ts',
+  'apps/travel-admin-e2e/src/e2e/admin-trip-detail.cy.ts',
+  'apps/travel-admin-e2e/src/e2e/candidacy-flow.cy.ts'
+];
+
+const replacementMockLogic = `
     cy.intercept('POST', '**/google.firestore.v1.Firestore/Listen/**', (req) => {
       const responses = [];
       let targetId = -1;
       let collectionId = '';
       let docNameQuery = '';
 
-      try {
-        let bodyStr = '';
-        if (typeof req.body === 'string') {
-          bodyStr = decodeURIComponent(req.body);
-        } else if (req.body && typeof req.body === 'object') {
-          if (req.body.req0__data__) {
-            bodyStr = Object.values(req.body).join('');
-          } else {
-            bodyStr = JSON.stringify(req.body);
-          }
+      if (typeof req.body === 'object' && req.body.addTarget) {
+        targetId = req.body.addTarget.targetId;
+        const query = req.body.addTarget.query;
+        if (query?.structuredQuery?.from?.[0]?.collectionId) {
+           collectionId = query.structuredQuery.from[0].collectionId;
+        } else if (req.body.addTarget.documents?.documents?.[0]) {
+           docNameQuery = req.body.addTarget.documents.documents[0];
+           collectionId = docNameQuery.split('/')[5] || ''; 
         }
-
-        const colMatch = /"collectionId"\s*:\s*"([^"]+)"/.exec(bodyStr);
-        const targetMatch = /"targetId"\s*:\s*(\d+)/.exec(bodyStr);
-        const docMatch = /"documents"\s*:\s*\["([^"]+)"\]/.exec(bodyStr);
+      } else {
+        // Fallback for WebChannel if it somehow slips through
+        const bodyStr = typeof req.body === 'string' ? decodeURIComponent(req.body) : JSON.stringify(req.body);
+        const colMatch = /"collectionId"\\s*:\\s*"([^"]+)"/.exec(bodyStr);
+        const targetMatch = /"targetId"\\s*:\\s*(\\d+)/.exec(bodyStr);
+        const docMatch = /"documents"\\s*:\\s*\\["([^"]+)"\\]/.exec(bodyStr);
         if (colMatch) collectionId = colMatch[1];
         if (targetMatch) targetId = parseInt(targetMatch[1]);
         if (docMatch) {
             docNameQuery = docMatch[1];
             collectionId = docNameQuery.split('/')[5] || '';
         }
-      } catch (e) {
-        console.error('Error parsing Listen body', e);
       }
 
       if (targetId !== -1) {
@@ -112,64 +117,16 @@ describe('Admin Trips Flow', () => {
         body: responses
       });
     }).as('firestoreListen');
+`;
 
-    // Intercept batch writes (Delete/Add)
-    cy.intercept('POST', '**/google.firestore.v1.Firestore/Commit/**', {
-      statusCode: 200,
-      body: {
-        commitTime: '2026-01-01T00:00:00Z',
-        writeResults: [{ updateTime: '2026-01-01T00:00:00Z' }]
-      }
-    }).as('firestoreCommit');
-
-    cy.visit('/admin/trips', {
-      onBeforeLoad(win) {
-        win.localStorage.setItem('bypassAuth', 'true');
-      }
-    });
-  });
-
-  it('should display the trip list and allow batch deletion', () => {
-    // Verify the mock trip is rendered
-    cy.contains('Japan').should('be.visible');
-    cy.contains('JP-2026').should('be.visible');
-
-    // Click the master checkbox to select all
-    cy.get('th mat-checkbox').click();
-
-    // Batch Delete button should appear
-    cy.get('button[aria-label="Delete selected"]').click();
-
-    // Confirm dialog should appear
-    cy.get('mat-dialog-container').should('be.visible');
-    cy.get('mat-dialog-container').contains('Confirm Deletion');
-    
-    // Click confirm
-    cy.get('mat-dialog-container button').contains('Delete').click();
-
-    // Wait for delete snackbar (avoiding explicit cy.wait on mock intercepts for timing)
-    cy.get('snack-bar-container').should('contain', 'deleted successfully');
-  });
-
-  it('should allow CSV import', () => {
-    // Click the Import CSV button
-    cy.get('button').contains('Batch Import (CSV)').click();
-
-    // CSV preview dialog should open
-    cy.get('mat-dialog-container').should('be.visible');
-    
-    const csvContent = 'weRoadTourSlug,start date,end date,coordinator,coordinator number,coordinator email,notes,hotel,booked by,nationality\nmock-tour-code,2026-12-01,2026-12-15,,,,,,IT';
-    
-    cy.get('input[type="file"]').selectFile({
-      contents: Cypress.Buffer.from(csvContent),
-      fileName: 'trips.csv',
-      mimeType: 'text/csv',
-    }, { force: true });
-
-    // Click Confirm Import
-    cy.contains('button', 'Import 1 Trips').click();
-
-    // Should contain successfully
-    cy.get('snack-bar-container').should('contain', 'successfully');
-  });
-});
+for (const file of files) {
+  const p = path.resolve(process.cwd(), file);
+  const content = fs.readFileSync(p, 'utf8');
+  
+  // Replace everything between cy.intercept('POST', '**/google.firestore.v1.Firestore/Listen/**' and }).as('firestoreListen');
+  const regex = /cy\.intercept\('POST',\s*'[^']*Firestore\/Listen[^']*',\s*\(req\)\s*=>\s*\{[\s\S]*?\}\)\.as\('firestoreListen'\);/g;
+  
+  const newContent = content.replace(regex, replacementMockLogic.trim());
+  fs.writeFileSync(p, newContent);
+  console.log(`Updated ${file}`);
+}

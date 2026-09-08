@@ -11,20 +11,11 @@ jest.mock('firebase-admin', () => ({
     initializeApp: jest.fn(),
     firestore: jest.fn(() => ({
         collection: jest.fn((colName) => {
-            if (colName === 'admins') {
-                return {
-                    doc: jest.fn(() => ({ get: dbDocGetMock })),
-                    where: dbWhereMock,
-                    get: dbGetMock,
-                };
-            }
-            if (colName === 'trips') {
-                return {
-                    where: dbWhereMock,
-                    get: dbGetMock,
-                };
-            }
-            return {};
+            return {
+                doc: jest.fn(() => ({ get: dbDocGetMock })),
+                where: dbWhereMock,
+                get: dbGetMock,
+            };
         })
     })),
     messaging: jest.fn(() => ({
@@ -61,17 +52,27 @@ describe('onTripDocumentUploaded', () => {
         const afterSnap = {
             data: () => ({
                 destination: 'Japan',
+                code: 'JP-2026',
+                coordinatorId: 'coord123',
                 documents: [{ id: 'doc1' }],
                 adminIds: ['admin1']
             })
         };
         const change = { before: beforeSnap, after: afterSnap };
-        dbDocGetMock.mockResolvedValue({ data: () => ({ fcmToken: 'token123' }) });
+        dbDocGetMock
+            .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Mario', surname: 'Rossi' }) })
+            .mockResolvedValueOnce({ data: () => ({ fcmToken: 'token123' }) });
         await index_1.onTripDocumentUploaded.run({ data: change, params: { tripId: '123' } });
         expect(sendEachForMulticastMock).toHaveBeenCalledWith(expect.objectContaining({
             tokens: ['token123'],
             notification: expect.objectContaining({
-                title: 'New Trip Document'
+                title: 'New Trip Document',
+                body: expect.stringContaining('Mario Rossi')
+            }),
+            webpush: expect.objectContaining({
+                fcmOptions: {
+                    link: expect.stringContaining('/admin/trips/123')
+                }
             })
         }));
     });
@@ -99,6 +100,11 @@ describe('onDocumentStatusChanged', () => {
             tokens: ['superToken1'],
             notification: expect.objectContaining({
                 title: 'Payment Completed'
+            }),
+            webpush: expect.objectContaining({
+                fcmOptions: {
+                    link: expect.stringContaining('/admin/trips/123')
+                }
             })
         }));
     });
@@ -134,23 +140,31 @@ describe('checkUpcomingTripsCron', () => {
         const tripsSnapshot = {
             docs: [
                 {
+                    id: 'trip123',
                     data: () => ({
                         destination: 'Japan',
                         documents: [],
+                        coordinatorId: 'coord456',
                         adminIds: ['admin1']
                     })
                 }
             ]
         };
         dbGetMock.mockResolvedValue(tripsSnapshot);
-        dbDocGetMock.mockResolvedValue({
-            data: () => ({ fcmToken: 'adminToken1' })
-        });
+        dbDocGetMock
+            .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Luigi', surname: 'Verdi' }) })
+            .mockResolvedValueOnce({ data: () => ({ fcmToken: 'adminToken1' }) });
         await index_1.checkUpcomingTripsCron.run({ data: {} });
         expect(sendEachForMulticastMock).toHaveBeenCalledWith(expect.objectContaining({
             tokens: ['adminToken1'],
             notification: expect.objectContaining({
-                title: 'Action Required: Missing Documents'
+                title: 'Action Required: Missing Documents',
+                body: expect.stringContaining('Luigi Verdi')
+            }),
+            webpush: expect.objectContaining({
+                fcmOptions: {
+                    link: expect.stringContaining('/admin/trips/trip123')
+                }
             })
         }));
     });
