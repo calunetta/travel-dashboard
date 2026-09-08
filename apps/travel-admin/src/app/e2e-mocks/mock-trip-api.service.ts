@@ -101,7 +101,13 @@ export class MockTripApiService {
     await this.update({ id: tripId, facebookGroupUrl } as any);
   }
 
-  async addDocument(): Promise<void> {}
-  async removeDocument(): Promise<void> {}
-  async toggleDocumentPaymentStatus(): Promise<void> {}
+  async addDocument(): Promise<void> {
+    await Promise.resolve();
+  }
+  async removeDocument(): Promise<void> {
+    await Promise.resolve();
+  }
+  async toggleDocumentPaymentStatus(): Promise<void> {
+    await Promise.resolve();
+  }
 }

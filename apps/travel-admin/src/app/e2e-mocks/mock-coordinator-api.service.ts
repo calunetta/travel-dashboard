@@ -100,10 +100,10 @@ export class MockCoordinatorApiService {
 
     if (type === AssignmentType.AUTOMATIC) {
       const current = this.candidacies.getValue();
-      const updated = current.map(c => 
-        (c.email === candidacy.email && c.status === CandidacyStatus.PENDING) 
-        ? { ...c, status: CandidacyStatus.WITHDRAWN } 
-        : c
+      const updated = current.map(c =>
+        (c.email === candidacy.email && c.status === CandidacyStatus.PENDING)
+          ? { ...c, status: CandidacyStatus.WITHDRAWN }
+          : c
       );
       this.candidacies.next(updated);
     }
@@ -120,7 +120,13 @@ export class MockCoordinatorApiService {
     return 'mock-coord-csv' as FirestoreId;
   }
 
-  async deleteManyCoordinators(): Promise<void> {}
-  async deleteCandidacy(): Promise<void> {}
-  async deleteManyCandidacies(): Promise<void> {}
+  async deleteManyCoordinators(): Promise<void> {
+    await Promise.resolve();
+  }
+  async deleteCandidacy(): Promise<void> {
+    await Promise.resolve();
+  }
+  async deleteManyCandidacies(): Promise<void> {
+    await Promise.resolve();
+  }
 }
