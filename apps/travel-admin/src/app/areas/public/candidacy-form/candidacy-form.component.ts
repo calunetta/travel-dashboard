@@ -232,7 +232,7 @@ export class CandidacyFormComponent {
       };
 
       await this.coordinatorApi.submitCandidacy(payload);
-      this.router.navigate(['../success'], { relativeTo: this.route });
+      this.router.navigate(['./success'], { relativeTo: this.route });
     } catch (err) {
       console.error('Failed to submit candidacy', err);
       this.snackBar.open('An error occurred while submitting your candidacy.', 'Close', {

@@ -35,6 +35,23 @@ import {
 } from 'shared-models';
 import { provideServiceWorker } from '@angular/service-worker';
 
+import { TripApiService } from 'trips-api-requests';
+import { TourApiService } from 'tours-api-requests';
+import { CoordinatorApiService } from 'coordinators-api-requests';
+import { MockTripApiService } from './e2e-mocks/mock-trip-api.service';
+import { MockTourApiService } from './e2e-mocks/mock-tour-api.service';
+import { MockCoordinatorApiService } from './e2e-mocks/mock-coordinator-api.service';
+
+import { HotelApiService } from 'hotels-api-requests';
+import { MockHotelApiService } from './e2e-mocks/mock-hotel-api.service';
+import { AdminApiService } from 'auth-api-requests';
+import { MockAdminApiService } from './e2e-mocks/mock-admin-api.service';
+
+const isCypress = typeof window !== 'undefined' && 
+          ((window as any).Cypress || window.localStorage.getItem('bypassAuth') === 'true');
+
+console.log('IS_CYPRESS EVALUATED TO:', isCypress);
+
 export const appConfig: ApplicationConfig = {
   providers: [
     // ── Core ──────────────────────────────────────────────────────────────
@@ -43,6 +60,14 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch()),
     provideAnimationsAsync(),
 
+    ...(isCypress ? [
+      { provide: TripApiService, useClass: MockTripApiService },
+      { provide: TourApiService, useClass: MockTourApiService },
+      { provide: CoordinatorApiService, useClass: MockCoordinatorApiService },
+      { provide: HotelApiService, useClass: MockHotelApiService },
+      { provide: AdminApiService, useClass: MockAdminApiService }
+    ] : []),
+
     // ── Firebase ──────────────────────────────────────────────────────────
     {
       provide: FIREBASE_APP_TOKEN,
@@ -50,15 +75,7 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: FIRESTORE_TOKEN,
-      useFactory: () => {
-        const app = initializeApp(environment.firebase);
-        const isCypress = typeof window !== 'undefined' && 
-          ((window as any).Cypress || window.localStorage.getItem('bypassAuth') === 'true');
-        if (isCypress) {
-          return initializeFirestore(app, { experimentalForceLongPolling: true });
-        }
-        return getFirestore(app);
-      }
+      useFactory: () => getFirestore(initializeApp(environment.firebase)),
     },
     {
       provide: FIREBASE_AUTH_TOKEN,
