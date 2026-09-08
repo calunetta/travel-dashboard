@@ -22,6 +22,7 @@ describe('AdminShellComponent', () => {
   let mockAdminApi: any;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     Object.defineProperty(window, 'Notification', {
       writable: true,
       value: {
@@ -45,19 +46,19 @@ describe('AdminShellComponent', () => {
       toggle: jest.fn(),
     };
 
-      mockAdminApi = {
-        updateFcmToken: jest.fn().mockResolvedValue(true)
-      };
+    mockAdminApi = {
+      updateFcmToken: jest.fn().mockResolvedValue(true)
+    };
 
-      await TestBed.configureTestingModule({
-        imports: [AdminShellComponent, RouterTestingModule, BrowserAnimationsModule],
-        providers: [
-          { provide: BreakpointObserver, useValue: mockBreakpointObserver },
-          { provide: FirebaseAuthService, useValue: mockAuthService },
-          { provide: ThemeService, useValue: mockThemeService },
-          { provide: AdminApiService, useValue: mockAdminApi },
-          { provide: FIREBASE_MESSAGING_TOKEN, useValue: {} },
-        ],
+    await TestBed.configureTestingModule({
+      imports: [AdminShellComponent, RouterTestingModule, BrowserAnimationsModule],
+      providers: [
+        { provide: BreakpointObserver, useValue: mockBreakpointObserver },
+        { provide: FirebaseAuthService, useValue: mockAuthService },
+        { provide: ThemeService, useValue: mockThemeService },
+        { provide: AdminApiService, useValue: mockAdminApi },
+        { provide: FIREBASE_MESSAGING_TOKEN, useValue: {} },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AdminShellComponent);
@@ -71,7 +72,7 @@ describe('AdminShellComponent', () => {
 
   it('should default to side mode on desktop (matches: false)', () => {
     expect(component.isMobile()?.matches).toBe(false);
-    
+
     const compiled = fixture.nativeElement as HTMLElement;
     const sidenav = compiled.querySelector('mat-sidenav');
     expect(sidenav?.getAttribute('ng-reflect-mode')).toBe('side');
@@ -81,14 +82,14 @@ describe('AdminShellComponent', () => {
   it('should switch to over mode on mobile (matches: true)', () => {
     // Override the mock for this specific test
     mockBreakpointObserver.observe = jest.fn().mockReturnValue(of({ matches: true } as BreakpointState));
-    
+
     // Re-create component to pick up new mock value
     fixture = TestBed.createComponent(AdminShellComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
 
     expect(component.isMobile()?.matches).toBe(true);
-    
+
     const compiled = fixture.nativeElement as HTMLElement;
     const sidenav = compiled.querySelector('mat-sidenav');
     expect(sidenav?.getAttribute('ng-reflect-mode')).toBe('over');
@@ -111,9 +112,9 @@ describe('AdminShellComponent', () => {
 
     it('should not update FCM token if permission is denied', async () => {
       window.Notification.requestPermission = jest.fn().mockResolvedValue('denied');
-      
+
       await component.enableNotifications();
-      
+
       expect(getToken).not.toHaveBeenCalled();
       expect(mockAdminApi.updateFcmToken).not.toHaveBeenCalled();
     });
