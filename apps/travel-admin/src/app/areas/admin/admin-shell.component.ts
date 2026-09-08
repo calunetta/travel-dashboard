@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, ViewChild } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, ViewChild, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
@@ -93,13 +93,21 @@ import { environment } from '../../../environments/environment';
           
           <div class="tha-flex-1"></div>
           
-          <span class="tha-text-sm tha-text-muted tha-mr-4">
+          <span *ngIf="!isMobile().matches" class="tha-text-sm tha-text-muted tha-mr-4">
             <span
               *ngIf="isSuperAdmin()"
               style="font-size: 0.65rem; font-weight: 700; background: var(--tha-primary); color: #fff; padding: 2px 6px; border-radius: 4px; margin-right: 6px; letter-spacing: 0.5px;"
             >SUPER ADMIN</span>
             {{ userEmail() }}
           </span>
+
+          <button *ngIf="deferredPrompt()" mat-icon-button (click)="installPwa()" aria-label="Install app" title="Install App" color="primary">
+            <mat-icon>install_mobile</mat-icon>
+          </button>
+
+          <button *ngIf="!notificationsEnabled()" mat-icon-button (click)="enableNotifications()" aria-label="Enable notifications" title="Enable notifications" color="primary">
+            <mat-icon>notifications_active</mat-icon>
+          </button>
 
           <button mat-icon-button (click)="themeService.toggle()" aria-label="Toggle theme">
             <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
@@ -142,12 +150,38 @@ export class AdminShellComponent {
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly messaging = inject(FIREBASE_MESSAGING_TOKEN, { optional: true });
 
-  constructor() {
-    this.initNotifications();
+  readonly deferredPrompt = signal<any>(null);
+
+  @HostListener('window:beforeinstallprompt', ['$event'])
+  onBeforeInstallPrompt(e: Event) {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    this.deferredPrompt.set(e);
   }
 
-  private async initNotifications() {
-    if (!this.messaging) return;
+  async installPwa() {
+    const promptEvent = this.deferredPrompt();
+    if (!promptEvent) return;
+
+    // Show the install prompt
+    promptEvent.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await promptEvent.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    // We've used the prompt, and can't use it again, throw it away
+    this.deferredPrompt.set(null);
+  }
+
+  // Expose signal for button visibility
+  readonly notificationsEnabled = computed(() => {
+    const user = this.authService.currentUser();
+    const hasPermission = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
+    return hasPermission && !!user?.adminProfile?.fcmToken;
+  });
+
+  async enableNotifications() {
+    if (!this.messaging || typeof window === 'undefined' || !('Notification' in window)) return;
 
     try {
       const permission = await Notification.requestPermission();
@@ -161,6 +195,8 @@ export class AdminShellComponent {
           await this.adminApi.updateFcmToken(user.uid as FirestoreId, token);
           console.log('FCM Token successfully saved.');
         }
+      } else {
+        console.warn('Notification permission denied by user.');
       }
     } catch (error) {
       console.error('Failed to get FCM token', error);

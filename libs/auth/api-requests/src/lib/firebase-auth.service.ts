@@ -67,7 +67,8 @@ export class FirebaseAuthService implements OnDestroy {
           surname: 'Admin',
           email: 'admin@example.com',
           phone: '',
-          role: 'SUPER_ADMIN'
+          role: 'SUPER_ADMIN',
+          fcmToken: undefined
         }
       });
       this._isLoading.set(false);
@@ -104,6 +105,7 @@ export class FirebaseAuthService implements OnDestroy {
                 email: data.email ?? firebaseUser.email ?? '',
                 phone: data.phone ?? '',
                 role: data.role ?? 'ADMIN',
+                fcmToken: data.fcmToken,
               };
             }
 

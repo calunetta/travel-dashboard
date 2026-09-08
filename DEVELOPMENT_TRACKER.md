@@ -871,3 +871,18 @@ Following the Master Rules for granular Git versioning, these are the logical co
 **Status**: COMPLETED
 - Logged all completed tasks from Parts 1 through 5 in this development tracker.
 - Documented the architecture changes (Coordinator upsert logic, Trip checklists, Audit logging, Gen 2 Firebase Triggers).
+
+---
+
+### ✅ Step 21 - Push Notifications UI & PWA Integration
+
+**Status:** Completed  
+**Date:** 2026-09-08  
+**Commit:** `feat(auth): add manual push notification and PWA install buttons`
+
+**Key Changes:**
+1. **Admin Model & Firebase Auth Service** — Added `fcmToken` to `Admin` models and updated mappers to support saving the FCM Token securely via the `updateFcmToken` method in `AdminApiService`.
+2. **Push Notifications UI** — Added a manual 'Enable Notifications' button in `AdminShellComponent`. Replaced automatic on-load requests with explicit user consent via this new button. It requests `Notification.requestPermission()`, retrieves the FCM token, and saves it.
+3. **PWA Installation Prompt** — Implemented a `HostListener` in `AdminShellComponent` for the `beforeinstallprompt` event. Prevented the default behavior and exposed a new 'Install App' button. Upon user click, triggers `prompt()` and captures the user's choice.
+4. **Mobile Responsive Adjustments** — Adjusted the Admin Shell toolbar. The user's email is now hidden on mobile and small screens to ensure that the newly added notification and PWA buttons remain usable without overlapping content.
+5. **Testing** — Implemented unit tests for the Push Notifications and PWA installation methods in `admin-shell.component.spec.ts`. Validated the changes using `nx test travel-admin` and `nx build travel-admin`.

@@ -7,19 +7,35 @@ import { ThemeService } from 'shared-ui';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { getToken } from 'firebase/messaging';
+import { environment } from '../../../environments/environment';
+
+jest.mock('firebase/messaging', () => ({
+  getToken: jest.fn(),
+}));
 
 describe('AdminShellComponent', () => {
   let component: AdminShellComponent;
   let fixture: ComponentFixture<AdminShellComponent>;
   let mockBreakpointObserver: any;
+  let mockAuthService: any;
+  let mockAdminApi: any;
 
   beforeEach(async () => {
+    Object.defineProperty(window, 'Notification', {
+      writable: true,
+      value: {
+        permission: 'default',
+        requestPermission: jest.fn().mockResolvedValue('granted')
+      }
+    });
+
     mockBreakpointObserver = {
       observe: jest.fn().mockReturnValue(of({ matches: false } as BreakpointState)),
     };
 
-    const mockAuthService = {
-      currentUser: jest.fn().mockReturnValue({ email: 'test@admin.com' }),
+    mockAuthService = {
+      currentUser: jest.fn().mockReturnValue({ uid: 'admin123', email: 'test@admin.com', adminProfile: {} }),
       isSuperAdmin: jest.fn().mockReturnValue(true),
       signOut: jest.fn().mockResolvedValue(true),
     };
@@ -29,7 +45,7 @@ describe('AdminShellComponent', () => {
       toggle: jest.fn(),
     };
 
-      const mockAdminApi = {
+      mockAdminApi = {
         updateFcmToken: jest.fn().mockResolvedValue(true)
       };
 
@@ -78,4 +94,49 @@ describe('AdminShellComponent', () => {
     expect(sidenav?.getAttribute('ng-reflect-mode')).toBe('over');
     expect(sidenav?.getAttribute('ng-reflect-opened')).toBe('false');
   });
+
+  describe('Push Notifications', () => {
+    it('should request permission and update FCM token when enableNotifications is called', async () => {
+      const mockToken = 'mock-fcm-token';
+      (getToken as jest.Mock).mockResolvedValue(mockToken);
+
+      await component.enableNotifications();
+
+      expect(window.Notification.requestPermission).toHaveBeenCalled();
+      expect(getToken).toHaveBeenCalledWith({}, expect.objectContaining({
+        vapidKey: (environment.firebase as any).vapidKey
+      }));
+      expect(mockAdminApi.updateFcmToken).toHaveBeenCalledWith('admin123', mockToken);
+    });
+
+    it('should not update FCM token if permission is denied', async () => {
+      window.Notification.requestPermission = jest.fn().mockResolvedValue('denied');
+      
+      await component.enableNotifications();
+      
+      expect(getToken).not.toHaveBeenCalled();
+      expect(mockAdminApi.updateFcmToken).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('PWA Installation', () => {
+    it('should stash beforeinstallprompt event and clear it after installation', async () => {
+      const mockPromptEvent = {
+        preventDefault: jest.fn(),
+        prompt: jest.fn(),
+        userChoice: Promise.resolve({ outcome: 'accepted' })
+      };
+
+      component.onBeforeInstallPrompt(mockPromptEvent as any);
+
+      expect(mockPromptEvent.preventDefault).toHaveBeenCalled();
+      expect(component.deferredPrompt()).toBe(mockPromptEvent);
+
+      await component.installPwa();
+
+      expect(mockPromptEvent.prompt).toHaveBeenCalled();
+      expect(component.deferredPrompt()).toBeNull();
+    });
+  });
 });
+

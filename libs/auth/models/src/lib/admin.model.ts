@@ -26,6 +26,8 @@ export interface Admin {
   readonly phone: string;
   /** RBAC role. Defaults to 'ADMIN' if not set in Firestore. */
   readonly role: AdminRole;
+  /** Firebase Cloud Messaging token for push notifications. */
+  readonly fcmToken?: string;
 }
 
 /**
@@ -39,6 +41,7 @@ export interface AdminDocument {
   readonly phone: string;
   readonly role?: AdminRole;
   readonly createdAt?: FirestoreTimestamp;
+  readonly fcmToken?: string;
 }
 
 /**

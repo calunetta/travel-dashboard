@@ -46,6 +46,7 @@ export class AdminApiService {
                 email: data.email ?? '',
                 phone: data.phone ?? '',
                 role: data.role ?? 'ADMIN',
+                fcmToken: data.fcmToken,
               };
               return admin;
             });
