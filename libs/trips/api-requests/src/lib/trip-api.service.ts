@@ -56,10 +56,16 @@ export class TripApiService {
   getAll$(): Observable<ReadonlyArray<Trip>> {
     if (!this.allTrips$) {
       this.allTrips$ = new Observable<ReadonlyArray<Trip>>((observer) => {
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowIso = tomorrow.toISOString().split('T')[0];
+
       const col = collection(this.firestore, TRIPS_COLLECTION);
       const q = query(
         col, 
         where('adminIds', 'array-contains', this.auth.currentUser()?.uid ?? ''),
+        where('startDate', '>=', tomorrowIso),
         orderBy('startDate', 'asc')
       );
 

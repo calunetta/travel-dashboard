@@ -26,7 +26,7 @@ import type { Admin } from 'auth-models';
 import { FirestoreId, Nationality, FIREBASE_STORAGE_TOKEN } from 'shared-models';
 
 import { Subscription, firstValueFrom, combineLatest } from 'rxjs';
-import { startWith } from 'rxjs/operators';
+import { startWith, map } from 'rxjs/operators';
 
 @Component({
   selector: 'tha-trip-form',
@@ -126,7 +126,12 @@ import { startWith } from 'rxjs/operators';
               <mat-card-content class="tha-pt-4 tha-grid-2">
                 <mat-form-field appearance="outline">
                   <mat-label>Booked By</mat-label>
-                  <input matInput formControlName="hotelBookedBy" placeholder="e.g. Mario Rossi" />
+                  <mat-select formControlName="hotelBookedBy">
+                    <mat-option [value]="null">-- None --</mat-option>
+                    <mat-option *ngFor="let admin of availableHotelBookers$ | async" [value]="admin.id">
+                      {{ admin.name }} {{ admin.surname }}
+                    </mat-option>
+                  </mat-select>
                 </mat-form-field>
                 <mat-form-field appearance="outline">
                   <mat-label>Booking Method</mat-label>
@@ -268,6 +273,21 @@ export class TripFormComponent implements OnInit, OnDestroy {
     /** SUPER_ADMIN only: explicitly assign a subset of admins to this trip. */
     assignedAdminIds: [[] as FirestoreId[]],
   });
+
+  readonly availableHotelBookers$ = combineLatest([
+    this.form.get('tourId')!.valueChanges.pipe(startWith(this.form.get('tourId')!.value)),
+    this.form.get('assignedAdminIds')!.valueChanges.pipe(startWith(this.form.get('assignedAdminIds')!.value)),
+    this.allAdmins$
+  ]).pipe(
+    map(([tourId, assignedAdminIds, allAdmins]) => {
+      const selectedTour = this.toursCache.find(t => t.id === tourId);
+      const adminIds = (this.isSuperAdmin() && assignedAdminIds && assignedAdminIds.length > 0)
+        ? assignedAdminIds
+        : (selectedTour ? selectedTour.adminIds : []);
+      
+      return (allAdmins as Admin[]).filter(admin => adminIds.includes(admin.id));
+    })
+  );
 
   ngOnInit(): void {
     // Check if edit mode

@@ -886,3 +886,42 @@ Following the Master Rules for granular Git versioning, these are the logical co
 3. **PWA Installation Prompt** — Implemented a `HostListener` in `AdminShellComponent` for the `beforeinstallprompt` event. Prevented the default behavior and exposed a new 'Install App' button. Upon user click, triggers `prompt()` and captures the user's choice.
 4. **Mobile Responsive Adjustments** — Adjusted the Admin Shell toolbar. The user's email is now hidden on mobile and small screens to ensure that the newly added notification and PWA buttons remain usable without overlapping content.
 5. **Testing** — Implemented unit tests for the Push Notifications and PWA installation methods in `admin-shell.component.spec.ts`. Validated the changes using `nx test travel-admin` and `nx build travel-admin`.
+
+---
+
+### ✅ Step 22 - Notification Targeting, UI Refinements, WhatsApp Standardization & Firestore Indexing
+
+**Status:** Completed (Parts 1–4)
+**Date:** 2026-09-09
+**Commit:** `feat(core): optimize cron reads, hotel booked by selector, WhatsApp standardization, Firestore indexes`
+
+**Key Changes:**
+
+#### Part 1: Targeted Notifications & Cron Read Optimization (`functions/src/index.ts`)
+1. **Cron Query Window Expanded** — `checkUpcomingTripsCron` now queries trips with `startDate >= tomorrowIso` AND `startDate <= threeMonthsIso`. Previously capped at 7 days, this covers the full notification window (T-7 docs, T-1/T-3 unpaid, and the new monthly hotel reminders) in a single efficient Firestore read, eliminating a separate query per notification type.
+2. **Scoped Notifications** — Unpaid document push notifications now use a shared `getAssignedAdminContactInfo()` helper that fetches tokens/emails ONLY from the trip's `adminIds` array, replacing a broadcase to all `SUPER_ADMIN`s.
+3. **Hotel Verification Reminders** — New logic that fires on exactly 3, 2, and 1 month before `startDate`. If `hotelBookedBy` is set, fetches that admin's profile and sends both an email and push notification containing the trip info, hotel name, and a deep link.
+
+#### Part 2: UI - 'Hotel Booked By' Selector & Table Optimization
+1. **`hotelBookedBy` Refactored to `mat-select`** — Replaced the free-text input in `TripFormComponent` with a dropdown. A new `availableHotelBookers$` observable filters the global admin list to only show admins assigned to this trip (via `assignedAdminIds` or inherited Tour `adminIds`). Saves admin UID; displays Name + Surname.
+2. **Trips Table Query Optimized** — `TripApiService.getAll$()` now applies `where('startDate', '>=', tomorrowIso)` to its Firestore query. The UI trips table now only loads upcoming trips, removing all past trips from the initial data load.
+
+#### Part 3: WhatsApp Integration Standardization
+1. **`utils.ts` Audited** — `buildWhatsAppUrl()` already uses the canonical `https://wa.me/<number>?text=<encodedText>` format. No changes needed.
+2. **`TripDetailComponent`** — Added a prominent green "Message on WhatsApp" button inside the Coordinator card. Only shown when a coordinator with a phone number is assigned. Pre-fills: *"Hi [Name]! Just a quick message regarding your upcoming trip to [Destination] (Code: [TripCode])."*
+3. **`CoordinatorDetailComponent`** — Replaced the custom inline `getWhatsAppUrl()` method with the shared `buildWhatsAppUrl` utility. Updated to include a pre-filled greeting message. Updated icon from `message` to `chat` for consistency.
+4. **`MatchmakingPreviewDialogComponent`** — Upgraded `openWhatsApp()` to receive the full `MatchmakingResult`, composing a personalized message with the coordinator's name, destination, and trip code.
+
+#### Part 4: Firestore Indexing (`firestore.indexes.json`)
+Added 2 new composite indexes to prevent query failures from the new queries:
+- **`candidacies`**: `status (ASC)` + `submittedAt (DESC)` — Required by `getCandidaciesByStatus$()` for the filtered-by-status + ordered-by-date query.
+- **`candidacies`**: `email (ASC)` + `status (ASC)` — Required by `#withdrawOtherCandidacies()` for the email + pending-status filter.
+
+Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+name`, `candidacies: tripIds+status+submittedAt`).
+
+#### Part 5: Comprehensive QA
+1. **Functions Unit Tests** — Rewrote and fixed `index.spec.ts` to properly mock multiple Firestore queries chained together (`.where().where().get()`) by using `jest.clearAllMocks()` and `.mockReset()` alongside `dbWhereMock.mockReturnThis()`.
+2. **Test Coverage** — Verified all new cron notification paths pass (T-7 email, T-1/T-3 push, 1-month hotel verification email & push). All 11/11 functions tests pass.
+3. **Frontend Tests** — Ensured all admin UI tests pass (`44/44`), including the newly updated `TripFormComponent`.
+
+**Current Progress:** Step 22 fully complete. Ready for final review.

@@ -139,20 +139,16 @@ exports.onDocumentStatusChanged = (0, firestore_1.onDocumentUpdated)('trips/{tri
 });
 exports.checkUpcomingTripsCron = (0, scheduler_1.onSchedule)('every day 00:00', async (event) => {
     const today = new Date();
-    // T-7 Calculation
-    const nextWeek = new Date(today);
-    nextWeek.setDate(today.getDate() + 7);
-    const nextWeekIso = nextWeek.toISOString().split('T')[0];
-    // T-1 to T-3 Calculation
-    const next1To3DaysIso = [];
-    for (let i = 1; i <= 3; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        next1To3DaysIso.push(d.toISOString().split('T')[0]);
-    }
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowIso = tomorrow.toISOString().split('T')[0];
+    const threeMonths = new Date(today);
+    threeMonths.setMonth(threeMonths.getMonth() + 3);
+    const threeMonthsIso = threeMonths.toISOString().split('T')[0];
+    // Base query optimization: only fetch trips happening between tomorrow and exactly 3 months from now.
     const tripsSnapshot = await db.collection('trips')
-        .where('startDate', '>=', next1To3DaysIso[0])
-        .where('startDate', '<=', nextWeekIso)
+        .where('startDate', '>=', tomorrowIso)
+        .where('startDate', '<=', threeMonthsIso)
         .get();
     const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.ethereal.email',
@@ -162,12 +158,53 @@ exports.checkUpcomingTripsCron = (0, scheduler_1.onSchedule)('every day 00:00', 
             pass: process.env.SMTP_PASS || 'ethereal.pass',
         },
     });
+    const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
     for (const doc of tripsSnapshot.docs) {
         const data = doc.data();
         const docs = data.documents || [];
         const startDate = data.startDate;
+        const tripUrl = `https://${adminDomain}/admin/trips/${doc.id}`;
+        // Exact dates for logic
+        const tMinus7 = new Date(today);
+        tMinus7.setDate(tMinus7.getDate() + 7);
+        const tMinus7Iso = tMinus7.toISOString().split('T')[0];
+        const next1To3DaysIso = [];
+        for (let i = 1; i <= 3; i++) {
+            const d = new Date(today);
+            d.setDate(d.getDate() + i);
+            next1To3DaysIso.push(d.toISOString().split('T')[0]);
+        }
+        const tMinus1Month = new Date(startDate);
+        tMinus1Month.setMonth(tMinus1Month.getMonth() - 1);
+        const tMinus2Months = new Date(startDate);
+        tMinus2Months.setMonth(tMinus2Months.getMonth() - 2);
+        const tMinus3Months = new Date(startDate);
+        tMinus3Months.setMonth(tMinus3Months.getMonth() - 3);
+        const todayIso = today.toISOString().split('T')[0];
+        const isExactly3Months = todayIso === tMinus3Months.toISOString().split('T')[0];
+        const isExactly2Months = todayIso === tMinus2Months.toISOString().split('T')[0];
+        const isExactly1Month = todayIso === tMinus1Month.toISOString().split('T')[0];
+        // Helper to get tokens and emails for assigned admins
+        const getAssignedAdminContactInfo = async () => {
+            const adminIds = data.adminIds || [];
+            const tokens = [];
+            const emails = [];
+            if (adminIds.length > 0) {
+                for (const adminId of adminIds) {
+                    const adminDoc = await db.collection('admins').doc(adminId).get();
+                    if (adminDoc.exists) {
+                        const adminData = adminDoc.data();
+                        if (adminData?.fcmToken)
+                            tokens.push(adminData.fcmToken);
+                        if (adminData?.email)
+                            emails.push(adminData.email);
+                    }
+                }
+            }
+            return { tokens, emails };
+        };
         // 1. T-7: Missing Documents Alert to Coordinator (via Email)
-        if (startDate === nextWeekIso && docs.length === 0) {
+        if (startDate === tMinus7Iso && docs.length === 0) {
             if (data.coordinatorId) {
                 const coordDoc = await db.collection('coordinators').doc(data.coordinatorId).get();
                 if (coordDoc.exists) {
@@ -187,32 +224,57 @@ exports.checkUpcomingTripsCron = (0, scheduler_1.onSchedule)('every day 00:00', 
         if (next1To3DaysIso.includes(startDate)) {
             const hasUnpaidDocs = docs.some((d) => d.paymentStatus === 'TO_BE_PAID');
             if (hasUnpaidDocs) {
-                const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
-                const tripUrl = `https://${adminDomain}/admin/trips/${doc.id}`;
-                const adminIds = data.adminIds || [];
-                if (adminIds.length > 0) {
-                    const tokens = [];
-                    for (const adminId of adminIds) {
-                        const adminDoc = await db.collection('admins').doc(adminId).get();
-                        const token = adminDoc.data()?.fcmToken;
-                        if (token) {
-                            tokens.push(token);
-                        }
-                    }
-                    if (tokens.length > 0) {
-                        await messaging.sendEachForMulticast({
-                            tokens,
-                            notification: {
-                                title: 'URGENT: Unpaid Documents',
-                                body: `Trip ${data.destination} starts very soon but has unpaid documents!`,
-                            },
-                            webpush: {
-                                fcmOptions: {
-                                    link: tripUrl
-                                }
+                const { tokens } = await getAssignedAdminContactInfo();
+                if (tokens.length > 0) {
+                    await messaging.sendEachForMulticast({
+                        tokens,
+                        notification: {
+                            title: 'URGENT: Unpaid Documents',
+                            body: `Trip ${data.destination} starts very soon but has unpaid documents!`,
+                        },
+                        webpush: {
+                            fcmOptions: {
+                                link: tripUrl
                             }
-                        });
+                        }
+                    });
+                }
+            }
+        }
+        // 3. New Hotel Verification Logic (Exactly 3, 2, and 1 month prior)
+        if ((isExactly3Months || isExactly2Months || isExactly1Month) && data.hotelBookedBy) {
+            const hotelAdminDoc = await db.collection('admins').doc(data.hotelBookedBy).get();
+            if (hotelAdminDoc.exists) {
+                const hotelAdmin = hotelAdminDoc.data();
+                let hotelInfo = 'No hotel assigned.';
+                if (data.hotelId) {
+                    const hotelDoc = await db.collection('hotels').doc(data.hotelId).get();
+                    if (hotelDoc.exists) {
+                        hotelInfo = hotelDoc.data()?.name || 'Unnamed Hotel';
                     }
+                }
+                if (hotelAdmin?.email) {
+                    await transporter.sendMail({
+                        from: '"Travel Admin" <noreply@travelhandling.com>',
+                        to: hotelAdmin.email,
+                        subject: `Reminder: Double Check Hotel Booking for ${data.destination}`,
+                        html: `<p>Hi,</p>
+                   <p>This is a reminder to double-check the hotel booking for the upcoming trip to <strong>${data.destination}</strong> (${data.code}).</p>
+                   <p><strong>Hotel:</strong> ${hotelInfo}</p>
+                   <p><a href="${tripUrl}">View Trip</a></p>`,
+                    });
+                }
+                if (hotelAdmin?.fcmToken) {
+                    await messaging.send({
+                        token: hotelAdmin.fcmToken,
+                        notification: {
+                            title: 'Hotel Verification Reminder',
+                            body: `Please verify the booking for ${data.destination} at ${hotelInfo}.`,
+                        },
+                        webpush: {
+                            fcmOptions: { link: tripUrl }
+                        }
+                    });
                 }
             }
         }

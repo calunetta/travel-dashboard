@@ -17,6 +17,7 @@ import { CoordinatorApiService } from 'coordinators-api-requests';
 import { TripApiService } from 'trips-api-requests';
 import { FirestoreId } from 'shared-models';
 import { shareReplay, switchMap, map } from 'rxjs';
+import { buildWhatsAppUrl } from 'shared-mapping-and-utils';
 
 @Component({
   selector: 'tha-coordinator-detail',
@@ -78,8 +79,8 @@ import { shareReplay, switchMap, map } from 'rxjs';
               <mat-divider class="tha-mb-6"></mat-divider>
 
               <h3 class="tha-text-lg tha-font-bold tha-mb-4">Contact</h3>
-              <a [href]="getWhatsAppUrl(c.phone)" target="_blank" mat-flat-button style="background-color: #25D366; color: white;">
-                <mat-icon>message</mat-icon> Message on WhatsApp
+              <a [href]="buildWhatsAppUrl(c.phone, 'Hi ' + c.name + '! I wanted to reach out regarding your coordinator profile.')" target="_blank" mat-flat-button style="background-color: #25D366; color: white;">
+                <mat-icon>chat</mat-icon> Message on WhatsApp
               </a>
             </div>
 
@@ -176,11 +177,7 @@ export class CoordinatorDetailComponent implements OnInit {
     });
   }
 
-  getWhatsAppUrl(phone: string): string {
-    // Remove all non-numeric characters except +
-    const sanitized = phone.replace(/[^\d+]/g, '');
-    return `https://wa.me/${sanitized}`;
-  }
+  protected readonly buildWhatsAppUrl = buildWhatsAppUrl;
 
   async saveFeedback() {
     if (!this.coordinatorId) return;

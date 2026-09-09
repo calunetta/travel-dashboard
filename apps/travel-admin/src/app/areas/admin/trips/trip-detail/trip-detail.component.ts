@@ -33,6 +33,7 @@ import { TripDocument } from 'trips-models';
 import { switchMap, shareReplay } from 'rxjs';
 import { RoomType } from 'trips-models';
 import { calculateHotelCost } from 'hotels-mapping-and-utils';
+import { buildWhatsAppUrl } from 'shared-mapping-and-utils';
 
 @Component({
   selector: 'tha-trip-detail',
@@ -118,6 +119,17 @@ import { calculateHotelCost } from 'hotels-mapping-and-utils';
                   <mat-card-title>Coordinator</mat-card-title>
                   <mat-card-subtitle>{{ coordinator()?.name ? coordinator()?.name + ' ' + coordinator()?.surname : 'Unassigned' }}</mat-card-subtitle>
                 </mat-card-header>
+                <mat-card-content *ngIf="t.coordinatorId && coordinator()?.phone" class="tha-pt-4">
+                  <a
+                    [href]="buildWhatsAppUrl(coordinator()!.phone, 'Hi ' + coordinator()!.name + '! Just a quick message regarding your upcoming trip to ' + t.destination + ' (Code: ' + t.code + ').')"
+                    target="_blank"
+                    mat-flat-button
+                    style="background-color: #25D366; color: white;"
+                    aria-label="Message coordinator on WhatsApp"
+                  >
+                    <mat-icon>chat</mat-icon> Message on WhatsApp
+                  </a>
+                </mat-card-content>
                 <mat-card-actions *ngIf="t.coordinatorId" align="end">
                   <button mat-button color="primary" [routerLink]="['/admin/coordinators', t.coordinatorId]">View Profile</button>
                 </mat-card-actions>
@@ -338,6 +350,7 @@ import { calculateHotelCost } from 'hotels-mapping-and-utils';
     </ng-template>
   `,
   styles: [
+
     `
       :host {
         display: block;
@@ -353,6 +366,8 @@ export class TripDetailComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly route = inject(ActivatedRoute);
+
+  protected readonly buildWhatsAppUrl = buildWhatsAppUrl;
 
   private readonly tripId = this.route.snapshot.paramMap.get('id') as FirestoreId;
 

@@ -12,21 +12,21 @@ describe('Admin Trips Flow', () => {
     cy.contains('Japan').should('be.visible');
     cy.contains('JP-2026').should('be.visible');
 
-    // Click the master checkbox to select all
+    // Click the master checkbox to select all (SUPER_ADMIN only)
     cy.get('th mat-checkbox').click();
 
-    // Batch Delete button should appear
-    cy.get('button[aria-label="Delete selected"]').click();
+    // Batch Delete button appears after selection (no aria-label on this button)
+    cy.contains('button', 'Delete Selected').click();
 
-    // Confirm dialog should appear
+    // Confirm dialog title
     cy.get('mat-dialog-container').should('be.visible');
-    cy.get('mat-dialog-container').contains('Confirm Deletion');
-    
-    // Click confirm
-    cy.get('mat-dialog-container button').contains('Delete').click();
+    cy.get('mat-dialog-container').contains('Delete Multiple Trips');
 
-    // Wait for delete snackbar (avoiding explicit cy.wait on mock intercepts for timing)
-    cy.get('snack-bar-container').should('contain', 'deleted successfully');
+    // Click confirm — label is 'Delete All'
+    cy.get('mat-dialog-container button').contains('Delete All').click();
+
+    // Snackbar shows 'Successfully deleted N trips'
+    cy.get('snack-bar-container').should('contain', 'Successfully deleted');
   });
 
   it('should allow CSV import', () => {
@@ -47,7 +47,7 @@ describe('Admin Trips Flow', () => {
     // Click Confirm Import
     cy.contains('button', 'Import 1 Trips').click();
 
-    // Should contain successfully
-    cy.get('snack-bar-container').should('contain', 'successfully');
+    // Snackbar shows 'Successfully imported N trips!' or 'Import completed'
+    cy.get('snack-bar-container').should('contain', 'uccessfully');
   });
 });

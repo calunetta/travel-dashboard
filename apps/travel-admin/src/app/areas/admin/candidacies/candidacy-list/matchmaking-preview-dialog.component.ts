@@ -41,7 +41,7 @@ export interface MatchmakingResult {
           <div matListItemTitle class="tha-font-bold">{{ match.coordinatorName }}</div>
           <div matListItemLine>Assigned to: {{ match.destination }} ({{ match.tripCode }})</div>
           
-          <button mat-icon-button matListItemMeta (click)="openWhatsApp(match.coordinatorPhone)" aria-label="Contact via WhatsApp" color="primary">
+          <button mat-icon-button matListItemMeta (click)="openWhatsApp(match)" aria-label="Contact via WhatsApp" color="primary">
             <mat-icon>chat</mat-icon>
           </button>
         </mat-list-item>
@@ -72,8 +72,9 @@ export class MatchmakingPreviewDialogComponent {
 
   submitting = false;
 
-  openWhatsApp(phone: string): void {
-    const url = buildWhatsAppUrl(phone, 'Hi! Great news, you have been automatically assigned to a trip!');
+  openWhatsApp(match: MatchmakingResult): void {
+    const message = `Hi ${match.coordinatorName}! Great news — you have been automatically assigned to the trip to ${match.destination} (Code: ${match.tripCode}). Please log in to your dashboard to review the details.`;
+    const url = buildWhatsAppUrl(match.coordinatorPhone, message);
     window.open(url, '_blank');
   }
 

@@ -32,11 +32,15 @@ describe('Coordinator Candidacy Flow & Admin Assignment', () => {
       }
     });
 
-    // Use cy.contains('button', 'Run Automatic Assignment')
+    // Run Automatic Assignment opens the MatchmakingPreviewDialogComponent
     cy.contains('button', 'Run Automatic Assignment').click();
-    
+
     cy.get('mat-dialog-container').should('be.visible');
-    cy.get('mat-dialog-container button').contains('Confirm').click();
-    cy.get('snack-bar-container').should('contain', 'Assignment batch complete');
+    cy.get('mat-dialog-container').contains('Automatic Assignment Preview');
+
+    // The dialog button is "Confirm & Save"
+    cy.get('mat-dialog-container button').contains('Confirm & Save').click();
+
+    cy.get('snack-bar-container').should('contain', 'Batch assignment completed successfully');
   });
 });
