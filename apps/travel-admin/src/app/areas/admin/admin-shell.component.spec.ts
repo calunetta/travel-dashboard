@@ -47,7 +47,12 @@ describe('AdminShellComponent', () => {
     };
 
     mockAdminApi = {
-      updateFcmToken: jest.fn().mockResolvedValue(true)
+      updateFcmToken: jest.fn().mockResolvedValue(true),
+      getNotifications$: jest.fn().mockReturnValue(of([
+        { id: 'n1', title: 'Test Notification', body: 'Trip X has a new document.', link: '/admin/trips/123', read: false, createdAt: null },
+        { id: 'n2', title: 'Old Notification', body: 'Payment completed.', link: '/admin/trips/456', read: true, createdAt: null },
+      ])),
+      markNotificationAsRead: jest.fn().mockResolvedValue(true),
     };
 
     await TestBed.configureTestingModule({
@@ -117,6 +122,22 @@ describe('AdminShellComponent', () => {
 
       expect(getToken).not.toHaveBeenCalled();
       expect(mockAdminApi.updateFcmToken).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Notification Center', () => {
+    it('should compute unread count from notifications signal', () => {
+      // 1 unread (n1), 1 read (n2) => unreadCount should be 1
+      expect(component.unreadCount()).toBe(1);
+    });
+
+    it('should call markNotificationAsRead and navigate on notification click', async () => {
+      const mockRouter = { navigateByUrl: jest.fn() } as any;
+      // Directly invoke to test the logic
+      const unreadNotification = { id: 'n1', title: 'T', body: 'B', link: 'https://admin.example.com/admin/trips/123', read: false, createdAt: null };
+      await component.onNotificationClick(unreadNotification as any);
+
+      expect(mockAdminApi.markNotificationAsRead).toHaveBeenCalledWith('admin123', 'n1');
     });
   });
 

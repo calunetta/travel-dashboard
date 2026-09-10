@@ -7,18 +7,52 @@ const sendEachForMulticastMock = jest.fn();
 const sendMock = jest.fn();
 const deleteFilesMock = jest.fn();
 
+const batchSetMock = jest.fn();
+const batchDeleteMock = jest.fn();
+const batchCommitMock = jest.fn().mockResolvedValue(true);
+const batchMock = jest.fn(() => ({
+  set: batchSetMock,
+  delete: batchDeleteMock,
+  commit: batchCommitMock,
+}));
+
 jest.mock('firebase-admin', () => ({
   apps: [],
   initializeApp: jest.fn(),
-  firestore: jest.fn(() => ({
+  firestore: Object.assign(jest.fn(() => ({
     collection: jest.fn((_colName) => {
+      const docMock = jest.fn(() => ({
+        get: dbDocGetMock,
+        collection: jest.fn(() => ({
+          doc: jest.fn(() => ({ id: 'mocked-doc-id', ref: 'mocked-ref' })),
+          get: dbGetMock,
+          where: dbWhereMock
+        })),
+        ref: {
+          collection: jest.fn(() => ({
+            doc: jest.fn(() => ({ id: 'mocked-doc-id', ref: 'mocked-ref' })),
+            get: dbGetMock,
+            where: dbWhereMock
+          }))
+        }
+      }));
       return {
-        doc: jest.fn(() => ({ get: dbDocGetMock })),
+        doc: docMock,
         where: dbWhereMock,
         get: dbGetMock,
       };
-    })
-  })),
+    }),
+    batch: batchMock,
+  })), {
+    FieldValue: {
+      serverTimestamp: jest.fn(() => 'mocked-timestamp'),
+    },
+    Timestamp: {
+      fromMillis: jest.fn((millis) => ({
+        toMillis: () => millis
+      })),
+    }
+  }),
   messaging: jest.fn(() => ({
     sendEachForMulticast: sendEachForMulticastMock,
     send: sendMock,
@@ -56,6 +90,10 @@ import {
     sendMock.mockReset();
     deleteFilesMock.mockReset();
     sendMailMock.mockReset();
+    batchSetMock.mockReset();
+    batchDeleteMock.mockReset();
+    batchCommitMock.mockReset();
+    batchMock.mockClear();
     
     dbWhereMock.mockReset();
     dbWhereMock.mockReturnThis();
@@ -71,7 +109,7 @@ import {
       expect(sendEachForMulticastMock).not.toHaveBeenCalled();
     });
 
-    it('should send notification to admins if a new document is added', async () => {
+    it('should send notification and email to admins if a new document is added', async () => {
       const beforeSnap = { data: () => ({ documents: [] }) };
       const afterSnap = { 
         data: () => ({ 
@@ -86,7 +124,7 @@ import {
       
       dbDocGetMock
         .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Mario', surname: 'Rossi' }) })
-        .mockResolvedValueOnce({ data: () => ({ fcmToken: 'token123' }) });
+        .mockResolvedValueOnce({ exists: true, data: () => ({ fcmToken: 'token123', email: 'admin@test.com' }) });
       
       await onTripDocumentUploaded.run({ data: change, params: { tripId: '123' } } as any);
       
@@ -104,6 +142,22 @@ import {
           })
         })
       );
+
+      expect(sendMailMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'admin@test.com',
+          subject: 'New Document Uploaded: Japan (JP-2026)'
+        })
+      );
+      
+      expect(batchSetMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          title: 'New Trip Document',
+          body: expect.stringContaining('Mario Rossi'),
+          read: false,
+        })
+      );
     });
   });
 
@@ -117,24 +171,24 @@ import {
       expect(sendEachForMulticastMock).not.toHaveBeenCalled();
     });
 
-    it('should notify SUPER_ADMINs if document status changes to PAID', async () => {
+    it('should notify adminIds if document status changes to PAID', async () => {
       const beforeSnap = { data: () => ({ documents: [{ id: 'doc1', paymentStatus: 'TO_BE_PAID' }] }) };
       const afterSnap = { 
         data: () => ({ 
           destination: 'Japan',
-          documents: [{ id: 'doc1', paymentStatus: 'PAID' }] 
+          documents: [{ id: 'doc1', paymentStatus: 'PAID' }],
+          adminIds: ['admin1']
         }) 
       };
       const change = { before: beforeSnap, after: afterSnap };
       
-      dbGetMock.mockResolvedValue([{ data: () => ({ fcmToken: 'superToken1' }) }]);
-      dbWhereMock.mockReturnThis();
+      dbDocGetMock.mockResolvedValueOnce({ exists: true, data: () => ({ fcmToken: 'adminToken1' }) });
       
       await onDocumentStatusChanged.run({ data: change, params: { tripId: '123' } } as any);
 
       expect(sendEachForMulticastMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          tokens: ['superToken1'],
+          tokens: ['adminToken1'],
           notification: expect.objectContaining({
             title: 'Payment Completed'
           }),
@@ -145,31 +199,39 @@ import {
           })
         })
       );
+
+      expect(batchSetMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          title: 'Payment Completed',
+          read: false,
+        })
+      );
     });
   });
 
   describe('onTripCreated', () => {
-    it('should send an email with an icalEvent attachment to SUPER_ADMINs', async () => {
+    it('should send an email with an icalEvent attachment to assigned admins', async () => {
       const snap = { 
         data: () => ({ 
           tourId: 'tour123',
           destination: 'Japan',
           code: 'JP-2026',
           startDate: '2026-10-01',
-          endDate: '2026-10-15'
+          endDate: '2026-10-15',
+          adminIds: ['admin1']
         }) 
       };
 
-      // Mock the get() call to return super admin, and also the tour fetch
-      dbDocGetMock.mockResolvedValueOnce({ exists: true, data: () => ({ tourName: 'Awesome Japan Tour' }) }); // Tour mock
-      dbGetMock.mockResolvedValueOnce([{ data: () => ({ email: 'super@example.com' }) }]); // Admin mock
-      dbWhereMock.mockReturnThis();
+      dbDocGetMock
+        .mockResolvedValueOnce({ exists: true, data: () => ({ tourName: 'Awesome Japan Tour' }) }) // Tour mock
+        .mockResolvedValueOnce({ exists: true, data: () => ({ email: 'admin@example.com' }) }); // Admin mock
       
       await onTripCreated.run({ data: snap, params: { tripId: 'trip_123' } } as any);
 
       expect(sendMailMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          to: 'super@example.com',
+          to: 'admin@example.com',
           subject: 'New Trip Created: Awesome Japan Tour - Japan',
           html: expect.stringContaining('Awesome Japan Tour'),
           icalEvent: expect.objectContaining({
@@ -218,7 +280,7 @@ import {
       expect(dbWhereMock).toHaveBeenCalledWith('startDate', '<=', expect.any(String));
     });
 
-    it('should send a missing-documents email to coordinator when trip starts in 7 days with no docs', async () => {
+    it('should send a missing-documents email and push to assigned admins when trip starts in 7 days with no docs', async () => {
       // Compute the date exactly 7 days from now
       const date7DaysFromNow = new Date();
       date7DaysFromNow.setDate(date7DaysFromNow.getDate() + 7);
@@ -227,15 +289,31 @@ import {
       dbWhereMock.mockReturnThis();
       dbGetMock.mockResolvedValue(buildTripSnapshotWithDate(startDate));
       dbDocGetMock
-        .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Luigi', surname: 'Verdi', email: 'luigi@test.com' }) }); // coordinator
+        .mockResolvedValueOnce({ exists: true, data: () => ({ fcmToken: 'adminToken', email: 'admin@test.com' }) }); // admin
 
       await checkUpcomingTripsCron.run({ data: {} } as any);
 
       expect(sendMailMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          to: 'luigi@test.com',
+          to: 'admin@test.com',
           subject: expect.stringContaining('URGENT: Missing Documents'),
           html: expect.stringContaining('starts in 7 days')
+        })
+      );
+      expect(sendEachForMulticastMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokens: ['adminToken'],
+          notification: expect.objectContaining({
+            title: 'URGENT: Missing Documents',
+          }),
+        })
+      );
+
+      expect(batchSetMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          title: 'URGENT: Missing Documents',
+          read: false,
         })
       );
     });
@@ -268,9 +346,17 @@ import {
           }),
         })
       );
+
+      expect(batchSetMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          title: 'URGENT: Unpaid Documents',
+          read: false,
+        })
+      );
     });
 
-    it('should send hotel verification email and push when hotelBookedBy is set at exactly 1 month prior', async () => {
+    it('should send hotel verification email and push to assigned admins when hotelBookedBy is set at exactly 1 month prior', async () => {
       // Build a startDate exactly 1 month from today
       const startDate1Month = new Date();
       startDate1Month.setMonth(startDate1Month.getMonth() + 1);
@@ -282,36 +368,51 @@ import {
           hotelBookedBy: 'hotelAdmin1',
           hotelId: 'hotel1',
           code: 'JP-001',
+          adminIds: ['admin1']
         })
       );
 
-      // hotelBookedBy admin doc
       dbDocGetMock
+        // hotelBookedBy admin doc
         .mockResolvedValueOnce({
           exists: true,
-          data: () => ({ fcmToken: 'hotelToken', email: 'hotel@test.com' }),
+          data: () => ({ name: 'Hotel', surname: 'Booker' }),
         })
         // hotel doc
         .mockResolvedValueOnce({
           exists: true,
           data: () => ({ name: 'Grand Hyatt Tokyo' }),
+        })
+        // admin1 doc
+        .mockResolvedValueOnce({
+          exists: true,
+          data: () => ({ fcmToken: 'adminToken', email: 'admin@test.com' }),
         });
 
       await checkUpcomingTripsCron.run({ data: {} } as any);
 
       expect(sendMailMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          to: 'hotel@test.com',
+          to: 'admin@test.com',
           subject: expect.stringContaining('Reminder: Double Check Hotel Booking'),
           html: expect.stringContaining('Grand Hyatt Tokyo'),
         })
       );
-      expect(sendMock).toHaveBeenCalledWith(
+      expect(sendEachForMulticastMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          token: 'hotelToken',
+          tokens: ['adminToken'],
           notification: expect.objectContaining({
             title: 'Hotel Verification Reminder',
+            body: expect.stringContaining('Hotel Booker'),
           }),
+        })
+      );
+
+      expect(batchSetMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          title: 'Hotel Verification Reminder',
+          read: false,
         })
       );
     });
@@ -332,6 +433,7 @@ import {
       await checkUpcomingTripsCron.run({ data: {} } as any);
 
       expect(sendMock).not.toHaveBeenCalled();
+      expect(sendEachForMulticastMock).not.toHaveBeenCalled();
       expect(sendMailMock).not.toHaveBeenCalled();
     });
   });

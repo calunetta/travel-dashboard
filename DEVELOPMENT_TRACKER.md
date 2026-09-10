@@ -925,3 +925,71 @@ Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+
 3. **Frontend Tests** — Ensured all admin UI tests pass (`44/44`), including the newly updated `TripFormComponent`.
 
 **Current Progress:** Step 22 fully complete. Ready for final review.
+
+---
+
+### ✅ Step 23 - UX/UI & Backend Notification Overhaul (Part 1)
+
+**Status:** Completed  
+**Date:** 2026-09-10  
+
+**Key Changes:**
+1. **Cloud Functions Notification Recipient Overhaul (`functions/src/index.ts`)**: 
+   - Promoted `getAssignedAdminContactInfo` to a module-level helper function for reuse.
+   - **`onTripDocumentUploaded`**: Updated to send both Push and Email notifications to `adminIds`.
+   - **`onDocumentStatusChanged`**: Replaced broad `SUPER_ADMIN` query with targeted Push notifications to `adminIds`.
+   - **`checkUpcomingTripsCron` (T-7)**: Shifted Missing Documents alert from the Coordinator to `adminIds`, adding both Email and Push notifications.
+   - **`checkUpcomingTripsCron` (Hotel 3/2/1 month)**: Retargeted hotel verification reminders from `hotelBookedBy` to `adminIds` (Email + Push) while retaining the booker's name in the message body.
+   - **`onTripCreated`**: Redirected the new trip Calendar Invite email from `SUPER_ADMIN`s to the specifically assigned `adminIds`.
+2. **Testing**: 
+   - Rewrote corresponding tests in `functions/src/index.spec.ts` to assert against `adminIds` logic instead of `SUPER_ADMIN` queries.
+   - Added new assertions for new email delivery paths.
+   - All 11/11 functions tests pass successfully.
+
+---
+
+### ✅ Step 24 - UX/UI & Backend Notification Overhaul (Part 2: In-App Notification Center)
+
+**Status:** Completed  
+**Date:** 2026-09-10  
+
+**Key Changes:**
+1. **Model (`libs/shared/models`)**: Created `InAppNotification` interface and exported it from `shared-models`.
+2. **Backend (`functions/src/index.ts`)**:
+   - Added `writeInAppNotifications(adminIds, title, body, link)` batch-write helper.
+   - Integrated into all 5 notification triggers (`onTripDocumentUploaded`, `onDocumentStatusChanged`, `checkUpcomingTripsCron` T-7 missing docs, T-1/T-3 unpaid docs, hotel reminders).
+   - Added `deleteOldNotificationsCron`: a daily cron (02:00) that purges notifications older than 30 days OR read notifications older than 7 days.
+3. **API Service (`libs/auth/api-requests/admin-api.service.ts`)**:
+   - `getNotifications$(adminId)`: Real-time observable of latest 50 notifications ordered by `createdAt` desc.
+   - `markNotificationAsRead(adminId, notificationId)`: Sets `read: true` via Firestore update.
+4. **UI (`AdminShellComponent`)**:
+   - Added `MatBadgeModule` + `MatMenuModule` to imports.
+   - Bell icon with animated unread count badge (hidden when 0, warn color).
+   - `MatMenu` dropdown (max 350px, max-height 400px, scrollable, wrapping text).
+   - Unread notifications highlighted with a primary-color dot and bold title.
+   - Click marks as read then navigates to the relevant URL (extracting pathname for in-app routing).
+5. **Tests**:
+   - `index.spec.ts`: All mocks updated to support `db.batch()` + `admin.firestore.FieldValue`; 5 new `batchSetMock` assertions added; 11/11 pass.
+   - `admin-shell.component.spec.ts`: 2 new tests for Notification Center (unread count, click handler); 8/8 pass.
+   - Full suite: **46/46** travel-admin tests pass, **11/11** functions tests pass.
+
+---
+
+### ✅ Step 25 - UX/UI & Backend Notification Overhaul (Part 3: Global Visual Feedback Audit)
+
+**Status:** Completed (Audit — No Changes Required)  
+**Date:** 2026-09-10  
+
+**Audit Result:** All CRUD operations across the app already had `MatSnackBar` integrated on both success and error paths. Full coverage verified across:
+- `TripFormComponent`: Create ✅, Update ✅, Load Error ✅, File Validation Error ✅
+- `HotelFormComponent`: Create ✅, Update ✅, Load Error ✅
+- `TourFormComponent`: Create ✅, Update ✅, Load Error ✅, Auth Guard ✅
+- `CsvImportDialogComponent`: Import Success ✅, Partial Failure ✅
+- `MatchmakingPreviewDialogComponent`: Confirm Success ✅, Error ✅, Auth Guard ✅
+- `TripListComponent`: Delete ✅, Batch Delete ✅
+- `HotelListComponent`: Delete ✅, Batch Delete ✅
+- `TourListComponent`: Delete ✅, Batch Delete ✅, Clipboard ✅
+- `CoordinatorListComponent`: Delete ✅, Batch Delete ✅
+- `CandidacyListComponent`: Reject ✅, Assign ✅, Delete ✅, Batch Delete ✅
+- `TripDetailComponent`: Document Upload ✅, Document Delete ✅, Payment Status ✅, Checklist ✅
+- `CoordinatorDetailComponent`: Save Feedback ✅

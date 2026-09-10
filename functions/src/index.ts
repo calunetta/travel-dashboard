@@ -13,6 +13,46 @@ const messaging = admin.messaging();
 
 setGlobalOptions({ region: 'europe-west1' });
 
+async function getAssignedAdminContactInfo(
+  data: Record<string, any>
+): Promise<{ tokens: string[]; emails: string[] }> {
+  const adminIds: string[] = data.adminIds || [];
+  const tokens: string[] = [];
+  const emails: string[] = [];
+  if (adminIds.length > 0) {
+    for (const adminId of adminIds) {
+      const adminDoc = await db.collection('admins').doc(adminId).get();
+      if (adminDoc.exists) {
+        const adminData = adminDoc.data();
+        if (adminData?.fcmToken) tokens.push(adminData.fcmToken);
+        if (adminData?.email) emails.push(adminData.email);
+      }
+    }
+  }
+  return { tokens, emails };
+}
+
+async function writeInAppNotifications(
+  adminIds: string[],
+  title: string,
+  body: string,
+  link: string
+): Promise<void> {
+  if (!adminIds || adminIds.length === 0) return;
+  const batch = db.batch();
+  for (const adminId of adminIds) {
+    const docRef = db.collection('admins').doc(adminId).collection('notifications').doc();
+    batch.set(docRef, {
+      title,
+      body,
+      link,
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+  }
+  await batch.commit();
+}
+
 export const onTripDocumentUploaded = onDocumentUpdated('trips/{tripId}', async (event: any) => {
     const beforeData = event.data?.before.data();
     const afterData = event.data?.after.data();
@@ -47,31 +87,42 @@ export const onTripDocumentUploaded = onDocumentUpdated('trips/{tripId}', async 
         const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
         const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
 
+        const { tokens, emails } = await getAssignedAdminContactInfo(afterData);
+
+        const title = 'New Trip Document';
+        const body = `A new document has been uploaded for trip ${afterData.destination} (${afterData.code}) by ${uploaderName}.`;
+
         const adminIds = afterData.adminIds || [];
         if (adminIds.length > 0) {
-          const tokens: string[] = [];
-          for (const adminId of adminIds) {
-            const adminDoc = await db.collection('admins').doc(adminId).get();
-            const token = adminDoc.data()?.fcmToken;
-            if (token) {
-              tokens.push(token);
-            }
-          }
+          await writeInAppNotifications(adminIds, title, body, tripUrl);
+        }
 
-          if (tokens.length > 0) {
-            await messaging.sendEachForMulticast({
-              tokens,
-              notification: {
-                title: 'New Trip Document',
-                body: `A new document has been uploaded for trip ${afterData.destination} (${afterData.code}) by ${uploaderName}.`,
-              },
-              webpush: {
-                fcmOptions: {
-                  link: tripUrl
-                }
-              }
-            });
-          }
+        if (tokens.length > 0) {
+          await messaging.sendEachForMulticast({
+            tokens,
+            notification: { title, body },
+            webpush: {
+              fcmOptions: { link: tripUrl }
+            }
+          });
+        }
+
+        if (emails.length > 0) {
+          const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+            port: Number(process.env.SMTP_PORT) || 587,
+            auth: {
+              user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
+              pass: process.env.SMTP_PASS || 'ethereal.pass',
+            },
+          });
+
+          await transporter.sendMail({
+            from: '"Travel Admin" <noreply@travelhandling.com>',
+            to: emails.join(', '),
+            subject: `New Document Uploaded: ${afterData.destination} (${afterData.code})`,
+            html: `<p>A new document has been uploaded for trip <strong>${afterData.destination}</strong> (${afterData.code}) by ${uploaderName}.</p><p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>`,
+          });
         }
       }
     }
@@ -102,30 +153,24 @@ export const onDocumentStatusChanged = onDocumentUpdated('trips/{tripId}', async
     }
 
     if (statusChangedToPaid) {
-      // Find all super admins
-      const superAdminsSnapshot = await db.collection('admins').where('role', '==', 'SUPER_ADMIN').get();
-      const tokens: string[] = [];
-      superAdminsSnapshot.forEach((doc: any) => {
-        const token = doc.data().fcmToken;
-        if (token) {
-          tokens.push(token);
-        }
-      });
+      const { tokens } = await getAssignedAdminContactInfo(afterData);
 
       const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
       const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
+      const title = 'Payment Completed';
+      const body = `A document for trip ${afterData.destination} has been paid.`;
+
+      const adminIds = afterData.adminIds || [];
+      if (adminIds.length > 0) {
+        await writeInAppNotifications(adminIds, title, body, tripUrl);
+      }
 
       if (tokens.length > 0) {
         await messaging.sendEachForMulticast({
           tokens,
-          notification: {
-            title: 'Payment Completed',
-            body: `A document for trip ${afterData.destination} has been paid.`,
-          },
+          notification: { title, body },
           webpush: {
-            fcmOptions: {
-              link: tripUrl
-            }
+            fcmOptions: { link: tripUrl }
           }
         });
       }
@@ -192,39 +237,31 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
     const isExactly2Months = todayIso === tMinus2Months.toISOString().split('T')[0];
     const isExactly1Month = todayIso === tMinus1Month.toISOString().split('T')[0];
 
-    // Helper to get tokens and emails for assigned admins
-    const getAssignedAdminContactInfo = async () => {
-      const adminIds = data.adminIds || [];
-      const tokens: string[] = [];
-      const emails: string[] = [];
-      if (adminIds.length > 0) {
-        for (const adminId of adminIds) {
-          const adminDoc = await db.collection('admins').doc(adminId).get();
-          if (adminDoc.exists) {
-            const adminData = adminDoc.data();
-            if (adminData?.fcmToken) tokens.push(adminData.fcmToken);
-            if (adminData?.email) emails.push(adminData.email);
-          }
-        }
-      }
-      return { tokens, emails };
-    };
-
-    // 1. T-7: Missing Documents Alert to Coordinator (via Email)
+    // 1. T-7: Missing Documents Alert to Admins (via Email + Push)
     if (startDate === tMinus7Iso && docs.length === 0) {
-      if (data.coordinatorId) {
-        const coordDoc = await db.collection('coordinators').doc(data.coordinatorId).get();
-        if (coordDoc.exists) {
-          const cData = coordDoc.data();
-          if (cData?.email) {
-            await transporter.sendMail({
-              from: '"Travel Admin" <noreply@travelhandling.com>',
-              to: cData.email,
-              subject: `URGENT: Missing Documents for Trip ${data.destination}`,
-              html: `<p>Hi ${cData.name},</p><p>Your trip to <strong>${data.destination}</strong> starts in 7 days, but no documents have been uploaded yet. Please upload them immediately.</p>`,
-            });
-          }
-        }
+      const { tokens, emails } = await getAssignedAdminContactInfo(data);
+      const title = 'URGENT: Missing Documents';
+      const body = `Trip ${data.destination} starts in 7 days, but no documents have been uploaded yet.`;
+
+      const adminIds = data.adminIds || [];
+      if (adminIds.length > 0) {
+        await writeInAppNotifications(adminIds, title, body, tripUrl);
+      }
+
+      if (emails.length > 0) {
+        await transporter.sendMail({
+          from: '"Travel Admin" <noreply@travelhandling.com>',
+          to: emails.join(', '),
+          subject: `URGENT: Missing Documents for Trip ${data.destination}`,
+          html: `<p>Hi,</p><p>The trip to <strong>${data.destination}</strong> starts in 7 days, but no documents have been uploaded yet. Please upload them immediately.</p><p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>`,
+        });
+      }
+      if (tokens.length > 0) {
+        await messaging.sendEachForMulticast({
+          tokens,
+          notification: { title, body },
+          webpush: { fcmOptions: { link: tripUrl } }
+        });
       }
     }
 
@@ -232,18 +269,21 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
     if (next1To3DaysIso.includes(startDate)) {
       const hasUnpaidDocs = docs.some((d: any) => d.paymentStatus === 'TO_BE_PAID');
       if (hasUnpaidDocs) {
-        const { tokens } = await getAssignedAdminContactInfo();
+        const { tokens } = await getAssignedAdminContactInfo(data);
+        const title = 'URGENT: Unpaid Documents';
+        const body = `Trip ${data.destination} starts very soon but has unpaid documents!`;
+
+        const adminIds = data.adminIds || [];
+        if (adminIds.length > 0) {
+          await writeInAppNotifications(adminIds, title, body, tripUrl);
+        }
+
         if (tokens.length > 0) {
           await messaging.sendEachForMulticast({
             tokens,
-            notification: {
-              title: 'URGENT: Unpaid Documents',
-              body: `Trip ${data.destination} starts very soon but has unpaid documents!`,
-            },
+            notification: { title, body },
             webpush: {
-              fcmOptions: {
-                link: tripUrl
-              }
+              fcmOptions: { link: tripUrl }
             }
           });
         }
@@ -255,6 +295,7 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
       const hotelAdminDoc = await db.collection('admins').doc(data.hotelBookedBy).get();
       if (hotelAdminDoc.exists) {
         const hotelAdmin = hotelAdminDoc.data();
+        const hotelBookerName = `${hotelAdmin?.name || ''} ${hotelAdmin?.surname || ''}`.trim() || 'Unknown Admin';
         let hotelInfo = 'No hotel assigned.';
         if (data.hotelId) {
           const hotelDoc = await db.collection('hotels').doc(data.hotelId).get();
@@ -263,25 +304,32 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
           }
         }
 
-        if (hotelAdmin?.email) {
+        const { tokens, emails } = await getAssignedAdminContactInfo(data);
+        const title = 'Hotel Verification Reminder';
+        const body = `Please verify the booking for ${data.destination} at ${hotelInfo} (Booked by: ${hotelBookerName}).`;
+
+        const adminIds = data.adminIds || [];
+        if (adminIds.length > 0) {
+          await writeInAppNotifications(adminIds, title, body, tripUrl);
+        }
+
+        if (emails.length > 0) {
           await transporter.sendMail({
             from: '"Travel Admin" <noreply@travelhandling.com>',
-            to: hotelAdmin.email,
+            to: emails.join(', '),
             subject: `Reminder: Double Check Hotel Booking for ${data.destination}`,
             html: `<p>Hi,</p>
                    <p>This is a reminder to double-check the hotel booking for the upcoming trip to <strong>${data.destination}</strong> (${data.code}).</p>
                    <p><strong>Hotel:</strong> ${hotelInfo}</p>
+                   <p><strong>Booked By:</strong> ${hotelBookerName}</p>
                    <p><a href="${tripUrl}">View Trip</a></p>`,
           });
         }
 
-        if (hotelAdmin?.fcmToken) {
-          await messaging.send({
-            token: hotelAdmin.fcmToken,
-            notification: {
-              title: 'Hotel Verification Reminder',
-              body: `Please verify the booking for ${data.destination} at ${hotelInfo}.`,
-            },
+        if (tokens.length > 0) {
+          await messaging.sendEachForMulticast({
+            tokens,
+            notification: { title, body },
             webpush: {
               fcmOptions: { link: tripUrl }
             }
@@ -326,15 +374,8 @@ export const onTripCreated = onDocumentCreated('trips/{tripId}', async (event: a
     
     const icsContent = calendar.toString();
     
-    // 4. Find SUPER_ADMIN emails
-    const superAdminsSnapshot = await db.collection('admins').where('role', '==', 'SUPER_ADMIN').get();
-    const emails: string[] = [];
-    superAdminsSnapshot.forEach((doc: any) => {
-      const email = doc.data().email;
-      if (email) {
-        emails.push(email);
-      }
-    });
+    // 4. Find Assigned Admins emails
+    const { emails } = await getAssignedAdminContactInfo(tripData);
     
     if (emails.length === 0) return;
     
@@ -430,3 +471,41 @@ export const onAssignmentCreated = onDocumentCreated('trips/{tripId}/assignments
   });
 });
 
+export const deleteOldNotificationsCron = onSchedule('every day 02:00', async (event: any) => {
+  const adminsSnapshot = await db.collection('admins').get();
+  
+  const now = Date.now();
+  const thirtyDaysAgoMillis = now - 30 * 24 * 60 * 60 * 1000;
+  const sevenDaysAgoMillis = now - 7 * 24 * 60 * 60 * 1000;
+
+  let deletedCount = 0;
+
+  for (const adminDoc of adminsSnapshot.docs) {
+    const notificationsRef = adminDoc.ref.collection('notifications');
+    const snapshot = await notificationsRef.get();
+    
+    if (snapshot.docs.length === 0) continue;
+
+    const batch = db.batch();
+    let opsInBatch = 0;
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const createdAtMillis = data.createdAt?.toMillis() || 0;
+      
+      const isOlderThan30Days = createdAtMillis < thirtyDaysAgoMillis;
+      const isReadAndOlderThan7Days = data.read === true && createdAtMillis < sevenDaysAgoMillis;
+
+      if (isOlderThan30Days || isReadAndOlderThan7Days) {
+        batch.delete(doc.ref);
+        opsInBatch++;
+      }
+    });
+
+    if (opsInBatch > 0) {
+      await batch.commit();
+      deletedCount += opsInBatch;
+    }
+  }
+  console.log(`Deleted ${deletedCount} old in-app notifications.`);
+});

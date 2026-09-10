@@ -5,3 +5,4 @@ export * from './lib/weroad-api.types';
 export * from './lib/firebase.tokens';
 export * from './lib/nationality.types';
 export * from './lib/audit-log.model';
+export * from './lib/in-app-notification.model';

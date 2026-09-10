@@ -1,7 +1,8 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, ViewChild, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { switchMap, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -9,9 +10,11 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatMenuModule } from '@angular/material/menu';
 import { ThemeService } from 'shared-ui';
 import { FirebaseAuthService, AdminApiService } from 'auth-api-requests';
-import { FIREBASE_MESSAGING_TOKEN, FirestoreId } from 'shared-models';
+import { FIREBASE_MESSAGING_TOKEN, FirestoreId, InAppNotification } from 'shared-models';
 import { getToken } from 'firebase/messaging';
 import { environment } from '../../../environments/environment';
 
@@ -29,6 +32,8 @@ import { environment } from '../../../environments/environment';
     MatIconModule,
     MatButtonModule,
     MatDividerModule,
+    MatBadgeModule,
+    MatMenuModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -105,6 +110,37 @@ import { environment } from '../../../environments/environment';
             <mat-icon>install_mobile</mat-icon>
           </button>
 
+          <!-- Notifications Bell -->
+          <button mat-icon-button [matMenuTriggerFor]="notificationsMenu" aria-label="Notifications" title="Notifications">
+            <mat-icon [matBadge]="unreadCount()" [matBadgeHidden]="unreadCount() === 0" matBadgeColor="warn">
+              notifications
+            </mat-icon>
+          </button>
+
+          <mat-menu #notificationsMenu="matMenu" class="tha-notification-menu">
+            <ng-template matMenuContent>
+              <div class="tha-px-4 tha-py-2 tha-font-bold tha-text-sm" style="border-bottom: 1px solid rgba(128,128,128,0.2);">Notifications</div>
+              <div *ngIf="notifications().length === 0" class="tha-p-4 tha-text-muted tha-text-sm">
+                No notifications
+              </div>
+              <button 
+                *ngFor="let n of notifications()" 
+                mat-menu-item 
+                (click)="onNotificationClick(n)"
+                style="white-space: normal; height: auto; min-height: 48px; padding: 12px 16px; border-bottom: 1px solid rgba(128,128,128,0.1);"
+                [style.background]="n.read ? 'transparent' : 'rgba(var(--tha-primary-rgb), 0.05)'"
+              >
+                <div class="tha-flex tha-items-start">
+                  <div *ngIf="!n.read" class="tha-mt-1 tha-mr-2" style="width: 8px; height: 8px; border-radius: 50%; background: var(--tha-primary);"></div>
+                  <div class="tha-flex-1">
+                    <div class="tha-text-sm" [class.tha-font-bold]="!n.read">{{ n.title }}</div>
+                    <div class="tha-text-xs tha-text-muted" style="line-height: 1.4; margin-top: 2px;">{{ n.body }}</div>
+                  </div>
+                </div>
+              </button>
+            </ng-template>
+          </mat-menu>
+
           <button *ngIf="!notificationsEnabled()" mat-icon-button (click)="enableNotifications()" aria-label="Enable notifications" title="Enable notifications" color="primary">
             <mat-icon>notifications_active</mat-icon>
           </button>
@@ -139,6 +175,10 @@ import { environment } from '../../../environments/environment';
       .tha-active-link mat-icon {
         color: var(--tha-primary);
       }
+      ::ng-deep .tha-notification-menu {
+        max-width: 350px;
+        max-height: 400px;
+      }
     `,
   ],
 })
@@ -149,6 +189,38 @@ export class AdminShellComponent {
   private readonly router = inject(Router);
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly messaging = inject(FIREBASE_MESSAGING_TOKEN, { optional: true });
+
+  private readonly user$ = toObservable(this.authService.currentUser);
+  
+  readonly notifications = toSignal(
+    this.user$.pipe(
+      switchMap(user => {
+        if (!user || !user.uid) return of([]);
+        return this.adminApi.getNotifications$(user.uid as FirestoreId);
+      })
+    ),
+    { initialValue: [] as ReadonlyArray<InAppNotification> }
+  );
+
+  readonly unreadCount = computed(() => {
+    return (this.notifications() || []).filter(n => !n.read).length;
+  });
+
+  async onNotificationClick(n: InAppNotification) {
+    const user = this.authService.currentUser();
+    if (user && user.uid && !n.read) {
+      await this.adminApi.markNotificationAsRead(user.uid as FirestoreId, n.id);
+    }
+    if (n.link) {
+      try {
+        const url = new URL(n.link);
+        this.router.navigateByUrl(url.pathname);
+      } catch (e) {
+        // Fallback if link is not a full URL
+        this.router.navigateByUrl(n.link);
+      }
+    }
+  }
 
   readonly deferredPrompt = signal<any>(null);
 
