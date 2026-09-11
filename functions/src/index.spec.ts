@@ -135,6 +135,11 @@ import {
             title: 'New Trip Document',
             body: expect.stringContaining('Mario Rossi')
           }),
+          data: expect.objectContaining({
+            link: expect.stringContaining('/admin/trips/123'),
+            url: expect.stringContaining('/admin/trips/123'),
+            click_action: "FLUTTER_NOTIFICATION_CLICK"
+          }),
           webpush: expect.objectContaining({
             fcmOptions: {
               link: expect.stringContaining('/admin/trips/123')
@@ -191,6 +196,11 @@ import {
           tokens: ['adminToken1'],
           notification: expect.objectContaining({
             title: 'Payment Completed'
+          }),
+          data: expect.objectContaining({
+            link: expect.stringContaining('/admin/trips/123'),
+            url: expect.stringContaining('/admin/trips/123'),
+            click_action: "FLUTTER_NOTIFICATION_CLICK"
           }),
           webpush: expect.objectContaining({
             fcmOptions: {
@@ -306,6 +316,11 @@ import {
           notification: expect.objectContaining({
             title: 'URGENT: Missing Documents',
           }),
+          data: expect.objectContaining({
+            link: expect.stringContaining('/admin/trips/trip123'),
+            url: expect.stringContaining('/admin/trips/trip123'),
+            click_action: "FLUTTER_NOTIFICATION_CLICK"
+          }),
         })
       );
 
@@ -343,6 +358,11 @@ import {
           notification: expect.objectContaining({
             title: 'URGENT: Unpaid Documents',
             body: expect.stringContaining('Japan'),
+          }),
+          data: expect.objectContaining({
+            link: expect.stringContaining('/admin/trips/trip123'),
+            url: expect.stringContaining('/admin/trips/trip123'),
+            click_action: "FLUTTER_NOTIFICATION_CLICK"
           }),
         })
       );
@@ -404,6 +424,11 @@ import {
           notification: expect.objectContaining({
             title: 'Hotel Verification Reminder',
             body: expect.stringContaining('Hotel Booker'),
+          }),
+          data: expect.objectContaining({
+            link: expect.stringContaining('/admin/trips/trip123'),
+            url: expect.stringContaining('/admin/trips/trip123'),
+            click_action: "FLUTTER_NOTIFICATION_CLICK"
           }),
         })
       );

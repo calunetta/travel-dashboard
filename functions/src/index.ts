@@ -101,6 +101,11 @@ export const onTripDocumentUploaded = onDocumentUpdated('trips/{tripId}', async 
           await messaging.sendEachForMulticast({
             tokens,
             notification: { title, body },
+            data: { 
+              link: tripUrl,
+              url: tripUrl,
+              click_action: "FLUTTER_NOTIFICATION_CLICK"
+            },
             webpush: {
               fcmOptions: { link: tripUrl }
             }
@@ -169,6 +174,11 @@ export const onDocumentStatusChanged = onDocumentUpdated('trips/{tripId}', async
         await messaging.sendEachForMulticast({
           tokens,
           notification: { title, body },
+          data: { 
+            link: tripUrl,
+            url: tripUrl,
+            click_action: "FLUTTER_NOTIFICATION_CLICK"
+          },
           webpush: {
             fcmOptions: { link: tripUrl }
           }
@@ -260,6 +270,11 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
         await messaging.sendEachForMulticast({
           tokens,
           notification: { title, body },
+          data: { 
+            link: tripUrl,
+            url: tripUrl,
+            click_action: "FLUTTER_NOTIFICATION_CLICK"
+          },
           webpush: { fcmOptions: { link: tripUrl } }
         });
       }
@@ -282,6 +297,11 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
           await messaging.sendEachForMulticast({
             tokens,
             notification: { title, body },
+            data: { 
+              link: tripUrl,
+              url: tripUrl,
+              click_action: "FLUTTER_NOTIFICATION_CLICK"
+            },
             webpush: {
               fcmOptions: { link: tripUrl }
             }
@@ -330,6 +350,11 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
           await messaging.sendEachForMulticast({
             tokens,
             notification: { title, body },
+            data: { 
+              link: tripUrl,
+              url: tripUrl,
+              click_action: "FLUTTER_NOTIFICATION_CLICK"
+            },
             webpush: {
               fcmOptions: { link: tripUrl }
             }
@@ -394,6 +419,11 @@ export const onTripCreated = onDocumentCreated('trips/{tripId}', async (event: a
       await messaging.sendEachForMulticast({
         tokens,
         notification: { title, body },
+        data: { 
+          link: tripUrl,
+          url: tripUrl,
+          click_action: "FLUTTER_NOTIFICATION_CLICK"
+        },
         webpush: {
           fcmOptions: { link: tripUrl }
         }

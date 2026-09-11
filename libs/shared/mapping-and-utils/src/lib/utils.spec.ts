@@ -1,5 +1,4 @@
-import { normalizeDateInput, isValidCalendarDate, calculateNights, isDateInRange } from './utils';
-import { FirestoreId } from 'shared-models';
+import { normalizeDateInput, isValidCalendarDate, calculateNights, isDateInRange, splitFullName, generateFallbackEmail } from './utils';
 
 describe('Date Utilities', () => {
   describe('normalizeDateInput', () => {
@@ -77,6 +76,36 @@ describe('Date Utilities', () => {
 
     it('should return false for invalid dates', () => {
       expect(isDateInRange('invalid', '2024-01-01', '2024-01-05')).toBe(false);
+    });
+  });
+  describe('splitFullName', () => {
+    it('should extract name and surname correctly', () => {
+      expect(splitFullName('Mario Rossi')).toEqual({ name: 'Mario', surname: 'Rossi' });
+      expect(splitFullName('Luisa Stefania Rizzi')).toEqual({ name: 'Luisa', surname: 'Stefania Rizzi' });
+    });
+
+    it('should handle single names', () => {
+      expect(splitFullName('Mario')).toEqual({ name: 'Mario', surname: '' });
+    });
+
+    it('should handle empty or null strings', () => {
+      expect(splitFullName('')).toEqual({ name: '', surname: '' });
+      expect(splitFullName(null as any)).toEqual({ name: '', surname: '' });
+    });
+  });
+
+  describe('generateFallbackEmail', () => {
+    it('should slugify a standard name', () => {
+      expect(generateFallbackEmail('Luisa Stefania Rizzi')).toBe('luisa.stefania.rizzi@unknown-coordinator.com');
+    });
+
+    it('should handle special characters', () => {
+      expect(generateFallbackEmail('Mario O\'Connor-Smith!')).toBe('mario.oconnorsmith@unknown-coordinator.com');
+    });
+
+    it('should handle empty or null strings', () => {
+      expect(generateFallbackEmail('')).toBe('unknown@unknown-coordinator.com');
+      expect(generateFallbackEmail(null as any)).toBe('unknown@unknown-coordinator.com');
     });
   });
 });

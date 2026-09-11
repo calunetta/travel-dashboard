@@ -113,6 +113,11 @@ exports.onTripDocumentUploaded = (0, firestore_1.onDocumentUpdated)('trips/{trip
                 await messaging.sendEachForMulticast({
                     tokens,
                     notification: { title, body },
+                    data: {
+                        link: tripUrl,
+                        url: tripUrl,
+                        click_action: "FLUTTER_NOTIFICATION_CLICK"
+                    },
                     webpush: {
                         fcmOptions: { link: tripUrl }
                     }
@@ -164,6 +169,11 @@ exports.onDocumentStatusChanged = (0, firestore_1.onDocumentUpdated)('trips/{tri
             await messaging.sendEachForMulticast({
                 tokens,
                 notification: { title, body },
+                data: {
+                    link: tripUrl,
+                    url: tripUrl,
+                    click_action: "FLUTTER_NOTIFICATION_CLICK"
+                },
                 webpush: {
                     fcmOptions: { link: tripUrl }
                 }
@@ -239,6 +249,11 @@ exports.checkUpcomingTripsCron = (0, scheduler_1.onSchedule)('every day 00:00', 
                 await messaging.sendEachForMulticast({
                     tokens,
                     notification: { title, body },
+                    data: {
+                        link: tripUrl,
+                        url: tripUrl,
+                        click_action: "FLUTTER_NOTIFICATION_CLICK"
+                    },
                     webpush: { fcmOptions: { link: tripUrl } }
                 });
             }
@@ -258,6 +273,11 @@ exports.checkUpcomingTripsCron = (0, scheduler_1.onSchedule)('every day 00:00', 
                     await messaging.sendEachForMulticast({
                         tokens,
                         notification: { title, body },
+                        data: {
+                            link: tripUrl,
+                            url: tripUrl,
+                            click_action: "FLUTTER_NOTIFICATION_CLICK"
+                        },
                         webpush: {
                             fcmOptions: { link: tripUrl }
                         }
@@ -301,6 +321,11 @@ exports.checkUpcomingTripsCron = (0, scheduler_1.onSchedule)('every day 00:00', 
                     await messaging.sendEachForMulticast({
                         tokens,
                         notification: { title, body },
+                        data: {
+                            link: tripUrl,
+                            url: tripUrl,
+                            click_action: "FLUTTER_NOTIFICATION_CLICK"
+                        },
                         webpush: {
                             fcmOptions: { link: tripUrl }
                         }
@@ -356,6 +381,11 @@ exports.onTripCreated = (0, firestore_1.onDocumentCreated)('trips/{tripId}', asy
         await messaging.sendEachForMulticast({
             tokens,
             notification: { title, body },
+            data: {
+                link: tripUrl,
+                url: tripUrl,
+                click_action: "FLUTTER_NOTIFICATION_CLICK"
+            },
             webpush: {
                 fcmOptions: { link: tripUrl }
             }

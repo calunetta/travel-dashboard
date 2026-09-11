@@ -1137,3 +1137,23 @@ Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+
 **Key Changes:**
 1. **Cloud Functions (`functions/src/index.ts`)** — Modified the `onTripCreated` function to give `.ics` calendar events a predictable, deterministic ID (`trip-reminder-{tripId}@travelhandling.com`).
 2. **Cloud Functions (`functions/src/index.ts`)** — Expanded `onTripDeleted` to recreate the exact same event using the deterministic ID but with the `CANCEL` method, sending out an automated cancellation email so the meetings are automatically removed from Admins' calendars.
+
+### ✅ Step 36 - Coordinator Creation Fallback Logic
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+**Commit:** `fix(trips): guarantee coordinator creation for csv imports using fallback email and name splitting`
+
+**Key Changes:**
+1. **Utils (`utils.ts`)** — Added `splitFullName` to separate a single name string into name and surname, and `generateFallbackEmail` to generate a safe slugified fallback email (e.g., `luisa.stefania.rizzi@unknown-coordinator.com`).
+2. **Trip CSV Importer (`csv-import-dialog.component.ts`)** — Modified logic so that if a CSV row provides a coordinator name but omits an email, it gracefully parses the name and triggers the upsert API call using the generated fallback email and an empty phone string, preventing duplicates and errors.
+3. **Tests (`utils.spec.ts`, `csv-import-dialog.component.spec.ts`)** — Added unit tests verifying the fallback formatting and split logic, and E2E unit tests confirming the correct API payload sequence during a trip batch import.
+
+### ✅ Step 37 - Universal Mobile Deep Linking for FCM
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+**Commit:** `feat(functions): add universal deep linking to all push notifications`
+
+**Key Changes:**
+1. **Cloud Functions (`functions/src/index.ts`)** — Updated all `messaging.sendEachForMulticast` payloads to include a `data` block (`{ link: tripUrl, url: tripUrl, click_action: "FLUTTER_NOTIFICATION_CLICK" }`). This ensures that tapping a push notification correctly routes the user to the specific trip page, regardless of whether the app is running on Web, Android, or iOS.

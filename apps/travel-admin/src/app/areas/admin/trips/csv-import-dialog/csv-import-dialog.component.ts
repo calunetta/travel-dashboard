@@ -18,7 +18,7 @@ import { Nationality, FirestoreId } from 'shared-models';
 import { firstValueFrom, shareReplay } from 'rxjs';
 import { DEFAULT_ROOM_COMPOSITION, CreateTripPayload } from 'trips-models';
 import { TripCodeGenerator } from 'trips-mapping-and-utils';
-import { normalizeDateInput } from 'shared-mapping-and-utils';
+import { normalizeDateInput, splitFullName, generateFallbackEmail } from 'shared-mapping-and-utils';
 
 interface CsvRow {
   weRoadTourSlug: string;
@@ -397,12 +397,15 @@ export class CsvImportDialogComponent {
       try {
         let coordinatorId: FirestoreId | null = null;
 
-        // Upsert Coordinator if email provided
-        if (row.raw.coordinatorEmail && row.raw.coordinator) {
+        // Upsert Coordinator if name is provided (fallback to generated email if missing)
+        if (row.raw.coordinator) {
+          const { name, surname } = splitFullName(row.raw.coordinator);
+          const email = row.raw.coordinatorEmail || generateFallbackEmail(row.raw.coordinator);
+
           coordinatorId = (await this.coordinatorApi.upsertCoordinatorFromCsv(
-            row.raw.coordinator,
-            '', // Surname not separately provided in CSV
-            row.raw.coordinatorEmail,
+            name,
+            surname,
+            email,
             row.raw.coordinatorNumber || ''
           )) as FirestoreId;
         }

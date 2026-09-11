@@ -186,9 +186,30 @@ tour-code,2024-01-01,2024-01-08,Mario Rossi,123,mario@test.it,Test notes,Grand H
     });
     tick();
 
-    expect(mockCoordinatorApi.upsertCoordinatorFromCsv).toHaveBeenCalledWith('Mario Rossi', '', 'mario@test.it', '123');
+    expect(mockCoordinatorApi.upsertCoordinatorFromCsv).toHaveBeenCalledWith('Mario', 'Rossi', 'mario@test.it', '123');
     expect(mockTripApi.create).toHaveBeenCalled();
     expect(mockSnackBar.open).toHaveBeenCalledWith('Successfully imported 1 trips!', 'Close', { duration: 3000 });
     expect(mockDialogRef.close).toHaveBeenCalledWith(true);
+  }));
+
+  it('should generate fallback email and handle missing phone when only coordinator name is provided', fakeAsync(() => {
+    const csvData = `weRoadTourSlug,start date,end date,coordinator,coordinator number,coordinator email,notes,hotel,booked by,nationality
+tour-code,2024-01-01,2024-01-08,Mario Rossi,,,,Test notes,Grand Hotel,Admin,IT`;
+    const file = new File([csvData], 'fallback.csv', { type: 'text/csv' });
+    file.text = jest.fn().mockResolvedValue(csvData);
+    const event = { target: { files: [file] } } as unknown as Event;
+    
+    component.onFileSelected(event).then(() => {
+      component.startImport();
+    });
+    tick();
+
+    expect(mockCoordinatorApi.upsertCoordinatorFromCsv).toHaveBeenCalledWith(
+      'Mario',
+      'Rossi',
+      'mario.rossi@unknown-coordinator.com',
+      ''
+    );
+    expect(mockTripApi.create).toHaveBeenCalled();
   }));
 });

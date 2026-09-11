@@ -272,3 +272,41 @@ export function capitalize(value: string): string {
   if (!value || value.length === 0) return value;
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
+
+/**
+ * Safely splits a single string into a first name and surname.
+ * The first word is treated as the first name, and the rest as the surname.
+ */
+export function splitFullName(fullName: string): { name: string; surname: string } {
+  if (!fullName || typeof fullName !== 'string') {
+    return { name: '', surname: '' };
+  }
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 0 || (parts.length === 1 && parts[0] === '')) {
+    return { name: '', surname: '' };
+  }
+  if (parts.length === 1) {
+    return { name: parts[0], surname: '' };
+  }
+  const name = parts[0];
+  const surname = parts.slice(1).join(' ');
+  return { name, surname };
+}
+
+/**
+ * Converts a full name into a safe, slugified email format.
+ * (e.g., "Luisa Stefania Rizzi" -> luisa.stefania.rizzi@unknown-coordinator.com)
+ */
+export function generateFallbackEmail(fullName: string): string {
+  if (!fullName || typeof fullName !== 'string') {
+    return 'unknown@unknown-coordinator.com';
+  }
+  
+  const slugified = fullName
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '.') // spaces to dots
+    .replace(/[^a-z0-9.]/g, ''); // remove any non-alphanumeric or dot characters
+    
+  return `${slugified || 'unknown'}@unknown-coordinator.com`;
+}
