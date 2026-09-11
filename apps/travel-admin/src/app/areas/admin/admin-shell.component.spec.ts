@@ -9,6 +9,7 @@ import { of } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { getToken } from 'firebase/messaging';
 import { environment } from '../../../environments/environment';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 jest.mock('firebase/messaging', () => ({
   getToken: jest.fn(),
@@ -56,7 +57,7 @@ describe('AdminShellComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [AdminShellComponent, RouterTestingModule, BrowserAnimationsModule],
+      imports: [AdminShellComponent, RouterTestingModule, BrowserAnimationsModule, MatSnackBarModule],
       providers: [
         { provide: BreakpointObserver, useValue: mockBreakpointObserver },
         { provide: FirebaseAuthService, useValue: mockAuthService },
@@ -104,13 +105,22 @@ describe('AdminShellComponent', () => {
   describe('Push Notifications', () => {
     it('should request permission and update FCM token when enableNotifications is called', async () => {
       const mockToken = 'mock-fcm-token';
+      const mockRegistration = {};
+      Object.defineProperty(navigator, 'serviceWorker', {
+        value: {
+          register: jest.fn().mockResolvedValue(mockRegistration)
+        },
+        writable: true
+      });
       (getToken as jest.Mock).mockResolvedValue(mockToken);
 
       await component.enableNotifications();
 
       expect(window.Notification.requestPermission).toHaveBeenCalled();
+      expect(navigator.serviceWorker.register).toHaveBeenCalledWith('/firebase-messaging-sw.js');
       expect(getToken).toHaveBeenCalledWith({}, expect.objectContaining({
-        vapidKey: (environment.firebase as any).vapidKey
+        vapidKey: (environment.firebase as any).vapidKey,
+        serviceWorkerRegistration: mockRegistration
       }));
       expect(mockAdminApi.updateFcmToken).toHaveBeenCalledWith('admin123', mockToken);
     });

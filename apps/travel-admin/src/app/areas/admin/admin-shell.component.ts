@@ -17,6 +17,7 @@ import { FirebaseAuthService, AdminApiService } from 'auth-api-requests';
 import { FIREBASE_MESSAGING_TOKEN, FirestoreId, InAppNotification } from 'shared-models';
 import { getToken } from 'firebase/messaging';
 import { environment } from '../../../environments/environment';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'tha-admin-shell',
@@ -34,6 +35,7 @@ import { environment } from '../../../environments/environment';
     MatDividerModule,
     MatBadgeModule,
     MatMenuModule,
+    MatSnackBarModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -245,6 +247,8 @@ export class AdminShellComponent {
     this.deferredPrompt.set(null);
   }
 
+  private readonly snackBar = inject(MatSnackBar);
+
   // Expose signal for button visibility
   readonly notificationsEnabled = computed(() => {
     const user = this.authService.currentUser();
@@ -253,25 +257,36 @@ export class AdminShellComponent {
   });
 
   async enableNotifications() {
-    if (!this.messaging || typeof window === 'undefined' || !('Notification' in window)) return;
+    if (!this.messaging || typeof window === 'undefined' || !('Notification' in window)) {
+      this.snackBar.open('Notifications are not supported in this browser.', 'Close', { duration: 3000 });
+      return;
+    }
 
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        
         const token = await getToken(this.messaging, {
-          vapidKey: (environment.firebase as any).vapidKey
+          vapidKey: (environment.firebase as any).vapidKey,
+          serviceWorkerRegistration: registration
         });
 
         const user = this.authService.currentUser();
         if (token && user) {
           await this.adminApi.updateFcmToken(user.uid as FirestoreId, token);
+          this.snackBar.open('Notifications enabled successfully!', 'Close', { duration: 3000 });
           console.log('FCM Token successfully saved.');
+        } else {
+          this.snackBar.open('Failed to generate notification token.', 'Close', { duration: 3000 });
         }
       } else {
+        this.snackBar.open('Notification permission denied by user.', 'Close', { duration: 3000 });
         console.warn('Notification permission denied by user.');
       }
     } catch (error) {
       console.error('Failed to get FCM token', error);
+      this.snackBar.open('Error enabling notifications.', 'Close', { duration: 3000 });
     }
   }
 
