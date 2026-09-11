@@ -12,6 +12,14 @@ export default defineConfig({
       ciWebServerCommand: 'yarn nx run travel-admin:serve-static',
       ciBaseUrl: 'http://localhost:4200',
     }),
+    setupNodeEvents(on, config) {
+      on('task', {
+        log(message) {
+          console.log(message);
+          return null;
+        }
+      });
+    },
     baseUrl: 'http://localhost:4200',
   },
 });

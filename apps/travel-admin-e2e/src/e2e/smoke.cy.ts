@@ -38,7 +38,12 @@ describe('General Smoke Tests', () => {
   });
 
   it('should render Hotels page', () => {
-    cy.visit('/admin/hotels', { onBeforeLoad(win) { win.localStorage.setItem('bypassAuth', 'true'); } });
+    cy.visit('/admin/hotels', {
+      onBeforeLoad: (win) => {
+        win.localStorage.setItem('bypassAuth', 'true');
+      }
+    });
+
     cy.get('h1').contains('Hotels');
     cy.get('table').should('exist');
   });

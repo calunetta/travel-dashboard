@@ -37,7 +37,16 @@ describe('TripFormComponent', () => {
         { provide: HotelApiService, useValue: { getAll$: jest.fn().mockReturnValue(of([])) } },
         { provide: CoordinatorApiService, useValue: { getAll$: jest.fn().mockReturnValue(of([])) } },
         { provide: TourApiService, useValue: mockTourApi },
-        { provide: AdminApiService, useValue: { getAll$: jest.fn().mockReturnValue(of([])) } },
+        { 
+          provide: AdminApiService, 
+          useValue: { 
+            getAll$: jest.fn().mockReturnValue(of([
+              { id: 'admin1', role: 'SUPER_ADMIN', name: 'Super' },
+              { id: 'admin2', role: 'ADMIN', name: 'Admin' },
+              { id: 'admin3', role: 'EDITOR', name: 'Editor' } // Editor role or just anything else
+            ])) 
+          } 
+        },
         { provide: FirebaseAuthService, useValue: { isSuperAdmin: jest.fn().mockReturnValue(true) } },
         { provide: FIREBASE_STORAGE_TOKEN, useValue: {} },
       ],
@@ -60,4 +69,13 @@ describe('TripFormComponent', () => {
     // Since there are multiple nationalities, it should NOT auto-select
     expect(component.form.get('nationality')?.value).toBeNull();
   }));
+
+  it('should filter availableHotelBookers$ to SUPER_ADMIN and ADMIN roles', (done) => {
+    component.availableHotelBookers$.subscribe(bookers => {
+      expect(bookers.length).toBe(2);
+      expect(bookers[0].id).toBe('admin1');
+      expect(bookers[1].id).toBe('admin2');
+      done();
+    });
+  });
 });

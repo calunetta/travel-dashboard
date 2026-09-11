@@ -50,4 +50,26 @@ describe('Admin Trips Flow', () => {
     // Snackbar shows 'Successfully imported N trips!' or 'Import completed'
     cy.get('snack-bar-container').should('contain', 'uccessfully');
   });
+
+  it('should filter trips by Search, Date Start, Booked By, Tour, and Nationality', () => {
+    // Filter controls should exist
+    cy.get('input[formControlName="search"]').should('exist');
+    cy.get('input[formControlName="dateStart"]').should('exist');
+    cy.get('mat-select[formControlName="bookedBy"]').should('exist');
+    cy.get('mat-select[formControlName="tourId"]').should('exist');
+    cy.get('mat-select[formControlName="nationality"]').should('exist');
+
+    // Type a search query
+    cy.get('input[formControlName="search"]').type('nonexistent trip');
+    cy.contains('No trips found').should('be.visible');
+
+    // Clear search query
+    cy.get('input[formControlName="search"]').clear();
+    cy.contains('Japan').should('be.visible');
+
+    // Select nationality
+    cy.get('mat-select[formControlName="nationality"]').click();
+    cy.get('mat-option').contains('IT').click();
+    cy.get('table').should('be.visible');
+  });
 });

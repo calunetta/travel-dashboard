@@ -52,7 +52,8 @@ describe('CsvImportDialogComponent', () => {
     };
     mockAdminApi = {
       getAll$: jest.fn().mockReturnValue(of([
-        { id: 'admin1', name: 'Admin', surname: 'Test', email: 'admin@test.com', role: 'ADMIN' }
+        { id: 'admin1', name: 'Admin', surname: 'Test', email: 'admin@test.com', role: 'ADMIN' },
+        { id: 'admin2', name: 'Another', surname: 'One', email: 'alba@test.com', role: 'SUPER_ADMIN' }
       ]))
     };
     mockDialogRef = {
@@ -132,6 +133,23 @@ tour-code,2024-01-01,2024-01-08,Mario Rossi,123,mario@test.it,Test notes,Grand H
     expect(rows[0].isValid).toBe(true);
     expect(rows[0].payload?.destination).toBe('Italy');
     expect(rows[0].hotelName).toBe('Grand Hotel');
+    expect(rows[0].payload?.hotelBookedBy).toBe('admin1');
+  });
+
+  it('should parse valid records and resolve booked by admin by email', async () => {
+    const csvData = `weRoadTourSlug,start date,end date,coordinator,coordinator number,coordinator email,notes,hotel,booked by,nationality
+tour-code,2024-01-01,2024-01-08,Mario Rossi,123,mario@test.it,Test notes,Grand Hotel,alba@test.com,IT`;
+    const file = new File([csvData], 'valid.csv', { type: 'text/csv' });
+    file.text = jest.fn().mockResolvedValue(csvData);
+    const event = { target: { files: [file] } } as unknown as Event;
+    
+    await component.onFileSelected(event);
+    
+    expect(component.globalError()).toBeNull();
+    const rows = component.parsedRows();
+    expect(rows.length).toBe(1);
+    expect(rows[0].isValid).toBe(true);
+    expect(rows[0].payload?.hotelBookedBy).toBe('admin2');
   });
 
   it('should handle invalid records (e.g. invalid nationality or missing tour)', async () => {

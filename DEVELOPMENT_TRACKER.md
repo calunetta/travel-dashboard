@@ -1157,3 +1157,25 @@ Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+
 
 **Key Changes:**
 1. **Cloud Functions (`functions/src/index.ts`)** — Updated all `messaging.sendEachForMulticast` payloads to include a `data` block (`{ link: tripUrl, url: tripUrl, click_action: "FLUTTER_NOTIFICATION_CLICK" }`). This ensures that tapping a push notification correctly routes the user to the specific trip page, regardless of whether the app is running on Web, Android, or iOS.
+
+### ✅ Step 38 - Role Extension & Advanced UI Filters
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+**Commit:** `feat(trips): extend bookedBy roles, add index 8 CSV parsing, and reactive list filters`
+
+**Key Changes:**
+1. **Trip Form & Role Access** — Updated `TripFormComponent` to allow both `SUPER_ADMIN` and `ADMIN` users to be assigned to the `bookedBy` (Hotel Booked By) field. The `<mat-select>` now simply iterates over all global admins fetched via `AdminApiService` instead of restricting to `isSuperAdmin()`.
+2. **Trip CSV Importer Logic Update** — Upgraded `CsvImportDialogComponent` to parse the new structure, introducing the `booked by` field at index 8. The importer now performs a case-insensitive, partial-string search (comparing against `displayName` and `email`) across all admins to dynamically assign `bookedByAdminId`.
+3. **Reactive UI Filters (TripListComponent)** — Replaced standard text inputs with reactive dropdown filters for `Date Range`, `Tour`, `Nationality`, and a new `Booked By` dropdown.
+4. **Validation** — Used `toSignal` with RxJS `combineLatest` to ensure filter changes apply synchronously. Test suite execution passed successfully.
+
+### ✅ Step 39 - Stabilize E2E Smoke Tests & Mock Notifications
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+**Commit:** `fix(e2e): resolve missing MockAdminApiService methods breaking smoke tests`
+
+**Key Changes:**
+1. **Mock Services (`mock-admin-api.service.ts`)** — Implemented missing mock methods (`getNotifications$`, `updateFcmToken`, `markNotificationAsRead`) that were recently introduced in the Notification Overhaul session. The lack of these methods caused the `AdminShellComponent` to throw an unhandled `TypeError` during initialization when running under Cypress, breaking the router navigation.
+2. **Cypress E2E (`smoke.cy.ts`)** — Investigated headless `AssertionError: Timed out retrying after 4000ms: Expected to find element: h1` and diagnosed that it was an uncaught application error (not a true timeout). The 4 critical E2E tests (Hotels, Coordinators, Tours, Calendar) all pass perfectly under `bypassAuth`.
