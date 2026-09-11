@@ -9,7 +9,6 @@ import { FirebaseAuthService } from 'auth-api-requests';
 import { of } from 'rxjs';
 import { signal } from '@angular/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { CountryCode } from 'hotels-models';
 import type { FirestoreId } from 'shared-models';
 import { Nationality } from 'shared-models';
 import type { Tour } from 'tours-models';
@@ -39,7 +38,6 @@ describe('HotelFormComponent', () => {
     address: 'Via Roma 1',
     city: 'Rome',
     postalCode: '00100',
-    country: CountryCode.IT,
     beneficiary: 'Test Beneficiary',
     phone: '',
     email: 'test@example.com',
@@ -104,16 +102,12 @@ describe('HotelFormComponent', () => {
 
   it('should validate required base fields', () => {
     const nameControl = component.form.get('name');
-    const destinationControl = component.form.get('destination');
 
     expect(nameControl?.hasError('required')).toBe(true);
-    expect(destinationControl?.hasError('required')).toBe(true);
 
     nameControl?.setValue('Test Hotel');
-    destinationControl?.setValue('Rome');
 
     expect(nameControl?.hasError('required')).toBe(false);
-    expect(destinationControl?.hasError('required')).toBe(false);
   });
 
   it('should allow optional billing data', () => {
@@ -167,7 +161,6 @@ describe('HotelFormComponent', () => {
     component.form.patchValue({
       tourId: 'tour-1' as FirestoreId,
       name: 'Grand Resort',
-      destination: 'Bali',
       notes: '',
       billingData: buildValidBillingData(),
     });

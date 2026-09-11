@@ -16,7 +16,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 
 import { HotelApiService } from 'hotels-api-requests';
 import { TourApiService } from 'tours-api-requests';
-import { CountryCode, CreateHotelPayload, UpdateHotelPayload, HotelBillingData } from 'hotels-models';
+import { CreateHotelPayload, UpdateHotelPayload, HotelBillingData } from 'hotels-models';
 import type { Tour } from 'tours-models';
 import { RoomType } from 'trips-models';
 import { FirestoreId } from 'shared-models';
@@ -71,17 +71,11 @@ import { FirebaseAuthService } from 'auth-api-requests';
               </mat-form-field>
             </div>
             
-            <div class="tha-grid-3 tha-mt-4">
+            <div class="tha-grid-2 tha-mt-4">
               <mat-form-field appearance="outline">
                 <mat-label>Hotel Name</mat-label>
                 <input matInput formControlName="name" placeholder="e.g. Grand Resort" />
                 <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required.</mat-error>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Destination</mat-label>
-                <input matInput formControlName="destination" placeholder="e.g. Bali" />
-                <mat-error *ngIf="form.get('destination')?.hasError('required')">Destination is required.</mat-error>
               </mat-form-field>
               
               <mat-form-field appearance="outline">
@@ -115,14 +109,7 @@ import { FirebaseAuthService } from 'auth-api-requests';
               </mat-form-field>
             </div>
 
-            <div class="tha-grid-4 tha-mt-2">
-              <mat-form-field appearance="outline">
-                <mat-label>Country</mat-label>
-                <mat-select formControlName="country">
-                  <mat-option *ngFor="let c of countries" [value]="c">{{ c }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-
+            <div class="tha-grid-3 tha-mt-2">
               <mat-form-field appearance="outline">
                 <mat-label>City</mat-label>
                 <input matInput formControlName="city" />
@@ -278,7 +265,6 @@ export class HotelFormComponent implements OnInit {
   private readonly authService = inject(FirebaseAuthService);
   toursCache: Tour[] = [];
 
-  readonly countries = Object.values(CountryCode);
   
   isEditMode = false;
   isEditing = signal(true);
@@ -288,7 +274,6 @@ export class HotelFormComponent implements OnInit {
   readonly form = this.fb.group({
     tourId: [null as FirestoreId | null, Validators.required],
     name: ['', Validators.required],
-    destination: ['', Validators.required],
     notes: [''],
     billingData: this.fb.group({
       supplierName: [''],
@@ -296,7 +281,6 @@ export class HotelFormComponent implements OnInit {
       address: [''],
       postalCode: [''],
       city: [''],
-      country: [CountryCode.IT],
       taxCode: [''],
       phone: [''],
       email: ['', Validators.email],
@@ -367,7 +351,6 @@ export class HotelFormComponent implements OnInit {
         this.form.patchValue({
           tourId: hotel.tourId,
           name: hotel.name,
-          destination: hotel.destination,
           notes: hotel.notes,
           billingData: hotel.billingData,
         });
@@ -435,7 +418,6 @@ export class HotelFormComponent implements OnInit {
         const payload: UpdateHotelPayload = {
           id: this.hotelId,
           name: formVal.name!,
-          destination: formVal.destination!,
           notes: formVal.notes || '',
           billingData: formVal.billingData as unknown as HotelBillingData,
           pricingRanges: formattedPricingRanges,
@@ -454,7 +436,6 @@ export class HotelFormComponent implements OnInit {
 
         const payload: CreateHotelPayload = {
           name: formVal.name!,
-          destination: formVal.destination!,
           notes: formVal.notes ?? '',
           billingData: formVal.billingData as unknown as HotelBillingData,
           pricingRanges: formattedPricingRanges,

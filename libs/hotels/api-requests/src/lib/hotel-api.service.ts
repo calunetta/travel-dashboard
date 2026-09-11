@@ -114,7 +114,6 @@ export class HotelApiService {
     const update: Record<string, any> = { updatedAt: serverTimestamp() };
 
     if (rest.name !== undefined) update['name'] = rest.name;
-    if (rest.destination !== undefined) update['destination'] = rest.destination;
     if (rest.notes !== undefined) update['notes'] = rest.notes;
     if (rest.billingData !== undefined) update['billingData'] = rest.billingData;
     if (rest.pricingRanges !== undefined) {

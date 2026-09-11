@@ -104,19 +104,10 @@ import { firstValueFrom } from 'rxjs';
               <td mat-cell *matCellDef="let hotel" class="tha-font-bold"> {{ hotel.name }} </td>
             </ng-container>
 
-            <ng-container matColumnDef="destination">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header> Destination </th>
-              <td mat-cell *matCellDef="let hotel"> {{ hotel.destination }} </td>
-            </ng-container>
 
             <ng-container matColumnDef="supplierName">
               <th mat-header-cell *matHeaderCellDef mat-sort-header> Supplier </th>
-              <td mat-cell *matCellDef="let hotel"> {{ hotel.billingData.supplierName }} </td>
-            </ng-container>
-
-            <ng-container matColumnDef="country">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header> Country </th>
-              <td mat-cell *matCellDef="let hotel"> {{ hotel.billingData.country }} </td>
+              <td mat-cell *matCellDef="let hotel"> {{ hotel.billingData?.supplierName }} </td>
             </ng-container>
 
             <ng-container matColumnDef="pricingRanges">
@@ -194,7 +185,7 @@ export class HotelListComponent implements AfterViewInit {
   private readonly snackBar = inject(MatSnackBar);
 
   readonly isSuperAdmin = this.authService.isSuperAdmin;
-  displayedColumns: string[] = ['name', 'destination', 'supplierName', 'country', 'pricingRanges'];
+  displayedColumns: string[] = ['name', 'supplierName', 'pricingRanges'];
   readonly dataSource = new MatTableDataSource<Hotel>();
   readonly selection = new SelectionModel<Hotel>(true, []);
 
@@ -207,7 +198,7 @@ export class HotelListComponent implements AfterViewInit {
     });
 
     this.dataSource.filterPredicate = (data: Hotel, filter: string) => {
-      const searchStr = `${data.name} ${data.destination} ${data.billingData?.supplierName || ''} ${data.billingData?.country || ''}`.toLowerCase();
+      const searchStr = `${data.name} ${data.billingData?.supplierName || ''}`.toLowerCase();
       return searchStr.indexOf(filter) !== -1;
     };
   }

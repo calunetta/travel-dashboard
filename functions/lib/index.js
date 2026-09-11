@@ -332,6 +332,7 @@ exports.onTripCreated = (0, firestore_1.onDocumentCreated)('trips/{tripId}', asy
     const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
     const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
     calendar.createEvent({
+        id: `trip-reminder-${event.params.tripId}@travelhandling.com`,
         start: reminderDate,
         end: new Date(reminderDate.getTime() + 60 * 60 * 1000), // 1 hour event
         summary: `Reminder: Trip ${tourName} - ${tripData.destination} starts in 1 month`,
@@ -339,43 +340,63 @@ exports.onTripCreated = (0, firestore_1.onDocumentCreated)('trips/{tripId}', asy
         organizer: { name: 'Travel Admin', email: 'noreply@travelhandling.com' }
     });
     const icsContent = calendar.toString();
-    // 4. Find Assigned Admins emails
-    const { emails } = await getAssignedAdminContactInfo(tripData);
-    if (emails.length === 0)
+    // 4. Find Assigned Admins emails and push tokens
+    const { emails, tokens } = await getAssignedAdminContactInfo(tripData);
+    if (emails.length === 0 && tokens.length === 0)
         return;
-    // 5. Send email
-    const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-        port: Number(process.env.SMTP_PORT) || 587,
-        auth: {
-            user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
-            pass: process.env.SMTP_PASS || 'ethereal.pass',
-        },
-    });
-    const htmlBody = `
-      <h2>New Trip Created</h2>
-      <p>A new trip has been created. Please review the details below:</p>
-      <ul>
-        <li><strong>Tour:</strong> ${tourName}</li>
-        <li><strong>Destination:</strong> ${tripData.destination}</li>
-        <li><strong>Trip Code:</strong> ${tripData.code}</li>
-        <li><strong>Dates:</strong> ${tripData.startDate} to ${tripData.endDate}</li>
-      </ul>
-      <p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>
-    `;
-    await transporter.sendMail({
-        from: '"Travel Admin" <noreply@travelhandling.com>',
-        to: emails.join(', '),
-        subject: `New Trip Created: ${tourName} - ${tripData.destination}`,
-        html: htmlBody,
-        icalEvent: {
-            method: 'request',
-            content: icsContent
-        }
-    });
+    const adminIds = tripData.adminIds || [];
+    const title = 'New Trip Created';
+    const body = `A new trip to ${tripData.destination} (${tripData.code}) has been added.`;
+    // 5. In-App Notifications
+    if (adminIds.length > 0) {
+        await writeInAppNotifications(adminIds, title, body, tripUrl);
+    }
+    // 6. Push Notifications
+    if (tokens.length > 0) {
+        await messaging.sendEachForMulticast({
+            tokens,
+            notification: { title, body },
+            webpush: {
+                fcmOptions: { link: tripUrl }
+            }
+        });
+    }
+    // 7. Send email
+    if (emails.length > 0) {
+        const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+            port: Number(process.env.SMTP_PORT) || 587,
+            auth: {
+                user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
+                pass: process.env.SMTP_PASS || 'ethereal.pass',
+            },
+        });
+        const htmlBody = `
+        <h2>New Trip Created</h2>
+        <p>A new trip has been created. Please review the details below:</p>
+        <ul>
+          <li><strong>Tour:</strong> ${tourName}</li>
+          <li><strong>Destination:</strong> ${tripData.destination}</li>
+          <li><strong>Trip Code:</strong> ${tripData.code}</li>
+          <li><strong>Dates:</strong> ${tripData.startDate} to ${tripData.endDate}</li>
+        </ul>
+        <p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>
+      `;
+        await transporter.sendMail({
+            from: '"Travel Admin" <noreply@travelhandling.com>',
+            to: emails.join(', '),
+            subject: `New Trip Created: ${tourName} - ${tripData.destination}`,
+            html: htmlBody,
+            icalEvent: {
+                method: 'request',
+                content: icsContent
+            }
+        });
+    }
 });
 exports.onTripDeleted = (0, firestore_1.onDocumentDeleted)('trips/{tripId}', async (event) => {
     const tripId = event.params.tripId;
+    const tripData = event.data?.data();
     try {
         const bucket = admin.storage().bucket();
         await bucket.deleteFiles({
@@ -385,6 +406,51 @@ exports.onTripDeleted = (0, firestore_1.onDocumentDeleted)('trips/{tripId}', asy
     }
     catch (error) {
         console.error(`Failed to delete storage files for trip: ${tripId}`, error);
+    }
+    // Cancel Calendar Meeting
+    if (tripData && tripData.startDate) {
+        const { emails } = await getAssignedAdminContactInfo(tripData);
+        if (emails.length > 0) {
+            let tourName = 'Unknown Tour';
+            const tourId = tripData.tourId;
+            if (tourId) {
+                const tourDoc = await db.collection('tours').doc(tourId).get();
+                if (tourDoc.exists) {
+                    tourName = tourDoc.data()?.tourName || 'Unknown Tour';
+                }
+            }
+            const startDate = new Date(tripData.startDate);
+            const reminderDate = new Date(startDate);
+            reminderDate.setMonth(reminderDate.getMonth() - 1);
+            const calendar = (0, ical_generator_1.default)({ name: 'Trip Reminders', method: 'CANCEL' });
+            calendar.createEvent({
+                id: `trip-reminder-${tripId}@travelhandling.com`,
+                start: reminderDate,
+                end: new Date(reminderDate.getTime() + 60 * 60 * 1000),
+                summary: `CANCELED: Reminder: Trip ${tourName} - ${tripData.destination} starts in 1 month`,
+                description: `This trip has been deleted.`,
+                organizer: { name: 'Travel Admin', email: 'noreply@travelhandling.com' },
+                status: 'cancelled'
+            });
+            const transporter = nodemailer.createTransport({
+                host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+                port: Number(process.env.SMTP_PORT) || 587,
+                auth: {
+                    user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
+                    pass: process.env.SMTP_PASS || 'ethereal.pass',
+                },
+            });
+            await transporter.sendMail({
+                from: '"Travel Admin" <noreply@travelhandling.com>',
+                to: emails.join(', '),
+                subject: `Trip Canceled: ${tourName} - ${tripData.destination}`,
+                html: `<p>The trip to ${tripData.destination} (${tripData.code}) has been deleted. The calendar reminder has been canceled.</p>`,
+                icalEvent: {
+                    method: 'cancel',
+                    content: calendar.toString()
+                }
+            });
+        }
     }
 });
 exports.onAssignmentCreated = (0, firestore_1.onDocumentCreated)('trips/{tripId}/assignments/{assignmentId}', async (event) => {

@@ -5,11 +5,10 @@
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
 import { serverTimestamp } from 'firebase/firestore';
 import type { Hotel, HotelFirestoreDocument, CreateHotelPayload, DateRangePricing } from 'hotels-models';
-import { CountryCode } from 'hotels-models';
 import { RoomType } from 'trips-models';
 import type { FirestoreId } from 'shared-models';
 import { timestampToIso } from 'shared-mapping-and-utils';
-import { isCountryCode, isRoomType } from 'shared-mapping-and-utils';
+import { isRoomType } from 'shared-mapping-and-utils';
 
 // ─── Firestore → Domain ───────────────────────────────────────────────────────
 
@@ -43,16 +42,12 @@ export function mapSnapshotToHotel(
   return {
     id,
     name: data.name ?? '',
-    destination: data.destination ?? '',
     billingData: rawBilling ? {
       supplierName: (rawBilling as Record<string, unknown>)['supplierName'] as string | undefined,
       beneficiary: (rawBilling as Record<string, unknown>)['beneficiary'] as string | undefined,
       address: (rawBilling as Record<string, unknown>)['address'] as string | undefined,
       postalCode: (rawBilling as Record<string, unknown>)['postalCode'] as string | undefined,
       city: (rawBilling as Record<string, unknown>)['city'] as string | undefined,
-      country: isCountryCode((rawBilling as Record<string, unknown>)['country'])
-        ? ((rawBilling as Record<string, unknown>)['country'] as CountryCode)
-        : undefined,
       taxCode: (rawBilling as Record<string, unknown>)['taxCode'] as string | undefined,
       phone: (rawBilling as Record<string, unknown>)['phone'] as string | undefined,
       email: (rawBilling as Record<string, unknown>)['email'] as string | undefined,
@@ -81,14 +76,12 @@ export function mapCreateHotelToFirestore(
 } {
   return {
     name: payload.name,
-    destination: payload.destination,
     billingData: payload.billingData ? {
       supplierName: payload.billingData.supplierName,
       beneficiary: payload.billingData.beneficiary,
       address: payload.billingData.address,
       postalCode: payload.billingData.postalCode,
       city: payload.billingData.city,
-      country: payload.billingData.country,
       taxCode: payload.billingData.taxCode,
       phone: payload.billingData.phone,
       email: payload.billingData.email,

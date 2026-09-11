@@ -1099,3 +1099,41 @@ Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+
 4. **UI Formatting (`trip-list.component.ts`, `trip-detail.component.ts`, `calendar.component.ts`)** — Standardized all user-facing date visualizations natively in HTML templates using Angular's DatePipe: `| date:'dd/MM/yyyy'`.
 5. **Form Safeties (`trip-form.component.ts`)** — Enhanced manual date parsing during form submission to prevent timezone offset crashes if non-Date objects bypass the Angular Material datepicker.
 6. **Testing Suite:** Added robust Jest unit tests in `utils.spec.ts` evaluating the new normalizers and their error-handling boundaries. Expanded `csv-import-dialog.component.spec.ts` to assert that alternative date formats properly yield expected ISO models, or properly reject invalid inputs without failing the entire batch process.
+
+### ✅ Step 33 - Remove `destination` & `country` from Hotel Model
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+**Commit:** `refactor(hotels): remove destination and country fields from Hotel model`
+
+**Key Changes:**
+1. **Hotel Model (`hotel.model.ts`)** — Removed `CountryCode` enum, `destination` from `Hotel` and `HotelFirestoreDocument`, and `country` from `HotelBillingData`.
+2. **Hotel Mapper (`hotel.mapper.ts`)** — Removed `destination` and `country` mapping from both `mapSnapshotToHotel` and `mapCreateHotelToFirestore`.
+3. **Hotel API Service (`hotel-api.service.ts`)** — Removed `destination` from the update method.
+4. **Type Guards (`type-guards.ts`)** — Removed `isCountryCode` function and `CountryCode` import.
+5. **Hotel Form (`hotel-form.component.ts`)** — Removed Destination input field, Country select dropdown, and their corresponding form controls and submission logic.
+6. **Hotel List (`hotel-list.component.ts`)** — Removed `destination` and `country` table columns, updated filter predicate.
+7. **CSV Import (`csv-import-hotel-dialog.component.ts`)** — Removed `destination` and `country` from payload generation.
+8. **Tests** — Updated all 4 test files (hotel-form, hotel-list, csv-import-hotel, hotel-cost-calculator specs) to remove destination/country references.
+9. **Validation** — All 59 unit tests pass, production build succeeds.
+
+**Note:** Existing Firestore documents retain `destination` and `country` fields but they are now ignored by the mapper. No data migration required.
+
+### ✅ Step 34 - Fix Missing Push Notifications on Trip Creation
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+**Commit:** `fix(functions): add push and in-app notifications to onTripCreated`
+
+**Key Changes:**
+1. **Cloud Functions (`functions/src/index.ts`)** — Modified the `onTripCreated` function. It previously only sent an email with an `.ics` attachment when a trip was created. Now, it fetches the push tokens and `adminIds`, and fires `messaging.sendEachForMulticast` and `writeInAppNotifications` so the admins are alerted immediately upon single or batch CSV uploads.
+
+### ✅ Step 35 - Cancel Calendar Meetings on Trip Deletion
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+**Commit:** `feat(functions): send CANCEL ical event when a trip is deleted`
+
+**Key Changes:**
+1. **Cloud Functions (`functions/src/index.ts`)** — Modified the `onTripCreated` function to give `.ics` calendar events a predictable, deterministic ID (`trip-reminder-{tripId}@travelhandling.com`).
+2. **Cloud Functions (`functions/src/index.ts`)** — Expanded `onTripDeleted` to recreate the exact same event using the deterministic ID but with the `CANCEL` method, sending out an automated cancellation email so the meetings are automatically removed from Admins' calendars.

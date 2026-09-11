@@ -5,7 +5,6 @@
 
 import { RoomType } from 'trips-models';
 import { AgePreference, AssignmentType, CandidacyStatus } from 'coordinators-models';
-import { CountryCode } from 'hotels-models';
 import type { WeRoadTour, WeRoadPaginatedToursResponse, FirestoreId } from 'shared-models';
 import { Nationality } from 'shared-models';
 
@@ -53,9 +52,6 @@ export function isCandidacyStatus(value: unknown): value is CandidacyStatus {
   return isString(value) && Object.values(CandidacyStatus).includes(value as CandidacyStatus);
 }
 
-export function isCountryCode(value: unknown): value is CountryCode {
-  return isString(value) && Object.values(CountryCode).includes(value as CountryCode);
-}
 
 export function isNationality(value: unknown): value is Nationality {
   return isString(value) && Object.values(Nationality).includes(value as Nationality);

@@ -5,25 +5,6 @@
 import type { FirestoreId, FirestoreTimestamp, ISODateString } from 'shared-models';
 import type { RoomType } from 'trips-models';
 
-// ── Enums ────────────────────────────────────────────────────────────────────
-
-/** Country codes (ISO 3166-1 alpha-2). */
-export enum CountryCode {
-  IT = 'IT',
-  ES = 'ES',
-  FR = 'FR',
-  DE = 'DE',
-  GR = 'GR',
-  PT = 'PT',
-  HR = 'HR',
-  MT = 'MT',
-  MV = 'MV', // Maldives
-  TH = 'TH',
-  ID = 'ID',
-  MA = 'MA',
-  EG = 'EG',
-  OTHER = 'OTHER',
-}
 
 // ── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -37,7 +18,6 @@ export interface HotelBillingData {
   readonly address?: string;
   readonly postalCode?: string;
   readonly city?: string;
-  readonly country?: CountryCode;
   readonly taxCode?: string;
   readonly phone?: string;
   readonly email?: string;
@@ -76,7 +56,6 @@ export interface DateRangePricing {
 export interface Hotel {
   readonly id: FirestoreId;
   readonly name: string;
-  readonly destination: string;
   readonly billingData?: HotelBillingData;
   /** Dynamic pricing configuration — multiple ranges per hotel. */
   readonly pricingRanges: ReadonlyArray<DateRangePricing>;
@@ -92,14 +71,12 @@ export interface Hotel {
  */
 export interface HotelFirestoreDocument {
   readonly name: string;
-  readonly destination: string;
   readonly billingData?: {
     readonly supplierName?: string;
     readonly beneficiary?: string;
     readonly address?: string;
     readonly postalCode?: string;
     readonly city?: string;
-    readonly country?: string;
     readonly taxCode?: string;
     readonly phone?: string;
     readonly email?: string;

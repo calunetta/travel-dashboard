@@ -78,7 +78,6 @@ Hotel Sunset,Sunset Inc,456 Ocean Dr,10002,LA,TAX456,555-5678,contact@sunset.com
     const firstRow = component.parsedRows()[0];
     expect(firstRow.isValid).toBe(true);
     expect(firstRow.payload?.name).toBe('Hotel Sunrise');
-    expect(firstRow.payload?.destination).toBe('Miami');
     expect(firstRow.payload?.tourId).toBe('tour-1');
   });
 
@@ -113,7 +112,6 @@ Hotel Sunset,Sunset Inc,456 Ocean Dr,10002,LA,TAX456,555-5678,contact@sunset.com
         errors: [],
         payload: {
           name: 'Hotel Valid',
-          destination: 'Miami',
           billingData: {} as any,
           pricingRanges: [],
           notes: '',
@@ -144,7 +142,6 @@ Hotel Sunset,Sunset Inc,456 Ocean Dr,10002,LA,TAX456,555-5678,contact@sunset.com
         errors: [],
         payload: {
           name: 'Hotel Fail',
-          destination: 'Miami',
           billingData: {} as any,
           pricingRanges: [],
           notes: '',

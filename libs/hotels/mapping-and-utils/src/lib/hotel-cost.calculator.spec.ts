@@ -1,5 +1,5 @@
 import { calculateHotelCost } from './hotel-cost.calculator';
-import { Hotel, CountryCode } from 'hotels-models';
+import { Hotel } from 'hotels-models';
 import { Trip, RoomType } from 'trips-models';
 import { FirestoreId, ISODateString } from 'shared-models';
 
@@ -11,7 +11,6 @@ describe('Hotel Cost Calculator', () => {
     mockHotel = {
       id: 'h1' as FirestoreId,
       name: 'Test Hotel',
-      destination: 'Rome',
       notes: '',
       billingData: {
         supplierName: 'Test Hotel SRL',
@@ -21,7 +20,6 @@ describe('Hotel Cost Calculator', () => {
         address: 'Via Roma 1',
         city: 'Rome',
         postalCode: '00100',
-        country: CountryCode.IT,
         beneficiary: '',
         phone: '',
         accountNumber: '',
@@ -52,7 +50,6 @@ describe('Hotel Cost Calculator', () => {
     mockTrip = {
       id: 't1' as FirestoreId,
       title: 'Rome Trip',
-      destination: 'Rome',
       startDate: '2026-06-10' as ISODateString,
       endDate: '2026-06-17' as ISODateString,
       notes: '',

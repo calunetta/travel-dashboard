@@ -20,8 +20,8 @@ describe('HotelListComponent', () => {
   beforeEach(async () => {
     mockHotelApi = {
       getAll$: jest.fn().mockReturnValue(of([
-        { id: 'h1', name: 'Hotel 1', destination: 'Dest 1', billingData: { supplierName: 'Supplier 1' }, pricingRanges: [] },
-        { id: 'h2', name: 'Hotel 2', destination: 'Dest 2', billingData: { supplierName: 'Supplier 2' }, pricingRanges: [] }
+        { id: 'h1', name: 'Hotel 1', billingData: { supplierName: 'Supplier 1' }, pricingRanges: [] },
+        { id: 'h2', name: 'Hotel 2', billingData: { supplierName: 'Supplier 2' }, pricingRanges: [] }
       ])),
       delete: jest.fn().mockResolvedValue(true),
       deleteMany: jest.fn().mockResolvedValue(true)

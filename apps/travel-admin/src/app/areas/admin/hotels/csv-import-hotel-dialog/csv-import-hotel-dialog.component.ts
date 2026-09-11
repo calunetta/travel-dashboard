@@ -16,7 +16,7 @@ import { HotelApiService } from 'hotels-api-requests';
 import { TourApiService } from 'tours-api-requests';
 import { FirebaseAuthService } from 'auth-api-requests';
 import { FirestoreId } from 'shared-models';
-import { CreateHotelPayload, CountryCode } from 'hotels-models';
+import { CreateHotelPayload } from 'hotels-models';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 interface ParsedHotelRow {
@@ -307,14 +307,12 @@ export class CsvImportHotelDialogComponent {
         if (isValid) {
           payload = {
             name: supplierName,
-            destination: city,
             billingData: {
               supplierName,
               beneficiary,
               address,
               postalCode,
               city,
-              country: CountryCode.OTHER, // Requested by user to ignore country
               taxCode,
               phone,
               email,
