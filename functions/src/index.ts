@@ -212,7 +212,7 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
     },
   });
 
-  const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
+  const adminDomain = process.env.ADMIN_DOMAIN || 'https://travel-dashboard-f98a3.web.app';
 
   for (const doc of tripsSnapshot.docs) {
     const data = doc.data();
