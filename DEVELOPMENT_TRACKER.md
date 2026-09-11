@@ -1063,3 +1063,25 @@ Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+
    - Authored Unit tests for `CsvImportHotelDialogComponent` with near 100% coverage, specifically mocking file readers for valid and invalid file formats.
    - Created E2E Cypress Tests (`admin-hotels.cy.ts`) to validate the new bulk import dialog UI flow.
 
+---
+
+### ✅ Step 29 - Optional Hotel Billing & Form Toggle Modes
+**Status:** Completed  
+**Date:** 2026-09-11  
+
+**Key Changes:**
+1. **Optional Hotel Billing Data:**
+   - Modified `HotelBillingData` in models to make all properties optional (`?`).
+   - Made the `billingData` object itself optional in `Hotel` and `HotelFirestoreDocument`.
+   - Removed `Validators.required` from all billing form controls in `HotelFormComponent` to allow creating hotels without payment details.
+   - Refactored `hotel.mapper.ts` to seamlessly handle missing/optional billing objects when mapping from Create payload to Firestore documents.
+2. **View/Edit Mode Toggle for Entity Forms:**
+   - Introduced a new UI pattern across `HotelFormComponent`, `TripFormComponent`, and `TourFormComponent`.
+   - Existing records now load in a strict View-Only (Disabled) mode by default, preventing accidental modifications.
+   - Implemented an `isEditing` signal and an "Edit" button to unlock form controls (retaining specific disabled fields like auto-calculated trip dates/destinations).
+   - Integrated UI logic to dynamically hide the "Select Image" button in View Mode and alter the Primary action buttons (Save vs Create).
+3. **Testing & E2E Validation:**
+   - Refactored `hotel-form.component.spec.ts` unit tests to validate the newly optional billing inputs rather than expecting them to be invalid when empty.
+   - Resolved a TypeScript compilation error (`TS18048`) in `hotel-list.component.ts` filter predicate resulting from the new optional `billingData` type signature.
+   - Passed all 57 Angular tests, proving robust backwards compatibility with existing documents in Firebase. Cypress E2E flows remained intact.
+
