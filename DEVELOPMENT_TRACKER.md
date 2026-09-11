@@ -1179,3 +1179,15 @@ Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+
 **Key Changes:**
 1. **Mock Services (`mock-admin-api.service.ts`)** — Implemented missing mock methods (`getNotifications$`, `updateFcmToken`, `markNotificationAsRead`) that were recently introduced in the Notification Overhaul session. The lack of these methods caused the `AdminShellComponent` to throw an unhandled `TypeError` during initialization when running under Cypress, breaking the router navigation.
 2. **Cypress E2E (`smoke.cy.ts`)** — Investigated headless `AssertionError: Timed out retrying after 4000ms: Expected to find element: h1` and diagnosed that it was an uncaught application error (not a true timeout). The 4 critical E2E tests (Hotels, Coordinators, Tours, Calendar) all pass perfectly under `bypassAuth`.
+
+### ✅ Step 40 - Fix Failing E2E Tests (Hotels, Trips, Candidacy)
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+**Commit:** `fix(e2e): fix failing cypress tests across hotels, trips, and candidacy flows`
+
+**Key Changes:**
+1. **Admin Hotels Test (`admin-hotels.cy.ts`)** — Replaced a missing custom command `cy.loginAsSuperAdmin()` with standard `bypassAuth` usage. Also fixed `cy.click()` finding multiple `mat-select` elements by scoping the query to the dialog (`mat-dialog-container mat-select`).
+2. **Admin Trips Test (`admin-trips.cy.ts`)** — Updated the CSV string to include the correct number of commas matching the new index-8 structure. Fixed assertions looking for `snack-bar-container` (which changed in Material 19 to `mat-mdc-snack-bar-container`) by checking for text presence instead. Handled `mat-label` overlaying input elements by injecting `{ force: true }` in `cy.type()` and `cy.click()`.
+3. **Candidacy Flow Test (`candidacy-flow.cy.ts`)** — Removed legacy `snack-bar-container` selector checks and transitioned to text visibility checks.
+4. **Validation** — The entire `travel-admin-e2e` suite runs and passes (8 tests green).

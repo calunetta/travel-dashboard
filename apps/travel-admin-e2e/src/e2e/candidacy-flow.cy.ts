@@ -41,6 +41,6 @@ describe('Coordinator Candidacy Flow & Admin Assignment', () => {
     // The dialog button is "Confirm & Save"
     cy.get('mat-dialog-container button').contains('Confirm & Save').click();
 
-    cy.get('snack-bar-container').should('contain', 'Batch assignment completed successfully');
+    cy.contains('Batch assignment completed successfully').should('be.visible');
   });
 });

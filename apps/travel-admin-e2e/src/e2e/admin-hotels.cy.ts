@@ -1,8 +1,6 @@
 describe('Admin Hotels Flow', () => {
   beforeEach(() => {
-    // Custom command to login as super admin
-    cy.loginAsSuperAdmin();
-    cy.visit('/admin/hotels');
+    cy.visit('/admin/hotels', { onBeforeLoad(win) { win.localStorage.setItem('bypassAuth', 'true'); } });
   });
 
   it('should navigate to hotels list and display import button', () => {
@@ -23,7 +21,7 @@ describe('Admin Hotels Flow', () => {
     cy.contains('button', 'Import Bulk').click();
     
     // Select a tour from dropdown (assumes at least one mocked tour exists)
-    cy.get('mat-select').click();
+    cy.get('mat-dialog-container mat-select').click();
     cy.get('mat-option').first().click();
 
     cy.contains('button', 'Browse File').should('not.be.disabled');

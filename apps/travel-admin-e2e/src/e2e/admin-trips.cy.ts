@@ -26,7 +26,7 @@ describe('Admin Trips Flow', () => {
     cy.get('mat-dialog-container button').contains('Delete All').click();
 
     // Snackbar shows 'Successfully deleted N trips'
-    cy.get('snack-bar-container').should('contain', 'Successfully deleted');
+    cy.contains('Successfully deleted').should('be.visible');
   });
 
   it('should allow CSV import', () => {
@@ -36,7 +36,7 @@ describe('Admin Trips Flow', () => {
     // CSV preview dialog should open
     cy.get('mat-dialog-container').should('be.visible');
     
-    const csvContent = 'weRoadTourSlug,start date,end date,coordinator,coordinator number,coordinator email,notes,hotel,booked by,nationality\nmock-tour-code,2026-12-01,2026-12-15,,,,,,IT';
+    const csvContent = 'weRoadTourSlug,start date,end date,coordinator,coordinator number,coordinator email,notes,hotel,booked by,nationality\nmock-tour-code,2026-12-01,2026-12-15,,,,,,,IT';
     
     cy.get('input[type="file"]').selectFile({
       contents: Cypress.Buffer.from(csvContent),
@@ -48,7 +48,7 @@ describe('Admin Trips Flow', () => {
     cy.contains('button', 'Import 1 Trips').click();
 
     // Snackbar shows 'Successfully imported N trips!' or 'Import completed'
-    cy.get('snack-bar-container').should('contain', 'uccessfully');
+    cy.contains('uccessfully').should('be.visible');
   });
 
   it('should filter trips by Search, Date Start, Booked By, Tour, and Nationality', () => {
@@ -60,7 +60,7 @@ describe('Admin Trips Flow', () => {
     cy.get('mat-select[formControlName="nationality"]').should('exist');
 
     // Type a search query
-    cy.get('input[formControlName="search"]').type('nonexistent trip');
+    cy.get('input[formControlName="search"]').type('nonexistent trip', { force: true });
     cy.contains('No trips found').should('be.visible');
 
     // Clear search query
@@ -68,8 +68,8 @@ describe('Admin Trips Flow', () => {
     cy.contains('Japan').should('be.visible');
 
     // Select nationality
-    cy.get('mat-select[formControlName="nationality"]').click();
-    cy.get('mat-option').contains('IT').click();
+    cy.get('mat-select[formControlName="nationality"]').click({ force: true });
+    cy.get('mat-option').contains('IT').click({ force: true });
     cy.get('table').should('be.visible');
   });
 });
