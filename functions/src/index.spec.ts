@@ -78,6 +78,7 @@ import {
   checkUpcomingTripsCron,
   onTripCreated,
   onTripDeleted,
+  deleteOldNotificationsCron,
 } from './index';
 
 // We wrap them manually to test them without the complex firebase-functions-test snapshot generator
@@ -471,5 +472,86 @@ import {
       expect(deleteFilesMock).toHaveBeenCalledWith({
         prefix: 'trips/123/documents/'
       });
+    });
+  });
+
+  describe('deleteOldNotificationsCron', () => {
+    it('should delete notifications older than 30 days and read notifications older than 7 days using batch', async () => {
+      const now = Date.now();
+      const thirtyOneDaysAgo = now - 31 * 24 * 60 * 60 * 1000;
+      const eightDaysAgo = now - 8 * 24 * 60 * 60 * 1000;
+      const twoDaysAgo = now - 2 * 24 * 60 * 60 * 1000;
+
+      const mockAdminsSnapshot = {
+        docs: [
+          {
+            ref: {
+              collection: jest.fn(() => ({
+                get: jest.fn().mockResolvedValue({
+                  docs: [
+                    {
+                      ref: 'docRef1',
+                      data: () => ({ read: false, createdAt: { toMillis: () => thirtyOneDaysAgo } })
+                    },
+                    {
+                      ref: 'docRef2',
+                      data: () => ({ read: true, createdAt: { toMillis: () => eightDaysAgo } })
+                    },
+                    {
+                      ref: 'docRef3',
+                      data: () => ({ read: false, createdAt: { toMillis: () => eightDaysAgo } })
+                    },
+                    {
+                      ref: 'docRef4',
+                      data: () => ({ read: true, createdAt: { toMillis: () => twoDaysAgo } })
+                    }
+                  ]
+                })
+              }))
+            }
+          }
+        ]
+      };
+
+      dbGetMock.mockResolvedValueOnce(mockAdminsSnapshot);
+
+      await deleteOldNotificationsCron.run({ data: {} } as any);
+
+      // docRef1 is > 30 days old. docRef2 is read and > 7 days old. docRef3 is unread and < 30 days old. docRef4 is read and < 7 days old.
+      expect(batchDeleteMock).toHaveBeenCalledTimes(2);
+      expect(batchDeleteMock).toHaveBeenCalledWith('docRef1');
+      expect(batchDeleteMock).toHaveBeenCalledWith('docRef2');
+      expect(batchCommitMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not process batches if no notifications are old enough', async () => {
+      const now = Date.now();
+      const twoDaysAgo = now - 2 * 24 * 60 * 60 * 1000;
+
+      const mockAdminsSnapshot = {
+        docs: [
+          {
+            ref: {
+              collection: jest.fn(() => ({
+                get: jest.fn().mockResolvedValue({
+                  docs: [
+                    {
+                      ref: 'docRef1',
+                      data: () => ({ read: false, createdAt: { toMillis: () => twoDaysAgo } })
+                    }
+                  ]
+                })
+              }))
+            }
+          }
+        ]
+      };
+
+      dbGetMock.mockResolvedValueOnce(mockAdminsSnapshot);
+
+      await deleteOldNotificationsCron.run({ data: {} } as any);
+
+      expect(batchDeleteMock).not.toHaveBeenCalled();
+      expect(batchCommitMock).not.toHaveBeenCalled();
     });
   });
