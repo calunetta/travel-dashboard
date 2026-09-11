@@ -1040,3 +1040,26 @@ Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+
 3. **PART 3** (Global Visual Feedback Audit): 100% `MatSnackBar` coverage confirmed across all 12 components — no code changes required.
 4. **PART 4** (Delete Confirmation Dialogs): `ConfirmDialogComponent` already guarded all list deletes. Fixed the only missing case: `TripDetailComponent.deleteDocument()`.
 5. **PART 5** (QA & Testing): Added `trip-detail.component.spec.ts` with 6 targeted tests. All 52 admin + 11 function tests pass.
+
+### ✅ Step 28 - Bulk Hotel Import, Dashboard Stats & Caching
+**Status:** Completed  
+**Date:** 2026-09-11  
+
+**Key Changes:**
+1. **Bulk Hotel Import (CSV/Excel):**
+   - Created `CsvImportHotelDialogComponent` mirroring the Trips importer.
+   - Parses Excel/CSV columns (Supplier name, Beneficiary, Address, Zip, City, Tax code, Telephone, Email, Pec, Sdi) directly into `CreateHotelPayload` and `HotelBillingData`. Excluded the 'Country' field as requested.
+   - Connected `tourId` (via a signal-based dropdown) to allow linking all imported hotels to a specific Tour.
+   - Handled FirestoreId casting limitations for Jest mocking by using `{ readonly _brand: "FirestoreId" }` conventions properly in `csv-import-hotel-dialog.component.spec.ts`.
+2. **Dashboard Counters Updates:**
+   - Modified `DashboardComponent` to fetch aggregate stats for Coordinators (total active) and Pending Candidacies using `CoordinatorApiService`.
+   - Used `shareReplay({ bufferSize: 1, refCount: true })` in `CoordinatorApiService` to prevent duplicated listener connections.
+3. **PWA Stale Deployment Fix (Caching):**
+   - Implemented Service Worker update logic (`SwUpdate`) forcing the browser/PWA to reload if a newer version of the app is detected on load.
+   - Adjusted `firebase.json` caching headers on `index.html` to `Cache-Control: no-cache, no-store, must-revalidate` to prevent Firebase Hosting from caching the entrypoint, ensuring immediate updates when a new version deploys.
+4. **Theme Fixes:**
+   - Updated the Sidebar in light mode to use `--tha-surface-light` for better contrast and visibility of the text labels.
+5. **Testing & QA:**
+   - Authored Unit tests for `CsvImportHotelDialogComponent` with near 100% coverage, specifically mocking file readers for valid and invalid file formats.
+   - Created E2E Cypress Tests (`admin-hotels.cy.ts`) to validate the new bulk import dialog UI flow.
+

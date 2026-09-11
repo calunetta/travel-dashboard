@@ -22,9 +22,9 @@ jest.mock('firebase/firestore', () => ({
 
 describe('FirebaseAuthService', () => {
   let service: FirebaseAuthService;
-  let mockAuth: any;
-  let mockFirestore: any;
-  let authStateCallback: (user: any) => void;
+  let mockAuth: unknown;
+  let mockFirestore: unknown;
+  let authStateCallback: (user: auth.User | null) => void;
 
   beforeEach(() => {
     mockAuth = {};
@@ -76,7 +76,7 @@ describe('FirebaseAuthService', () => {
       return jest.fn();
     });
 
-    await authStateCallback(mockFirebaseUser);
+    await authStateCallback(mockFirebaseUser as unknown as auth.User);
 
     expect(service.isAuthenticated()).toBe(true);
     expect(service.isAdmin()).toBe(false);
@@ -85,7 +85,12 @@ describe('FirebaseAuthService', () => {
   });
 
   it('should handle authenticated admin user', async () => {
-    const mockFirebaseUser = { uid: 'admin123', email: 'admin@weroad.it', displayName: 'Admin User', photoURL: null };
+    const mockFirebaseUser = {
+      uid: '789',
+      email: 'admin@example.com',
+      displayName: 'Admin User',
+      photoURL: null,
+    } as unknown as auth.User;
     
     (firestore.onSnapshot as jest.Mock).mockImplementationOnce((docRef, onNext) => {
       onNext({
@@ -95,7 +100,7 @@ describe('FirebaseAuthService', () => {
       return jest.fn();
     });
 
-    await authStateCallback(mockFirebaseUser);
+    await authStateCallback(mockFirebaseUser as unknown as auth.User);
 
     expect(service.isAuthenticated()).toBe(true);
     expect(service.isAdmin()).toBe(true);
@@ -105,7 +110,7 @@ describe('FirebaseAuthService', () => {
   });
 
   it('should handle authenticated SUPER_ADMIN user', async () => {
-    const mockFirebaseUser = { uid: 'superadmin123', email: 'super@weroad.it', displayName: 'Super Admin', photoURL: null };
+    const mockFirebaseUser = { uid: 'superadmin123', email: 'super@weroad.it', displayName: 'Super Admin', photoURL: null } as unknown as auth.User;
     
     (firestore.onSnapshot as jest.Mock).mockImplementationOnce((docRef, onNext) => {
       onNext({
@@ -115,7 +120,7 @@ describe('FirebaseAuthService', () => {
       return jest.fn();
     });
 
-    await authStateCallback(mockFirebaseUser);
+    await authStateCallback(mockFirebaseUser as unknown as auth.User);
 
     expect(service.isAuthenticated()).toBe(true);
     expect(service.isAdmin()).toBe(true);
@@ -156,7 +161,12 @@ describe('FirebaseAuthService', () => {
   });
 
   it('should handle Firestore admin check failure gracefully and stop loading', async () => {
-    const mockFirebaseUser = { uid: 'user123', email: 'test@weroad.it', displayName: 'Test User', photoURL: null };
+    const mockFirebaseUser = {
+      uid: '123',
+      email: 'test@example.com',
+      displayName: 'Test User',
+      photoURL: null,
+    } as unknown as auth.User;
     
     // Simulate Firestore throwing an error (e.g. permission denied)
     (firestore.onSnapshot as jest.Mock).mockImplementationOnce((docRef, onNext, onError) => {

@@ -11,6 +11,7 @@ import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { TourApiService } from 'tours-api-requests';
+import { CandidacyStatus } from 'coordinators-models';
 
 @Component({
   selector: 'tha-dashboard',
@@ -66,6 +67,7 @@ import { TourApiService } from 'tours-api-requests';
           <div class="card-content tha-flex-row">
             <div class="card-text">
               <div class="card-label">Coordinators</div>
+              <div class="card-value">{{ coordinatorsCount() ?? '-' }}</div>
             </div>
             <div class="icon-container success-icon">
               <mat-icon>group</mat-icon>
@@ -78,6 +80,7 @@ import { TourApiService } from 'tours-api-requests';
           <div class="card-content tha-flex-row">
             <div class="card-text">
               <div class="card-label">Pending Candidacies</div>
+              <div class="card-value">{{ pendingCandidaciesCount() ?? '-' }}</div>
             </div>
             <div class="icon-container warning-icon">
               <mat-icon>assignment_late</mat-icon>
@@ -235,6 +238,16 @@ export class DashboardComponent {
 
   readonly toursCount = toSignal(
     this.tourApi.getAll$().pipe(map(tours => tours.length)),
+    { initialValue: null }
+  );
+
+  readonly coordinatorsCount = toSignal(
+    this.coordinatorApi.getAll$().pipe(map(coordinators => coordinators.length)),
+    { initialValue: null }
+  );
+
+  readonly pendingCandidaciesCount = toSignal(
+    this.coordinatorApi.getCandidaciesByStatus$(CandidacyStatus.PENDING).pipe(map(candidacies => candidacies.length)),
     { initialValue: null }
   );
 }

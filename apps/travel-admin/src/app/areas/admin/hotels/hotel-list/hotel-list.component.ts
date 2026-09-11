@@ -17,6 +17,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent, type ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { CsvImportHotelDialogComponent } from '../csv-import-hotel-dialog/csv-import-hotel-dialog.component';
 import { FirebaseAuthService } from 'auth-api-requests';
 import { firstValueFrom } from 'rxjs';
 
@@ -52,6 +53,11 @@ import { firstValueFrom } from 'rxjs';
           >
             <mat-icon>delete</mat-icon> Delete Selected ({{ selection.selected.length }})
           </button>
+          
+          <button *ngIf="isSuperAdmin()" mat-stroked-button color="primary" (click)="openBatchImport()">
+            <mat-icon>upload_file</mat-icon> Import Bulk
+          </button>
+
           <button mat-flat-button color="primary" routerLink="/admin/hotels/new">
             <mat-icon>add</mat-icon> New Hotel
           </button>
@@ -225,6 +231,13 @@ export class HotelListComponent implements AfterViewInit {
 
   navigateToHotel(hotelId: string) {
     this.router.navigate(['/admin/hotels', hotelId, 'edit']);
+  }
+
+  openBatchImport() {
+    this.dialog.open(CsvImportHotelDialogComponent, {
+      width: '800px',
+      disableClose: true
+    });
   }
 
   isAllSelected() {

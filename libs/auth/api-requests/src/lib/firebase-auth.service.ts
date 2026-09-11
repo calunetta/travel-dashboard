@@ -17,7 +17,6 @@ import {
   signInWithPopup,
   signOut,
   onAuthStateChanged,
-  type User,
 } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { FIREBASE_AUTH_TOKEN, FIRESTORE_TOKEN } from 'shared-models';
@@ -72,7 +71,7 @@ export class FirebaseAuthService implements OnDestroy {
         }
       });
       this._isLoading.set(false);
-      this._unsubscribeAuth = () => {};
+      this._unsubscribeAuth = () => { /* no-op for mock */ };
       return;
     }
 

@@ -68,6 +68,7 @@ describe('TripApiService RBAC Filtering', () => {
     expect(firestore.query).toHaveBeenCalledWith(
       'mock-collection',
       'mock-where-clause',
+      'mock-where-clause',
       'mock-order-clause'
     );
   });
