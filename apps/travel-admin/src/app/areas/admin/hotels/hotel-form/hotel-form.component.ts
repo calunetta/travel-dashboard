@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -102,19 +102,16 @@ import { FirebaseAuthService } from 'auth-api-requests';
               <mat-form-field appearance="outline">
                 <mat-label>Supplier Name</mat-label>
                 <input matInput formControlName="supplierName" />
-                <mat-error *ngIf="form.get('billingData.supplierName')?.hasError('required')">Required.</mat-error>
               </mat-form-field>
               
               <mat-form-field appearance="outline">
                 <mat-label>Beneficiary</mat-label>
                 <input matInput formControlName="beneficiary" />
-                <mat-error *ngIf="form.get('billingData.beneficiary')?.hasError('required')">Required.</mat-error>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Tax Code / VAT</mat-label>
                 <input matInput formControlName="taxCode" />
-                <mat-error *ngIf="form.get('billingData.taxCode')?.hasError('required')">Required.</mat-error>
               </mat-form-field>
             </div>
 
@@ -124,7 +121,6 @@ import { FirebaseAuthService } from 'auth-api-requests';
                 <mat-select formControlName="country">
                   <mat-option *ngFor="let c of countries" [value]="c">{{ c }}</mat-option>
                 </mat-select>
-                <mat-error *ngIf="form.get('billingData.country')?.hasError('required')">Required.</mat-error>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
@@ -171,7 +167,7 @@ import { FirebaseAuthService } from 'auth-api-requests';
         <mat-card class="tha-card tha-shadow-sm">
           <mat-card-header class="tha-flex-row tha-flex-col-sm" style="justify-content: space-between; width: 100%; gap: var(--tha-spacing-4);">
             <mat-card-title>Dynamic Pricing Configurations</mat-card-title>
-            <button mat-flat-button color="primary" type="button" (click)="addPricingRange()">
+            <button *ngIf="isEditing()" mat-flat-button color="primary" type="button" (click)="addPricingRange()">
               <mat-icon>add</mat-icon> Add Period
             </button>
           </mat-card-header>
@@ -223,7 +219,7 @@ import { FirebaseAuthService } from 'auth-api-requests';
                   </div>
                 </div>
 
-                <div class="tha-flex-end tha-mt-2">
+                <div class="tha-flex-end tha-mt-2" *ngIf="isEditing()">
                   <button mat-button color="warn" type="button" (click)="removePricingRange(i)">
                     <mat-icon>delete</mat-icon> Remove Period
                   </button>
@@ -234,14 +230,28 @@ import { FirebaseAuthService } from 'auth-api-requests';
         </mat-card>
 
         <div class="tha-flex-end tha-mt-4 tha-mb-8">
-          <button mat-stroked-button type="button" routerLink="/admin/hotels" class="tha-mr-2">Cancel</button>
+          <button mat-stroked-button type="button" routerLink="/admin/hotels" class="tha-mr-2">
+            {{ isEditing() ? 'Cancel' : 'Back' }}
+          </button>
+          
           <button 
+            *ngIf="isEditMode && !isEditing()"
+            mat-flat-button 
+            color="primary" 
+            type="button" 
+            (click)="enableEditMode()"
+          >
+            Edit
+          </button>
+
+          <button 
+            *ngIf="isEditing()"
             mat-flat-button 
             color="primary" 
             type="submit" 
             [disabled]="form.invalid || submitting"
           >
-            {{ isEditMode ? 'Save Changes' : 'Create Hotel' }}
+            {{ isEditMode ? 'Save' : 'Create Hotel' }}
           </button>
         </div>
 
@@ -271,6 +281,7 @@ export class HotelFormComponent implements OnInit {
   readonly countries = Object.values(CountryCode);
   
   isEditMode = false;
+  isEditing = signal(true);
   hotelId: FirestoreId | null = null;
   submitting = false;
 
@@ -280,17 +291,17 @@ export class HotelFormComponent implements OnInit {
     destination: ['', Validators.required],
     notes: [''],
     billingData: this.fb.group({
-      supplierName: ['', Validators.required],
-      beneficiary: ['', Validators.required],
-      address: ['', Validators.required],
-      postalCode: ['', Validators.required],
-      city: ['', Validators.required],
-      country: [CountryCode.IT, Validators.required],
-      taxCode: ['', Validators.required],
+      supplierName: [''],
+      beneficiary: [''],
+      address: [''],
+      postalCode: [''],
+      city: [''],
+      country: [CountryCode.IT],
+      taxCode: [''],
       phone: [''],
       email: ['', Validators.email],
-      accountNumber: ['', Validators.required],
-      swiftCode: ['', Validators.required],
+      accountNumber: [''],
+      swiftCode: [''],
     }),
     pricingRanges: this.fb.array([]),
   });
@@ -307,11 +318,18 @@ export class HotelFormComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode = true;
+      this.isEditing.set(false);
+      this.form.disable();
       this.hotelId = id as FirestoreId;
       this.loadHotel(this.hotelId);
     }
     
     this.tours$.subscribe(tours => this.toursCache = tours as Tour[]);
+  }
+
+  enableEditMode(): void {
+    this.isEditing.set(true);
+    this.form.enable();
   }
 
   addPricingRange() {
@@ -424,6 +442,8 @@ export class HotelFormComponent implements OnInit {
         };
         await this.hotelApi.update(payload);
         this.snackBar.open('Hotel updated successfully', 'Close', { duration: 3000 });
+        this.isEditing.set(false);
+        this.form.disable();
       } else {
         const selectedTour = this.toursCache.find(t => t.id === formVal.tourId);
         if (!selectedTour) {

@@ -32,17 +32,17 @@ export enum CountryCode {
  * Used for invoice generation and payment processing.
  */
 export interface HotelBillingData {
-  readonly supplierName: string;
-  readonly beneficiary: string;
-  readonly address: string;
-  readonly postalCode: string;
-  readonly city: string;
-  readonly country: CountryCode;
-  readonly taxCode: string;
-  readonly phone: string;
-  readonly email: string;
-  readonly accountNumber: string;
-  readonly swiftCode: string;
+  readonly supplierName?: string;
+  readonly beneficiary?: string;
+  readonly address?: string;
+  readonly postalCode?: string;
+  readonly city?: string;
+  readonly country?: CountryCode;
+  readonly taxCode?: string;
+  readonly phone?: string;
+  readonly email?: string;
+  readonly accountNumber?: string;
+  readonly swiftCode?: string;
 }
 
 /**
@@ -77,7 +77,7 @@ export interface Hotel {
   readonly id: FirestoreId;
   readonly name: string;
   readonly destination: string;
-  readonly billingData: HotelBillingData;
+  readonly billingData?: HotelBillingData;
   /** Dynamic pricing configuration — multiple ranges per hotel. */
   readonly pricingRanges: ReadonlyArray<DateRangePricing>;
   readonly notes: string;
@@ -93,18 +93,18 @@ export interface Hotel {
 export interface HotelFirestoreDocument {
   readonly name: string;
   readonly destination: string;
-  readonly billingData: {
-    readonly supplierName: string;
-    readonly beneficiary: string;
-    readonly address: string;
-    readonly postalCode: string;
-    readonly city: string;
-    readonly country: string;
-    readonly taxCode: string;
-    readonly phone: string;
-    readonly email: string;
-    readonly accountNumber: string;
-    readonly swiftCode: string;
+  readonly billingData?: {
+    readonly supplierName?: string;
+    readonly beneficiary?: string;
+    readonly address?: string;
+    readonly postalCode?: string;
+    readonly city?: string;
+    readonly country?: string;
+    readonly taxCode?: string;
+    readonly phone?: string;
+    readonly email?: string;
+    readonly accountNumber?: string;
+    readonly swiftCode?: string;
   };
   readonly pricingRanges: ReadonlyArray<{
     readonly id: string;

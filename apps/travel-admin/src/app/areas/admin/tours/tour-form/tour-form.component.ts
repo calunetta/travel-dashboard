@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -105,14 +105,28 @@ import { firstValueFrom } from 'rxjs';
             </mat-card>
 
             <div class="tha-flex-end tha-mt-4">
-              <button mat-stroked-button type="button" routerLink="/admin/tours" class="tha-mr-2">Cancel</button>
+              <button mat-stroked-button type="button" routerLink="/admin/tours" class="tha-mr-2">
+                {{ isEditing() ? 'Cancel' : 'Back' }}
+              </button>
+
               <button 
+                *ngIf="isEditMode && !isEditing()"
+                mat-flat-button 
+                color="primary" 
+                type="button" 
+                (click)="enableEditMode()"
+              >
+                Edit
+              </button>
+
+              <button 
+                *ngIf="isEditing()"
                 mat-flat-button 
                 color="primary" 
                 type="submit" 
                 [disabled]="form.invalid || submitting"
               >
-                {{ isEditMode ? 'Save Changes' : 'Create Tour' }}
+                {{ isEditMode ? 'Save' : 'Create Tour' }}
               </button>
             </div>
 
@@ -138,6 +152,7 @@ export class TourFormComponent implements OnInit {
   readonly isSuperAdmin = this.authService.isSuperAdmin;
 
   isEditMode = false;
+  isEditing = signal(true);
   tourId: FirestoreId | null = null;
   submitting = false;
 
@@ -169,6 +184,8 @@ export class TourFormComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode = true;
+      this.isEditing.set(false);
+      this.form.disable();
       this.tourId = id as FirestoreId;
       this.loadTour(this.tourId);
     } else {
@@ -178,6 +195,11 @@ export class TourFormComponent implements OnInit {
         this.form.patchValue({ adminIds: [currentUid as FirestoreId] });
       }
     }
+  }
+
+  enableEditMode(): void {
+    this.isEditing.set(true);
+    this.form.enable();
   }
 
   private async loadTour(id: FirestoreId): Promise<void> {
@@ -221,6 +243,8 @@ export class TourFormComponent implements OnInit {
         };
         await this.tourApi.update(payload);
         this.snackBar.open('Tour updated successfully', 'Close', { duration: 3000 });
+        this.isEditing.set(false);
+        this.form.disable();
       } else {
         const payload: CreateTourPayload = {
           tourWeRoadCode: formVal.tourWeRoadCode!,

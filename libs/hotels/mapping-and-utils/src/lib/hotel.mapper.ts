@@ -24,7 +24,7 @@ export function mapSnapshotToHotel(
   const data = snapshot.data() as Partial<HotelFirestoreDocument>;
   const id = snapshot.id as FirestoreId;
 
-  const rawBilling = data.billingData ?? {};
+  const rawBilling = data.billingData;
   const rawRanges = Array.isArray(data.pricingRanges) ? data.pricingRanges : [];
 
   const pricingRanges: ReadonlyArray<DateRangePricing> = rawRanges.map((range) => ({
@@ -44,21 +44,21 @@ export function mapSnapshotToHotel(
     id,
     name: data.name ?? '',
     destination: data.destination ?? '',
-    billingData: {
-      supplierName: (rawBilling as Record<string, unknown>)['supplierName'] as string ?? '',
-      beneficiary: (rawBilling as Record<string, unknown>)['beneficiary'] as string ?? '',
-      address: (rawBilling as Record<string, unknown>)['address'] as string ?? '',
-      postalCode: (rawBilling as Record<string, unknown>)['postalCode'] as string ?? '',
-      city: (rawBilling as Record<string, unknown>)['city'] as string ?? '',
+    billingData: rawBilling ? {
+      supplierName: (rawBilling as Record<string, unknown>)['supplierName'] as string | undefined,
+      beneficiary: (rawBilling as Record<string, unknown>)['beneficiary'] as string | undefined,
+      address: (rawBilling as Record<string, unknown>)['address'] as string | undefined,
+      postalCode: (rawBilling as Record<string, unknown>)['postalCode'] as string | undefined,
+      city: (rawBilling as Record<string, unknown>)['city'] as string | undefined,
       country: isCountryCode((rawBilling as Record<string, unknown>)['country'])
         ? ((rawBilling as Record<string, unknown>)['country'] as CountryCode)
-        : CountryCode.OTHER,
-      taxCode: (rawBilling as Record<string, unknown>)['taxCode'] as string ?? '',
-      phone: (rawBilling as Record<string, unknown>)['phone'] as string ?? '',
-      email: (rawBilling as Record<string, unknown>)['email'] as string ?? '',
-      accountNumber: (rawBilling as Record<string, unknown>)['accountNumber'] as string ?? '',
-      swiftCode: (rawBilling as Record<string, unknown>)['swiftCode'] as string ?? '',
-    },
+        : undefined,
+      taxCode: (rawBilling as Record<string, unknown>)['taxCode'] as string | undefined,
+      phone: (rawBilling as Record<string, unknown>)['phone'] as string | undefined,
+      email: (rawBilling as Record<string, unknown>)['email'] as string | undefined,
+      accountNumber: (rawBilling as Record<string, unknown>)['accountNumber'] as string | undefined,
+      swiftCode: (rawBilling as Record<string, unknown>)['swiftCode'] as string | undefined,
+    } : undefined,
     pricingRanges,
     notes: data.notes ?? '',
     tourId: typeof data.tourId === 'string' ? data.tourId as FirestoreId : '' as FirestoreId,
@@ -82,7 +82,7 @@ export function mapCreateHotelToFirestore(
   return {
     name: payload.name,
     destination: payload.destination,
-    billingData: {
+    billingData: payload.billingData ? {
       supplierName: payload.billingData.supplierName,
       beneficiary: payload.billingData.beneficiary,
       address: payload.billingData.address,
@@ -94,7 +94,7 @@ export function mapCreateHotelToFirestore(
       email: payload.billingData.email,
       accountNumber: payload.billingData.accountNumber,
       swiftCode: payload.billingData.swiftCode,
-    },
+    } : undefined,
     pricingRanges: payload.pricingRanges.map((range) => ({
       id: range.id,
       fromDate: range.fromDate,

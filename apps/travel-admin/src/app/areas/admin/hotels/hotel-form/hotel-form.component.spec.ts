@@ -116,9 +116,9 @@ describe('HotelFormComponent', () => {
     expect(destinationControl?.hasError('required')).toBe(false);
   });
 
-  it('should validate billing data required fields', () => {
+  it('should allow optional billing data', () => {
     const billingGroup = component.form.get('billingData');
-    expect(billingGroup?.invalid).toBe(true);
+    expect(billingGroup?.invalid).toBe(false);
 
     billingGroup?.patchValue(buildValidBillingData());
 

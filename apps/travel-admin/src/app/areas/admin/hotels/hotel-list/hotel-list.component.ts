@@ -207,7 +207,7 @@ export class HotelListComponent implements AfterViewInit {
     });
 
     this.dataSource.filterPredicate = (data: Hotel, filter: string) => {
-      const searchStr = `${data.name} ${data.destination} ${data.billingData.supplierName} ${data.billingData.country}`.toLowerCase();
+      const searchStr = `${data.name} ${data.destination} ${data.billingData?.supplierName || ''} ${data.billingData?.country || ''}`.toLowerCase();
       return searchStr.indexOf(filter) !== -1;
     };
   }

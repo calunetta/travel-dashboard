@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -146,7 +146,7 @@ import { startWith, map } from 'rxjs/operators';
                   <span class="tha-text-sm tha-font-bold tha-mb-2">Booking Receipt (Image)</span>
                   <input type="file" accept="image/*" (change)="onReceiptSelected($event)" #receiptInput style="display: none;" />
                   <div class="tha-flex-row tha-items-center tha-gap-4">
-                    <button mat-stroked-button type="button" (click)="receiptInput.click()">
+                    <button *ngIf="isEditing()" mat-stroked-button type="button" (click)="receiptInput.click()">
                       <mat-icon>upload_file</mat-icon> Select Image
                     </button>
                     <span class="tha-text-xs tha-text-muted">{{ selectedReceiptFile ? selectedReceiptFile.name : (form.get('hotelBookingReceiptUrl')?.value ? 'Receipt already uploaded' : 'No file selected') }}</span>
@@ -198,14 +198,28 @@ import { startWith, map } from 'rxjs/operators';
             </mat-form-field>
 
             <div class="tha-flex-end tha-mt-4">
-              <button mat-stroked-button type="button" routerLink="/admin/trips" class="tha-mr-2">Cancel</button>
+              <button mat-stroked-button type="button" routerLink="/admin/trips" class="tha-mr-2">
+                {{ isEditing() ? 'Cancel' : 'Back' }}
+              </button>
+              
               <button 
+                *ngIf="isEditMode && !isEditing()"
+                mat-flat-button 
+                color="primary" 
+                type="button" 
+                (click)="enableEditMode()"
+              >
+                Edit
+              </button>
+
+              <button 
+                *ngIf="isEditing()"
                 mat-flat-button 
                 color="primary" 
                 type="submit" 
                 [disabled]="form.invalid || submitting"
               >
-                {{ isEditMode ? 'Save Changes' : 'Create Trip' }}
+                {{ isEditMode ? 'Save' : 'Create Trip' }}
               </button>
             </div>
 
@@ -250,6 +264,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
   selectedReceiptFile: File | null = null;
 
   isEditMode = false;
+  isEditing = signal(true);
   tripId: FirestoreId | null = null;
   submitting = false;
 
@@ -294,6 +309,8 @@ export class TripFormComponent implements OnInit, OnDestroy {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode = true;
+      this.isEditing.set(false);
+      this.form.disable();
       this.tripId = id as FirestoreId;
       this.loadTrip(this.tripId);
     }
@@ -349,6 +366,13 @@ export class TripFormComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
+  }
+
+  enableEditMode(): void {
+    this.isEditing.set(true);
+    this.form.enable();
+    this.form.get('destination')?.disable();
+    this.form.get('endDate')?.disable();
   }
 
   private async loadTrip(id: FirestoreId): Promise<void> {
@@ -440,6 +464,8 @@ export class TripFormComponent implements OnInit, OnDestroy {
         };
         await this.tripApi.update(payload);
         this.snackBar.open('Trip updated successfully', 'Close', { duration: 3000 });
+        this.isEditing.set(false);
+        this.form.disable();
       } else {
         const allTrips = await firstValueFrom(this.tripApi.getAll$());
         const existingCodes = allTrips.map(t => t.code).filter(Boolean);
