@@ -43,10 +43,10 @@
   --tha-on-surface-variant:    #{tokens.$tha-on-surface-variant-light};
 
   // ── Sidebar ───────────────────────────────────────────────────────────────
-  --tha-sidebar-bg:            #{tokens.$tha-primary-900};
-  --tha-sidebar-text:          #{tokens.$tha-primary-100};
-  --tha-sidebar-active:        #{tokens.$tha-primary-500};
-  --tha-sidebar-active-bg:     rgba(63, 123, 217, 0.15);
+  --tha-sidebar-bg:            #{tokens.$tha-surface-light};
+  --tha-sidebar-text:          #{tokens.$tha-on-surface-light};
+  --tha-sidebar-active:        #{tokens.$tha-primary-600};
+  --tha-sidebar-active-bg:     #{tokens.$tha-primary-50};
   --tha-sidebar-width:         #{tokens.$tha-sidebar-width};
   --tha-sidebar-collapsed-width: #{tokens.$tha-sidebar-collapsed-width};
 

@@ -168,12 +168,12 @@ import { environment } from '../../../environments/environment';
         height: 100vh;
       }
       .tha-active-link {
-        background-color: rgba(var(--tha-primary-rgb), 0.1);
-        color: var(--tha-primary);
-        border-right: 4px solid var(--tha-primary);
+        background-color: var(--tha-sidebar-active-bg);
+        color: var(--tha-sidebar-active);
+        border-right: 4px solid var(--tha-sidebar-active);
       }
       .tha-active-link mat-icon {
-        color: var(--tha-primary);
+        color: var(--tha-sidebar-active);
       }
       ::ng-deep .tha-notification-menu {
         max-width: 350px;
