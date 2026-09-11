@@ -142,6 +142,38 @@ invalid-code,2024-01-01,2024-01-08,,,,,,,INVALID`;
     expect(rows[0].errors).toContain('Tour not found for slug invalid-code and nationality INVALID');
   });
 
+  it('should normalize dates like dd/MM/yyyy successfully', async () => {
+    const csvData = `weRoadTourSlug,start date,end date,coordinator,coordinator number,coordinator email,notes,hotel,booked by,nationality
+tour-code,01/02/2027,08/02/2027,Mario Rossi,123,mario@test.it,Test notes,Grand Hotel,Admin,IT`;
+    const file = new File([csvData], 'valid_dates.csv', { type: 'text/csv' });
+    file.text = jest.fn().mockResolvedValue(csvData);
+    const event = { target: { files: [file] } } as unknown as Event;
+    
+    await component.onFileSelected(event);
+    
+    expect(component.globalError()).toBeNull();
+    const rows = component.parsedRows();
+    expect(rows.length).toBe(1);
+    expect(rows[0].isValid).toBe(true);
+    expect(rows[0].payload?.startDate).toBe('2027-02-01');
+    expect(rows[0].payload?.endDate).toBe('2027-02-08');
+  });
+
+  it('should flag rows with unparseable dates as invalid', async () => {
+    const csvData = `weRoadTourSlug,start date,end date,coordinator,coordinator number,coordinator email,notes,hotel,booked by,nationality
+tour-code,invalid,2027-02-08,Mario Rossi,123,mario@test.it,Test notes,Grand Hotel,Admin,IT`;
+    const file = new File([csvData], 'invalid_dates.csv', { type: 'text/csv' });
+    file.text = jest.fn().mockResolvedValue(csvData);
+    const event = { target: { files: [file] } } as unknown as Event;
+    
+    await component.onFileSelected(event);
+    
+    const rows = component.parsedRows();
+    expect(rows.length).toBe(1);
+    expect(rows[0].isValid).toBe(false);
+    expect(rows[0].errors).toContain('Invalid start date format');
+  });
+
   it('should start import and create trips', fakeAsync(() => {
     const csvData = `weRoadTourSlug,start date,end date,coordinator,coordinator number,coordinator email,notes,hotel,booked by,nationality
 tour-code,2024-01-01,2024-01-08,Mario Rossi,123,mario@test.it,Test notes,Grand Hotel,Admin,IT`;

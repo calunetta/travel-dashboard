@@ -18,6 +18,7 @@ import { Nationality, FirestoreId } from 'shared-models';
 import { firstValueFrom, shareReplay } from 'rxjs';
 import { DEFAULT_ROOM_COMPOSITION, CreateTripPayload } from 'trips-models';
 import { TripCodeGenerator } from 'trips-mapping-and-utils';
+import { normalizeDateInput } from 'shared-mapping-and-utils';
 
 interface CsvRow {
   weRoadTourSlug: string;
@@ -256,10 +257,15 @@ export class CsvImportDialogComponent {
         return key ? raw[key] : '';
       };
 
+      const rawStartDate = getField('start date');
+      const rawEndDate = getField('end date');
+      const normStart = normalizeDateInput(rawStartDate);
+      const normEnd = rawEndDate ? normalizeDateInput(rawEndDate) : null;
+
       const row: CsvRow = {
         weRoadTourSlug: getField('weroadtourslug'),
-        startDate: getField('start date'),
-        endDate: getField('end date'),
+        startDate: normStart || rawStartDate,
+        endDate: normEnd || rawEndDate,
         coordinator: getField('coordinator'),
         coordinatorNumber: getField('coordinator number'),
         coordinatorEmail: getField('coordinator email'),
@@ -271,7 +277,17 @@ export class CsvImportDialogComponent {
 
       // 1. Validate required basic fields
       if (!row.weRoadTourSlug) errors.push('weRoadTourSlug is required');
-      if (!row.startDate) errors.push('start date is required');
+      
+      if (!rawStartDate) {
+        errors.push('start date is required');
+      } else if (!normStart) {
+        errors.push('Invalid start date format');
+      }
+
+      if (rawEndDate && !normEnd) {
+        errors.push('Invalid end date format');
+      }
+
       if (!row.nationality) errors.push('nationality is required');
 
       // Check Nationality valid enum

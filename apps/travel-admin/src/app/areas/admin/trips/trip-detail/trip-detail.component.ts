@@ -77,8 +77,9 @@ import { firstValueFrom } from 'rxjs';
                 style="font-size: 0.75rem; font-weight: 700; background: rgba(var(--tha-primary-rgb), 0.12); color: var(--tha-primary); padding: 3px 10px; border-radius: 20px; letter-spacing: 1px;"
               >{{ t.code }}</span>
             </div>
-            <div class="tha-text-sm tha-text-muted tha-mt-1">
-              {{ t.startDate }} to {{ t.endDate }} ({{ t.durationDays }} days)
+            <div class="tha-flex-row" style="gap: 8px; align-items: center;">
+              <mat-icon class="tha-text-primary">calendar_month</mat-icon>
+              {{ t.startDate | date:'dd/MM/yyyy' }} to {{ t.endDate | date:'dd/MM/yyyy' }} ({{ t.durationDays }} days)
             </div>
           </div>
         </div>

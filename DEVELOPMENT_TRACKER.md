@@ -1085,3 +1085,17 @@ Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+
    - Resolved a TypeScript compilation error (`TS18048`) in `hotel-list.component.ts` filter predicate resulting from the new optional `billingData` type signature.
    - Passed all 57 Angular tests, proving robust backwards compatibility with existing documents in Firebase. Cypress E2E flows remained intact.
 
+
+### ✅ Step 32 - Bug Fixes: Date Normalization & CSV Importer Refactor
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+**Commit:** `fix(utils): normalize and safely parse date inputs across the application`
+
+**Key Changes:**
+1. **Date Utilities (`utils.ts`)** — Implemented `normalizeDateInput`, `parseDateSafe`, and `isValidCalendarDate` to act as a resilient gateway for date processing, standardizing various date formats (e.g., `dd/MM/yyyy`, `YYYYMMDD`) into safe ISO `YYYY-MM-DD` strings.
+2. **Error Boundaries (`calculateNights`, `isDateInRange`)** — Refactored to catch unparseable date strings safely, returning `0` or `false` and logging warnings rather than crashing the application during bulk operations or table rendering.
+3. **CSV Importer (`csv-import-dialog.component.ts`)** — Upgraded `validateAndMapRecords` to leverage `normalizeDateInput` directly. The importer now normalizes incoming CSV date strings before evaluation, correctly identifying unparseable entries while ensuring that valid but unstandardized formats are securely prepared for Firestore.
+4. **UI Formatting (`trip-list.component.ts`, `trip-detail.component.ts`, `calendar.component.ts`)** — Standardized all user-facing date visualizations natively in HTML templates using Angular's DatePipe: `| date:'dd/MM/yyyy'`.
+5. **Form Safeties (`trip-form.component.ts`)** — Enhanced manual date parsing during form submission to prevent timezone offset crashes if non-Date objects bypass the Angular Material datepicker.
+6. **Testing Suite:** Added robust Jest unit tests in `utils.spec.ts` evaluating the new normalizers and their error-handling boundaries. Expanded `csv-import-dialog.component.spec.ts` to assert that alternative date formats properly yield expected ISO models, or properly reject invalid inputs without failing the entire batch process.

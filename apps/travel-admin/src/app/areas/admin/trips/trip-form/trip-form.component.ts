@@ -21,6 +21,7 @@ import { TourApiService } from 'tours-api-requests';
 import { AdminApiService, FirebaseAuthService } from 'auth-api-requests';
 import { TripCodeGenerator } from 'trips-mapping-and-utils';
 import { CreateTripPayload, UpdateTripPayload, DEFAULT_ROOM_COMPOSITION } from 'trips-models';
+import { normalizeDateInput } from 'shared-mapping-and-utils';
 import type { Tour } from 'tours-models';
 import type { Admin } from 'auth-models';
 import { FirestoreId, Nationality, FIREBASE_STORAGE_TOKEN } from 'shared-models';
@@ -412,7 +413,12 @@ export class TripFormComponent implements OnInit, OnDestroy {
     const formVal = this.form.getRawValue();
 
     // Format dates to ISO yyyy-mm-dd
-    const formatDate = (date: Date): string => {
+    const formatDate = (date: Date | string): string => {
+      if (typeof date === 'string') {
+        const norm = normalizeDateInput(date);
+        if (norm) return norm;
+        return new Date(date).toISOString().split('T')[0];
+      }
       const offset = date.getTimezoneOffset();
       const d = new Date(date.getTime() - (offset * 60 * 1000));
       return d.toISOString().split('T')[0];

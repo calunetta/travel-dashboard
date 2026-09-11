@@ -84,36 +84,173 @@ export function eurToCents(eur: number): number {
   return Math.round(eur * 100);
 }
 
+// ─── Date Normalization ───────────────────────────────────────────────────────
+
+/**
+ * Regular expressions for supported date input formats.
+ * - dd/MM/yyyy  (European slash)
+ * - dd-MM-yyyy  (European dash)
+ * - YYYYMMDD    (compact ISO)
+ * - YYYY-MM-DD  (standard ISO)
+ */
+const DATE_PATTERNS = {
+  /** dd/MM/yyyy — e.g. "21/02/2027" */
+  europeanSlash: /^(\d{2})\/(\d{2})\/(\d{4})$/,
+  /** dd-MM-yyyy — e.g. "21-02-2027" */
+  europeanDash: /^(\d{2})-(\d{2})-(\d{4})$/,
+  /** YYYYMMDD — e.g. "20270221" */
+  compactIso: /^(\d{4})(\d{2})(\d{2})$/,
+  /** YYYY-MM-DD — e.g. "2027-02-21" */
+  standardIso: /^(\d{4})-(\d{2})-(\d{2})$/,
+} as const;
+
+/**
+ * Validates that year, month, day components form a real calendar date.
+ * Catches impossible dates like 2027-02-30 or 2027-13-01.
+ */
+export function isValidCalendarDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12 || day < 1) return false;
+  // Construct with UTC to avoid timezone issues; month is 0-indexed in JS
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return (
+    d.getUTCFullYear() === year &&
+    d.getUTCMonth() === month - 1 &&
+    d.getUTCDate() === day
+  );
+}
+
+/**
+ * Normalizes a date string from any supported format into a standard
+ * ISO `YYYY-MM-DD` date string suitable for Firestore storage and
+ * date calculations.
+ *
+ * Accepted input formats:
+ * - `dd/MM/yyyy`  (e.g. "21/02/2027")
+ * - `dd-MM-yyyy`  (e.g. "21-02-2027")
+ * - `YYYYMMDD`    (e.g. "20270221")
+ * - `YYYY-MM-DD`  (e.g. "2027-02-21")
+ *
+ * @param dateStr - Raw date string from CSV, form, or API
+ * @returns Normalized `YYYY-MM-DD` string, or `null` if parsing fails
+ */
+export function normalizeDateInput(dateStr: string): ISODateString | null {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+
+  const trimmed = dateStr.trim();
+  if (trimmed.length === 0) return null;
+
+  let year: number;
+  let month: number;
+  let day: number;
+
+  // Try dd/MM/yyyy
+  let match = trimmed.match(DATE_PATTERNS.europeanSlash);
+  if (match) {
+    day = parseInt(match[1], 10);
+    month = parseInt(match[2], 10);
+    year = parseInt(match[3], 10);
+    if (isValidCalendarDate(year, month, day)) {
+      return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    return null;
+  }
+
+  // Try dd-MM-yyyy
+  match = trimmed.match(DATE_PATTERNS.europeanDash);
+  if (match) {
+    day = parseInt(match[1], 10);
+    month = parseInt(match[2], 10);
+    year = parseInt(match[3], 10);
+    if (isValidCalendarDate(year, month, day)) {
+      return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    return null;
+  }
+
+  // Try YYYYMMDD
+  match = trimmed.match(DATE_PATTERNS.compactIso);
+  if (match) {
+    year = parseInt(match[1], 10);
+    month = parseInt(match[2], 10);
+    day = parseInt(match[3], 10);
+    if (isValidCalendarDate(year, month, day)) {
+      return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    return null;
+  }
+
+  // Try YYYY-MM-DD (already normalized, just validate)
+  match = trimmed.match(DATE_PATTERNS.standardIso);
+  if (match) {
+    year = parseInt(match[1], 10);
+    month = parseInt(match[2], 10);
+    day = parseInt(match[3], 10);
+    if (isValidCalendarDate(year, month, day)) {
+      return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    return null;
+  }
+
+  return null;
+}
+
+/**
+ * Safely parses a date string (in any supported format) into a Date object.
+ * Uses `normalizeDateInput` internally so it handles European formats.
+ *
+ * @returns A valid Date object or `null` if the input cannot be parsed.
+ */
+export function parseDateSafe(dateStr: string): Date | null {
+  const normalized = normalizeDateInput(dateStr);
+  if (!normalized) return null;
+  // Parse as UTC noon to avoid timezone edge cases
+  const d = new Date(`${normalized}T12:00:00Z`);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 // ─── Date Range Helpers ───────────────────────────────────────────────────────
 
 /**
- * Returns the number of nights between two ISO date strings.
+ * Returns the number of nights between two date strings.
+ * Accepts any format supported by `normalizeDateInput`.
+ *
  * e.g. "2025-07-14" to "2025-07-22" = 8 nights.
+ * e.g. "14/07/2025" to "22/07/2025" = 8 nights.
+ *
+ * Returns `0` and logs a warning if either date is invalid,
+ * preventing app-crashing errors during bulk imports.
  */
 export function calculateNights(startDate: ISODateString, endDate: ISODateString): number {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    throw new Error(
-      `[calculateNights] Invalid date strings: "${startDate}", "${endDate}"`
+  const normalizedStart = normalizeDateInput(startDate);
+  const normalizedEnd = normalizeDateInput(endDate);
+
+  if (!normalizedStart || !normalizedEnd) {
+    console.warn(
+      `[calculateNights] Could not parse date strings: "${startDate}", "${endDate}". Returning 0.`
     );
+    return 0;
   }
+
+  const start = new Date(normalizedStart);
+  const end = new Date(normalizedEnd);
   const diffMs = end.getTime() - start.getTime();
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
 
 /**
- * Checks if a given ISO date falls within an inclusive date range.
+ * Checks if a given date falls within an inclusive date range.
+ * Accepts any format supported by `normalizeDateInput`.
  */
 export function isDateInRange(
   date: ISODateString,
   fromDate: ISODateString,
   toDate: ISODateString
 ): boolean {
-  const d = new Date(date).getTime();
-  const from = new Date(fromDate).getTime();
-  const to = new Date(toDate).getTime();
-  return d >= from && d <= to;
+  const d = parseDateSafe(date);
+  const from = parseDateSafe(fromDate);
+  const to = parseDateSafe(toDate);
+  if (!d || !from || !to) return false;
+  return d.getTime() >= from.getTime() && d.getTime() <= to.getTime();
 }
 
 // ─── String Helpers ───────────────────────────────────────────────────────────

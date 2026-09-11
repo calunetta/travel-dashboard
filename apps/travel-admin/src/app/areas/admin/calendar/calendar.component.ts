@@ -32,8 +32,8 @@ import { Nationality } from 'shared-models';
     <mat-dialog-content>
       <div class="tha-flex-col tha-gap-4 tha-py-4">
         <div class="tha-flex-row" style="align-items: center; gap: 8px;">
-          <mat-icon color="primary">date_range</mat-icon>
-          <span>{{ data.trip.startDate }} — {{ data.trip.endDate }} ({{ data.trip.durationDays }} days)</span>
+          <mat-icon class="tha-text-primary" style="font-size: 20px; width: 20px; height: 20px;">calendar_today</mat-icon>
+          <span>{{ data.trip.startDate | date:'dd/MM/yyyy' }} — {{ data.trip.endDate | date:'dd/MM/yyyy' }} ({{ data.trip.durationDays }} days)</span>
         </div>
         
         <div class="tha-flex-row" style="align-items: center; gap: 8px;">
@@ -167,7 +167,7 @@ interface CalendarDay {
                  (keydown.space)="openTripDialog(trip)"
                  tabindex="0"
                  matRipple
-                 [title]="trip.destination + ' (' + trip.startDate + ')'">
+                 [title]="trip.destination + ' (' + (trip.startDate | date:'dd/MM/yyyy') + ')'">
                 <span class="trip-pill-text">{{ trip.destination }}</span>
               </div>
             </div>

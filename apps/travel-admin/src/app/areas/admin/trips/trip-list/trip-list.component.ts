@@ -124,7 +124,7 @@ interface TripViewModel extends Trip {
             <ng-container matColumnDef="dates">
               <th mat-header-cell *matHeaderCellDef> Dates </th>
               <td mat-cell *matCellDef="let trip">
-                {{ trip.startDate }} <br/> <span class="tha-text-xs tha-text-muted">to {{ trip.endDate }} ({{ trip.durationDays }} days)</span>
+                {{ trip.startDate | date:'dd/MM/yyyy' }} <br/> <span class="tha-text-xs tha-text-muted">to {{ trip.endDate | date:'dd/MM/yyyy' }} ({{ trip.durationDays }} days)</span>
               </td>
             </ng-container>
 
