@@ -249,11 +249,16 @@ export class AdminShellComponent {
 
   private readonly snackBar = inject(MatSnackBar);
 
+  private readonly notificationPermission = signal<NotificationPermission>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
+  );
+  private readonly hasLocalToken = signal(false);
+
   // Expose signal for button visibility
   readonly notificationsEnabled = computed(() => {
     const user = this.authService.currentUser();
-    const hasPermission = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
-    return hasPermission && !!user?.adminProfile?.fcmToken;
+    const permission = this.notificationPermission();
+    return permission === 'granted' && (this.hasLocalToken() || !!user?.adminProfile?.fcmToken);
   });
 
   async enableNotifications() {
@@ -264,6 +269,8 @@ export class AdminShellComponent {
 
     try {
       const permission = await Notification.requestPermission();
+      this.notificationPermission.set(permission);
+      
       if (permission === 'granted') {
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
         
@@ -275,6 +282,7 @@ export class AdminShellComponent {
         const user = this.authService.currentUser();
         if (token && user) {
           await this.adminApi.updateFcmToken(user.uid as FirestoreId, token);
+          this.hasLocalToken.set(true);
           this.snackBar.open('Notifications enabled successfully!', 'Close', { duration: 3000 });
           console.log('FCM Token successfully saved.');
         } else {
