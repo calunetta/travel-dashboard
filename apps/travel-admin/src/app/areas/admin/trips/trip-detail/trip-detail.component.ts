@@ -20,6 +20,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -34,6 +35,8 @@ import { switchMap, shareReplay } from 'rxjs';
 import { RoomType } from 'trips-models';
 import { calculateHotelCost } from 'hotels-mapping-and-utils';
 import { buildWhatsAppUrl } from 'shared-mapping-and-utils';
+import { ConfirmDialogComponent, type ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'tha-trip-detail',
@@ -54,6 +57,7 @@ import { buildWhatsAppUrl } from 'shared-mapping-and-utils';
     MatChipsModule,
     MatTooltipModule,
     MatSnackBarModule,
+    MatDialogModule,
     MatCheckboxModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -364,6 +368,7 @@ export class TripDetailComponent implements OnInit {
   private readonly coordinatorApi = inject(CoordinatorApiService);
   private readonly hotelApi = inject(HotelApiService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly route = inject(ActivatedRoute);
 
@@ -511,6 +516,18 @@ export class TripDetailComponent implements OnInit {
     tripId: FirestoreId,
     document: TripDocument
   ): Promise<void> {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Document',
+        message: `Are you sure you want to delete "${document.name}"? The file will be permanently removed from storage.`,
+        dangerous: true,
+        confirmLabel: 'Delete',
+      } as ConfirmDialogData,
+    });
+
+    const confirmed = await firstValueFrom(dialogRef.afterClosed());
+    if (!confirmed) return;
+
     this.deletingDocId.set(document.id);
     try {
       // Delete from Storage first, then remove the Firestore record

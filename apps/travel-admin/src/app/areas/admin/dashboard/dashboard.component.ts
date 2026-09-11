@@ -11,7 +11,6 @@ import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { TourApiService } from 'tours-api-requests';
-import { CandidacyStatus } from 'coordinators-models';
 
 @Component({
   selector: 'tha-dashboard',
@@ -23,6 +22,19 @@ import { CandidacyStatus } from 'coordinators-models';
       <h1 class="tha-text-3xl tha-font-bold tha-mb-6">Dashboard</h1>
       
       <div class="tha-grid-4 tha-mb-8">
+        <!-- Active Tours -->
+        <mat-card class="dashboard-card tha-transition-normal" routerLink="/admin/tours">
+          <div class="card-content tha-flex-row">
+            <div class="card-text">
+              <div class="card-label">Active Tours</div>
+              <div class="card-value">{{ toursCount() ?? '-' }}</div>
+            </div>
+            <div class="icon-container info-icon" style="background: rgba(0, 188, 212, 0.1); color: #00bcd4;">
+              <mat-icon>explore</mat-icon>
+            </div>
+          </div>
+        </mat-card>
+
         <!-- Active Trips -->
         <mat-card class="dashboard-card tha-transition-normal" routerLink="/admin/trips">
           <div class="card-content tha-flex-row">
@@ -36,14 +48,15 @@ import { CandidacyStatus } from 'coordinators-models';
           </div>
         </mat-card>
 
-        <!-- Pending Candidacies -->
-        <mat-card class="dashboard-card tha-transition-normal" routerLink="/admin/candidacies">
+        <!-- Registered Hotels -->
+        <mat-card class="dashboard-card tha-transition-normal" routerLink="/admin/hotels">
           <div class="card-content tha-flex-row">
             <div class="card-text">
-              <div class="card-label">Pending Candidacies</div>
+              <div class="card-label">Hotels</div>
+              <div class="card-value">{{ hotelsCount() ?? '-' }}</div>
             </div>
-            <div class="icon-container warning-icon">
-              <mat-icon>assignment_late</mat-icon>
+            <div class="icon-container info-icon">
+              <mat-icon>hotel</mat-icon>
             </div>
           </div>
         </mat-card>
@@ -60,28 +73,14 @@ import { CandidacyStatus } from 'coordinators-models';
           </div>
         </mat-card>
 
-        <!-- Active Tours -->
-        <mat-card class="dashboard-card tha-transition-normal" routerLink="/admin/tours">
+        <!-- Pending Candidacies -->
+        <mat-card class="dashboard-card tha-transition-normal" routerLink="/admin/candidacies">
           <div class="card-content tha-flex-row">
             <div class="card-text">
-              <div class="card-label">Active Tours</div>
-              <div class="card-value">{{ toursCount() ?? '-' }}</div>
+              <div class="card-label">Pending Candidacies</div>
             </div>
-            <div class="icon-container info-icon" style="background: rgba(0, 188, 212, 0.1); color: #00bcd4;">
-              <mat-icon>explore</mat-icon>
-            </div>
-          </div>
-        </mat-card>
-
-        <!-- Registered Hotels -->
-        <mat-card class="dashboard-card tha-transition-normal" routerLink="/admin/hotels">
-          <div class="card-content tha-flex-row">
-            <div class="card-text">
-              <div class="card-label">Hotels</div>
-              <div class="card-value">{{ hotelsCount() ?? '-' }}</div>
-            </div>
-            <div class="icon-container info-icon">
-              <mat-icon>hotel</mat-icon>
+            <div class="icon-container warning-icon">
+              <mat-icon>assignment_late</mat-icon>
             </div>
           </div>
         </mat-card>

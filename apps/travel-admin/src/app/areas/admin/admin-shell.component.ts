@@ -53,7 +53,7 @@ import { environment } from '../../../environments/environment';
           </a>
           
           <mat-divider></mat-divider>
-          <div class="tha-text-xs tha-text-muted tha-font-bold tha-px-4 tha-pt-4 tha-pb-2" style="text-transform: uppercase;">Management</div>
+          <div class="tha-text-xs tha-text-muted tha-font-bold tha-px-4 tha-pt-4 tha-pb-2" style="text-transform: uppercase;margin: 10px">Management</div>
 
           <a *ngIf="isSuperAdmin()" mat-list-item routerLink="/admin/tours" routerLinkActive="tha-active-link">
             <mat-icon matListItemIcon>map</mat-icon>
@@ -119,7 +119,7 @@ import { environment } from '../../../environments/environment';
 
           <mat-menu #notificationsMenu="matMenu" class="tha-notification-menu">
             <ng-template matMenuContent>
-              <div class="tha-px-4 tha-py-2 tha-font-bold tha-text-sm" style="border-bottom: 1px solid rgba(128,128,128,0.2);">Notifications</div>
+              <div class="tha-px-4 tha-py-2 tha-font-bold tha-text-sm" style="margin: 0 10px;border-bottom: 1px solid rgba(128,128,128,0.2);">Notifications</div>
               <div *ngIf="notifications().length === 0" class="tha-p-4 tha-text-muted tha-text-sm">
                 No notifications
               </div>

@@ -49,6 +49,22 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────
+    // NOTIFICATIONS sub-collection (under admins)
+    // ─────────────────────────────────────────────
+    // Written exclusively by Cloud Functions (Admin SDK — bypasses rules).
+    // The client may only read its own notifications and mark them as read.
+    match /admins/{adminId}/notifications/{notificationId} {
+      // An admin may only read their own notifications.
+      allow read: if isAuthenticated() && request.auth.uid == adminId;
+      // An admin may only update their own notifications, and only to flip the `read` flag.
+      allow update: if isAuthenticated()
+                    && request.auth.uid == adminId
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      // Create and delete are handled exclusively by Cloud Functions.
+      allow create, delete: if false;
+    }
+
+    // ─────────────────────────────────────────────
     // RBAC Helpers
     // ─────────────────────────────────────────────
 

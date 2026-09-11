@@ -993,3 +993,50 @@ Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+
 - `CandidacyListComponent`: Reject ✅, Assign ✅, Delete ✅, Batch Delete ✅
 - `TripDetailComponent`: Document Upload ✅, Document Delete ✅, Payment Status ✅, Checklist ✅
 - `CoordinatorDetailComponent`: Save Feedback ✅
+
+---
+
+### ✅ Step 26 - UX/UI & Backend Notification Overhaul (Part 4: Global Delete Confirmation Dialogs)
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+
+**Audit Result:** `ConfirmDialogComponent` already existed and was already integrated into all list components. The only missing guard was `TripDetailComponent.deleteDocument()`.
+
+**Changes Made:**
+- `trip-detail.component.ts`: Added `MatDialog` + `MatDialogModule` + `ConfirmDialogComponent` import; wrapped `deleteDocument()` with a confirmation dialog before triggering the irreversible Storage + Firestore delete.
+
+**Full Coverage:**
+- `TripListComponent`: Single delete ✅, Batch delete ✅
+- `HotelListComponent`: Single delete ✅, Batch delete ✅
+- `TourListComponent`: Single delete ✅, Batch delete ✅
+- `CoordinatorListComponent`: Single delete ✅, Batch delete ✅
+- `CandidacyListComponent`: Single delete ✅, Batch delete ✅
+- `TripDetailComponent`: Document delete ✅ (fixed — was missing)
+
+---
+
+### ✅ Step 27 - UX/UI & Backend Notification Overhaul (Part 5: QA, Testing & Tracker)
+
+**Status:** Completed  
+**Date:** 2026-09-11  
+
+**New Test File:**
+- `trip-detail.component.spec.ts` — 6 tests covering the `deleteDocument` confirm dialog guard added in Part 4:
+  - `should create` ✅
+  - `should open a dangerous confirm dialog before deleting` ✅
+  - `should delete from Storage then Firestore when user confirms` ✅
+  - `should NOT delete when the user cancels the dialog` ✅
+  - `should show an error snackbar when deletion throws` ✅
+  - `should reset deletingDocId to null after completion` ✅
+
+**Final Test Counts:**
+- `travel-admin`: **52 tests, 14 suites — all pass** (up from 46/13)
+- `functions`: **11 tests, 1 suite — all pass**
+
+**Iteration Complete — Summary of All 5 Parts:**
+1. **PART 1** (Notification Logic): Standardized all Cloud Function notifications to `adminIds`. Push + Email routing corrected. 11/11 function tests.
+2. **PART 2** (In-App Notification Center): `InAppNotification` model, batch writes, daily cleanup cron, `AdminApiService` CRUD, bell/badge/menu in `AdminShellComponent`. Firestore rules fixed for `admins/{id}/notifications`.
+3. **PART 3** (Global Visual Feedback Audit): 100% `MatSnackBar` coverage confirmed across all 12 components — no code changes required.
+4. **PART 4** (Delete Confirmation Dialogs): `ConfirmDialogComponent` already guarded all list deletes. Fixed the only missing case: `TripDetailComponent.deleteDocument()`.
+5. **PART 5** (QA & Testing): Added `trip-detail.component.spec.ts` with 6 targeted tests. All 52 admin + 11 function tests pass.
