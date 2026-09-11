@@ -3,7 +3,8 @@ import { TripListComponent } from './trip-list.component';
 import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
-import { FirebaseAuthService } from 'auth-api-requests';
+import { FirebaseAuthService, AdminApiService } from 'auth-api-requests';
+import { TourApiService } from 'tours-api-requests';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
@@ -17,6 +18,8 @@ describe('TripListComponent', () => {
   let mockTripApi: any;
   let mockHotelApi: any;
   let mockCoordinatorApi: any;
+  let mockAdminApi: any;
+  let mockTourApi: any;
   let mockAuthService: any;
   let mockDialog: any;
   let mockSnackBar: any;
@@ -36,6 +39,14 @@ describe('TripListComponent', () => {
     };
 
     mockCoordinatorApi = {
+      getAll$: jest.fn().mockReturnValue(of([]))
+    };
+
+    mockAdminApi = {
+      getAll$: jest.fn().mockReturnValue(of([]))
+    };
+
+    mockTourApi = {
       getAll$: jest.fn().mockReturnValue(of([]))
     };
 
@@ -65,6 +76,8 @@ describe('TripListComponent', () => {
           { provide: TripApiService, useValue: mockTripApi },
           { provide: HotelApiService, useValue: mockHotelApi },
           { provide: CoordinatorApiService, useValue: mockCoordinatorApi },
+          { provide: AdminApiService, useValue: mockAdminApi },
+          { provide: TourApiService, useValue: mockTourApi },
           { provide: FirebaseAuthService, useValue: mockAuthService },
           { provide: MatDialog, useValue: mockDialog },
           { provide: MatSnackBar, useValue: mockSnackBar }

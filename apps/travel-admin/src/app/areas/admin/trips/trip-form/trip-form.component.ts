@@ -290,19 +290,8 @@ export class TripFormComponent implements OnInit, OnDestroy {
     assignedAdminIds: [[] as FirestoreId[]],
   });
 
-  readonly availableHotelBookers$ = combineLatest([
-    this.form.get('tourId')!.valueChanges.pipe(startWith(this.form.get('tourId')!.value)),
-    this.form.get('assignedAdminIds')!.valueChanges.pipe(startWith(this.form.get('assignedAdminIds')!.value)),
-    this.allAdmins$
-  ]).pipe(
-    map(([tourId, assignedAdminIds, allAdmins]) => {
-      const selectedTour = this.toursCache.find(t => t.id === tourId);
-      const adminIds = (this.isSuperAdmin() && assignedAdminIds && assignedAdminIds.length > 0)
-        ? assignedAdminIds
-        : (selectedTour ? selectedTour.adminIds : []);
-      
-      return (allAdmins as Admin[]).filter(admin => adminIds.includes(admin.id));
-    })
+  readonly availableHotelBookers$ = this.allAdmins$.pipe(
+    map(admins => (admins as Admin[]).filter(admin => admin.role === 'SUPER_ADMIN' || admin.role === 'ADMIN'))
   );
 
   ngOnInit(): void {

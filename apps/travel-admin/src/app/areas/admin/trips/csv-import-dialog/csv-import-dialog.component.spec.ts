@@ -4,6 +4,7 @@ import { TripApiService } from 'trips-api-requests';
 import { TourApiService } from 'tours-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
+import { AdminApiService } from 'auth-api-requests';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
@@ -18,6 +19,7 @@ describe('CsvImportDialogComponent', () => {
   let mockTourApi: any;
   let mockHotelApi: any;
   let mockCoordinatorApi: any;
+  let mockAdminApi: any;
   let mockDialogRef: any;
   let mockSnackBar: any;
 
@@ -48,6 +50,11 @@ describe('CsvImportDialogComponent', () => {
     mockCoordinatorApi = {
       upsertCoordinatorFromCsv: jest.fn().mockResolvedValue('coord-123')
     };
+    mockAdminApi = {
+      getAll$: jest.fn().mockReturnValue(of([
+        { id: 'admin1', name: 'Admin', surname: 'Test', email: 'admin@test.com', role: 'ADMIN' }
+      ]))
+    };
     mockDialogRef = {
       close: jest.fn()
     };
@@ -62,6 +69,7 @@ describe('CsvImportDialogComponent', () => {
         { provide: TourApiService, useValue: mockTourApi },
         { provide: HotelApiService, useValue: mockHotelApi },
         { provide: CoordinatorApiService, useValue: mockCoordinatorApi },
+        { provide: AdminApiService, useValue: mockAdminApi },
         { provide: MatDialogRef, useValue: mockDialogRef },
         { provide: MatSnackBar, useValue: mockSnackBar }
       ]
@@ -182,7 +190,7 @@ tour-code,2024-01-01,2024-01-08,Mario Rossi,123,mario@test.it,Test notes,Grand H
     const event = { target: { files: [file] } } as unknown as Event;
     
     component.onFileSelected(event).then(() => {
-      component.startImport();
+      console.log(component.parsedRows()[0].errors); component.startImport();
     });
     tick();
 
@@ -194,7 +202,7 @@ tour-code,2024-01-01,2024-01-08,Mario Rossi,123,mario@test.it,Test notes,Grand H
 
   it('should generate fallback email and handle missing phone when only coordinator name is provided', fakeAsync(() => {
     const csvData = `weRoadTourSlug,start date,end date,coordinator,coordinator number,coordinator email,notes,hotel,booked by,nationality
-tour-code,2024-01-01,2024-01-08,Mario Rossi,,,,Test notes,Grand Hotel,Admin,IT`;
+tour-code,2024-01-01,2024-01-08,Mario Rossi,,,Test notes,Grand Hotel,Admin,IT`;
     const file = new File([csvData], 'fallback.csv', { type: 'text/csv' });
     file.text = jest.fn().mockResolvedValue(csvData);
     const event = { target: { files: [file] } } as unknown as Event;

@@ -15,6 +15,7 @@ import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
 import { TourApiService } from 'tours-api-requests';
 import { Nationality, FirestoreId } from 'shared-models';
+import { AdminApiService } from 'auth-api-requests';
 import { firstValueFrom, shareReplay } from 'rxjs';
 import { DEFAULT_ROOM_COMPOSITION, CreateTripPayload } from 'trips-models';
 import { TripCodeGenerator } from 'trips-mapping-and-utils';
@@ -180,6 +181,7 @@ export class CsvImportDialogComponent {
   private readonly tourApi = inject(TourApiService);
   private readonly hotelApi = inject(HotelApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
+  private readonly adminApi = inject(AdminApiService);
   private readonly dialogRef = inject(MatDialogRef);
   private readonly snackBar = inject(MatSnackBar);
 
@@ -244,6 +246,7 @@ export class CsvImportDialogComponent {
     // Pre-fetch caches for fast resolution
     const tours = await firstValueFrom(this.tourApi.getAll$().pipe(shareReplay(1)));
     const hotels = await firstValueFrom(this.hotelApi.getAll$().pipe(shareReplay(1)));
+    const admins = await firstValueFrom(this.adminApi.getAll$().pipe(shareReplay(1)));
 
     const parsed: ParsedRow[] = [];
 
@@ -337,6 +340,23 @@ export class CsvImportDialogComponent {
         errors.push('Coordinator name is required if email is provided');
       }
 
+      // 5. Resolve Booked By
+      let hotelBookedBy: FirestoreId | null = null;
+      if (row.bookedBy) {
+        const searchTerm = row.bookedBy.toLowerCase();
+        const matchedAdmin = admins.find(a => 
+          a.name.toLowerCase().includes(searchTerm) || 
+          a.surname.toLowerCase().includes(searchTerm) || 
+          a.email.toLowerCase().includes(searchTerm) ||
+          (a.name + ' ' + a.surname).toLowerCase().includes(searchTerm)
+        );
+        if (matchedAdmin) {
+          hotelBookedBy = matchedAdmin.id as FirestoreId;
+        } else {
+          errors.push(`Admin not found for booked by: ${row.bookedBy}`);
+        }
+      }
+
       let payload: CreateTripPayload | undefined;
 
       if (errors.length === 0 && tour) {
@@ -351,7 +371,7 @@ export class CsvImportDialogComponent {
           coordinatorId: null, // Set during import phase
           hotelId,
           hotelBookerId: null,
-          hotelBookedBy: null,
+          hotelBookedBy,
           hotelBookingMethod: null,
           hotelBookingReceiptUrl: null,
           manualHotelCost: null,

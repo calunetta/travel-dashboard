@@ -11,13 +11,21 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatSelectModule } from '@angular/material/select';
+import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
+
 import { Router } from '@angular/router';
 import { CsvImportDialogComponent } from '../csv-import-dialog/csv-import-dialog.component';
 import { TripApiService } from 'trips-api-requests';
 import { HotelApiService } from 'hotels-api-requests';
 import { CoordinatorApiService } from 'coordinators-api-requests';
+import { AdminApiService } from 'auth-api-requests';
+import { TourApiService } from 'tours-api-requests';
 import { Trip } from 'trips-models';
-import { combineLatest, map, firstValueFrom } from 'rxjs';
+import { Nationality } from 'shared-models';
+import { combineLatest, map, firstValueFrom, startWith } from 'rxjs';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
@@ -50,6 +58,10 @@ interface TripViewModel extends Trip {
     MatCheckboxModule,
     MatMenuModule,
     MatSnackBarModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatSelectModule,
+    ReactiveFormsModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -75,10 +87,54 @@ interface TripViewModel extends Trip {
       </div>
 
       <div class="tha-card tha-shadow-sm tha-p-0">
-        <div class="tha-p-4" style="border-bottom: 1px solid var(--tha-border);">
-          <mat-form-field appearance="outline" class="tha-full-width" style="margin-bottom: -1.25em;">
+        <div class="tha-p-4 tha-flex-row tha-gap-4" [formGroup]="filterForm" style="border-bottom: 1px solid var(--tha-border); flex-wrap: wrap; align-items: baseline;">
+          
+          <mat-form-field appearance="outline" style="width: 150px;">
+            <mat-label>Date Start</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="dateStart">
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="width: 200px;">
+            <mat-label>Booked By</mat-label>
+            <mat-select formControlName="bookedBy">
+              <mat-option [value]="null">All Admins</mat-option>
+              @for (admin of availableHotelBookers$ | async; track admin.id) {
+                <mat-option [value]="admin.id">
+                  {{ admin.name }} {{ admin.surname }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="width: 200px;">
+            <mat-label>Tour</mat-label>
+            <mat-select formControlName="tourId">
+              <mat-option [value]="null">All Tours</mat-option>
+              @for (tour of tours$ | async; track tour.id) {
+                <mat-option [value]="tour.id">
+                  {{ tour.tourWeRoadCode }} ({{ tour.tourName }})
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="width: 150px;">
+            <mat-label>Nationality</mat-label>
+            <mat-select formControlName="nationality">
+              <mat-option [value]="null">All Nationalities</mat-option>
+              @for (nat of nationalities; track nat) {
+                <mat-option [value]="nat">
+                  {{ nat }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="flex: 1; min-width: 200px;">
             <mat-label>Search trips</mat-label>
-            <input matInput (keyup)="applyFilter($event)" placeholder="e.g. Bali" #input>
+            <input matInput formControlName="search" placeholder="e.g. Bali">
             <mat-icon matSuffix>search</mat-icon>
           </mat-form-field>
         </div>
@@ -232,6 +288,8 @@ export class TripListComponent implements AfterViewInit {
   private readonly tripApi = inject(TripApiService);
   private readonly hotelApi = inject(HotelApiService);
   private readonly coordinatorApi = inject(CoordinatorApiService);
+  private readonly adminApi = inject(AdminApiService);
+  private readonly tourApi = inject(TourApiService);
   private readonly authService = inject(FirebaseAuthService);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
@@ -242,6 +300,22 @@ export class TripListComponent implements AfterViewInit {
   readonly dataSource = new MatTableDataSource<TripViewModel>();
   readonly selection = new SelectionModel<TripViewModel>(true, []);
 
+  readonly nationalities = Object.values(Nationality);
+
+  readonly filterForm = new FormGroup({
+    search: new FormControl<string>(''),
+    dateStart: new FormControl<Date | null>(null),
+    bookedBy: new FormControl<string | null>(null),
+    tourId: new FormControl<string | null>(null),
+    nationality: new FormControl<Nationality | null>(null),
+  });
+
+  readonly availableHotelBookers$ = this.adminApi.getAll$().pipe(
+    map(admins => admins.filter(admin => admin.role === 'SUPER_ADMIN' || admin.role === 'ADMIN'))
+  );
+
+  readonly tours$ = this.tourApi.getAll$();
+
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -251,10 +325,28 @@ export class TripListComponent implements AfterViewInit {
       this.tripApi.getAll$(),
       this.hotelApi.getAll$(),
       this.coordinatorApi.getAll$(),
+      this.filterForm.valueChanges.pipe(startWith(this.filterForm.value))
     ])
       .pipe(
-        map(([trips, hotels, coordinators]) => {
-          return trips.map((trip) => {
+        map(([trips, hotels, coordinators, filters]) => {
+          return trips.filter(trip => {
+            if (filters.tourId && trip.tourId !== filters.tourId) return false;
+            if (filters.nationality && trip.nationality !== filters.nationality) return false;
+            if (filters.bookedBy && trip.hotelBookedBy !== filters.bookedBy) return false;
+            if (filters.dateStart) {
+              const filterDate = filters.dateStart;
+              const tzOffset = filterDate.getTimezoneOffset() * 60000;
+              const formattedDate = (new Date(filterDate.getTime() - tzOffset)).toISOString().split('T')[0];
+              if (trip.startDate !== formattedDate) return false;
+            }
+            if (filters.search) {
+              const hotel = hotels.find((h) => h.id === trip.hotelId);
+              const coordinator = coordinators.find((c) => c.id === trip.coordinatorId);
+              const searchStr = `${trip.destination} ${hotel?.name ?? ''} ${coordinator?.name ?? ''} ${coordinator?.surname ?? ''} ${trip.weRoadTourSlug ?? ''}`.toLowerCase();
+              if (searchStr.indexOf(filters.search.toLowerCase()) === -1) return false;
+            }
+            return true;
+          }).map((trip) => {
             const hotel = hotels.find((h) => h.id === trip.hotelId);
             const coordinator = coordinators.find((c) => c.id === trip.coordinatorId);
             
@@ -276,13 +368,10 @@ export class TripListComponent implements AfterViewInit {
       )
       .subscribe((viewModels) => {
         this.dataSource.data = viewModels;
+        if (this.dataSource.paginator) {
+          this.dataSource.paginator.firstPage();
+        }
       });
-      
-    // Custom filter predicate to search across resolved names too
-    this.dataSource.filterPredicate = (data: TripViewModel, filter: string) => {
-      const dataStr = `${data.destination} ${data.hotelName ?? ''} ${data.coordinatorName ?? ''} ${data.weRoadTourSlug ?? ''}`.toLowerCase();
-      return dataStr.indexOf(filter) !== -1;
-    };
   }
 
   ngAfterViewInit() {
@@ -292,16 +381,6 @@ export class TripListComponent implements AfterViewInit {
     this.dataSource.sort = this.sort;
     this.dataSource.paginator = this.paginator;
   }
-
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
-    }
-  }
-
   navigateToTrip(tripId: string) {
     this.router.navigate(['/admin/trips', tripId]);
   }
