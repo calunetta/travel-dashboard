@@ -32,6 +32,36 @@ async function getAssignedAdminContactInfo(
   return { tokens, emails };
 }
 
+async function fetchTripRelationalData(tripData: Record<string, any>): Promise<{ tourName: string, coordinatorName: string, hotelName: string }> {
+  let tourName = 'Unknown Tour';
+  let coordinatorName = 'Unknown Coordinator';
+  let hotelName = 'No hotel assigned';
+
+  if (tripData.tourId) {
+    const tourDoc = await db.collection('tours').doc(tripData.tourId).get();
+    if (tourDoc.exists) {
+      tourName = tourDoc.data()?.tourName || 'Unknown Tour';
+    }
+  }
+
+  if (tripData.coordinatorId) {
+    const coordDoc = await db.collection('coordinators').doc(tripData.coordinatorId).get();
+    if (coordDoc.exists) {
+      const cData = coordDoc.data();
+      coordinatorName = `${cData?.name || ''} ${cData?.surname || ''}`.trim() || 'Unknown Coordinator';
+    }
+  }
+
+  if (tripData.hotelId) {
+    const hotelDoc = await db.collection('hotels').doc(tripData.hotelId).get();
+    if (hotelDoc.exists) {
+      hotelName = hotelDoc.data()?.name || 'Unnamed Hotel';
+    }
+  }
+
+  return { tourName, coordinatorName, hotelName };
+}
+
 async function writeInAppNotifications(
   adminIds: string[],
   title: string,
@@ -75,22 +105,16 @@ export const onTripDocumentUploaded = onDocumentUpdated('trips/{tripId}', async 
       );
 
       if (addedDocs.length > 0) {
-        let uploaderName = 'Unknown Uploader';
-        if (afterData.coordinatorId) {
-          const coordDoc = await db.collection('coordinators').doc(afterData.coordinatorId).get();
-          if (coordDoc.exists) {
-            const cData = coordDoc.data();
-            uploaderName = `${cData?.name} ${cData?.surname}`;
-          }
-        }
+        const { tourName, coordinatorName, hotelName } = await fetchTripRelationalData(afterData);
+        let uploaderName = coordinatorName !== 'Unknown Coordinator' ? coordinatorName : 'Unknown Uploader';
 
         const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
         const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
 
         const { tokens, emails } = await getAssignedAdminContactInfo(afterData);
 
-        const title = 'New Trip Document';
-        const body = `A new document has been uploaded for trip ${afterData.destination} (${afterData.code}) by ${uploaderName}.`;
+        const title = `New Document: ${tourName} - ${afterData.destination}`;
+        const body = `Dates: ${afterData.startDate} to ${afterData.endDate}\nCoord: ${coordinatorName}\nHotel: ${hotelName}\nUploaded by: ${uploaderName}`;
 
         const adminIds = afterData.adminIds || [];
         if (adminIds.length > 0) {
@@ -124,8 +148,19 @@ export const onTripDocumentUploaded = onDocumentUpdated('trips/{tripId}', async 
           await transporter.sendMail({
             from: '"Travel Admin" <noreply@travelhandling.com>',
             to: emails.join(', '),
-            subject: `New Document Uploaded: ${afterData.destination} (${afterData.code})`,
-            html: `<p>A new document has been uploaded for trip <strong>${afterData.destination}</strong> (${afterData.code}) by ${uploaderName}.</p><p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>`,
+            subject: `New Document Uploaded: ${tourName} - ${afterData.destination} (${afterData.code})`,
+            html: `
+              <h2>New Document Uploaded</h2>
+              <p>A new document has been uploaded for trip <strong>${tourName} - ${afterData.destination}</strong> (${afterData.code}) by ${uploaderName}.</p>
+              <br/>
+              <h3>Trip Details</h3>
+              <ul>
+                <li><strong>Dates:</strong> ${afterData.startDate} to ${afterData.endDate}</li>
+                <li><strong>Coordinator:</strong> ${coordinatorName}</li>
+                <li><strong>Hotel:</strong> ${hotelName}</li>
+              </ul>
+              <br/>
+              <p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>`,
           });
         }
       }
@@ -158,11 +193,12 @@ export const onDocumentStatusChanged = onDocumentUpdated('trips/{tripId}', async
 
     if (statusChangedToPaid) {
       const { tokens } = await getAssignedAdminContactInfo(afterData);
+      const { tourName, coordinatorName, hotelName } = await fetchTripRelationalData(afterData);
 
       const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
       const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
-      const title = 'Payment Completed';
-      const body = `A document for trip ${afterData.destination} has been paid.`;
+      const title = `Payment Completed: ${tourName} - ${afterData.destination}`;
+      const body = `Dates: ${afterData.startDate} to ${afterData.endDate}\nCoord: ${coordinatorName}\nHotel: ${hotelName}\nA document for this trip has been paid.`;
 
       const adminIds = afterData.adminIds || [];
       if (adminIds.length > 0) {
@@ -218,6 +254,7 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
     const startDate = data.startDate;
 
     const tripUrl = `https://${adminDomain}/admin/trips/${doc.id}`;
+    const { tourName, coordinatorName, hotelName } = await fetchTripRelationalData(data);
     
     // Exact dates for logic
     const tMinus7 = new Date(today);
@@ -248,8 +285,8 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
     // 1. T-7: Missing Documents Alert to Admins (via Email + Push)
     if (startDate === tMinus7Iso && docs.length === 0) {
       const { tokens, emails } = await getAssignedAdminContactInfo(data);
-      const title = 'URGENT: Missing Documents';
-      const body = `Trip ${data.destination} starts in 7 days, but no documents have been uploaded yet.`;
+      const title = `URGENT: Missing Docs for ${tourName} - ${data.destination}`;
+      const body = `Trip starts in 7 days (${data.startDate}).\nCoord: ${coordinatorName}\nHotel: ${hotelName}\nNo documents uploaded yet!`;
 
       const adminIds = data.adminIds || [];
       if (adminIds.length > 0) {
@@ -260,8 +297,20 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
         await transporter.sendMail({
           from: '"Travel Admin" <noreply@travelhandling.com>',
           to: emails.join(', '),
-          subject: `URGENT: Missing Documents for Trip ${data.destination}`,
-          html: `<p>Hi,</p><p>The trip to <strong>${data.destination}</strong> starts in 7 days, but no documents have been uploaded yet. Please upload them immediately.</p><p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>`,
+          subject: `URGENT: Missing Documents for Trip ${tourName} - ${data.destination}`,
+          html: `
+            <h2>URGENT: Missing Documents</h2>
+            <p>The trip to <strong>${tourName} - ${data.destination}</strong> starts in 7 days, but no documents have been uploaded yet.</p>
+            <br/>
+            <h3>Trip Details</h3>
+            <ul>
+              <li><strong>Dates:</strong> ${data.startDate} to ${data.endDate}</li>
+              <li><strong>Coordinator:</strong> ${coordinatorName}</li>
+              <li><strong>Hotel:</strong> ${hotelName}</li>
+            </ul>
+            <br/>
+            <p>Please upload them immediately.</p>
+            <p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>`,
         });
       }
       if (tokens.length > 0) {
@@ -282,8 +331,8 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
       const hasUnpaidDocs = docs.some((d: any) => d.paymentStatus === 'TO_BE_PAID');
       if (hasUnpaidDocs) {
         const { tokens } = await getAssignedAdminContactInfo(data);
-        const title = 'URGENT: Unpaid Documents';
-        const body = `Trip ${data.destination} starts very soon but has unpaid documents!`;
+        const title = `URGENT: Unpaid Docs for ${tourName} - ${data.destination}`;
+        const body = `Trip starts very soon (${data.startDate}).\nCoord: ${coordinatorName}\nHotel: ${hotelName}\nUnpaid documents remaining!`;
 
         const adminIds = data.adminIds || [];
         if (adminIds.length > 0) {
@@ -312,17 +361,10 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
       if (hotelAdminDoc.exists) {
         const hotelAdmin = hotelAdminDoc.data();
         const hotelBookerName = `${hotelAdmin?.name || ''} ${hotelAdmin?.surname || ''}`.trim() || 'Unknown Admin';
-        let hotelInfo = 'No hotel assigned.';
-        if (data.hotelId) {
-          const hotelDoc = await db.collection('hotels').doc(data.hotelId).get();
-          if (hotelDoc.exists) {
-            hotelInfo = hotelDoc.data()?.name || 'Unnamed Hotel';
-          }
-        }
 
         const { tokens, emails } = await getAssignedAdminContactInfo(data);
-        const title = 'Hotel Verification Reminder';
-        const body = `Please verify the booking for ${data.destination} at ${hotelInfo} (Booked by: ${hotelBookerName}).`;
+        const title = `Hotel Verification: ${tourName} - ${data.destination}`;
+        const body = `Verify booking at ${hotelName}\nBooked by: ${hotelBookerName}\nDates: ${data.startDate} to ${data.endDate}`;
 
         const adminIds = data.adminIds || [];
         if (adminIds.length > 0) {
@@ -333,12 +375,20 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
           await transporter.sendMail({
             from: '"Travel Admin" <noreply@travelhandling.com>',
             to: emails.join(', '),
-            subject: `Reminder: Double Check Hotel Booking for ${data.destination}`,
-            html: `<p>Hi,</p>
-                   <p>This is a reminder to double-check the hotel booking for the upcoming trip to <strong>${data.destination}</strong> (${data.code}).</p>
-                   <p><strong>Hotel:</strong> ${hotelInfo}</p>
-                   <p><strong>Booked By:</strong> ${hotelBookerName}</p>
-                   <p><a href="${tripUrl}">View Trip</a></p>`,
+            subject: `Reminder: Hotel Verification for ${tourName} - ${data.destination}`,
+            html: `
+              <h2>Reminder: Hotel Verification</h2>
+              <p>This is a reminder to double-check the hotel booking for the upcoming trip to <strong>${tourName} - ${data.destination}</strong> (${data.code}).</p>
+              <br/>
+              <h3>Details</h3>
+              <ul>
+                <li><strong>Hotel:</strong> ${hotelName}</li>
+                <li><strong>Dates:</strong> ${data.startDate} to ${data.endDate}</li>
+                <li><strong>Coordinator:</strong> ${coordinatorName}</li>
+                <li><strong>Booked By:</strong> ${hotelBookerName}</li>
+              </ul>
+              <br/>
+              <p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>`,
           });
         }
 
@@ -364,15 +414,8 @@ export const onTripCreated = onDocumentCreated('trips/{tripId}', async (event: a
     const tripData = event.data?.data();
     if (!tripData || !tripData.startDate) return;
     
-    // 1. Fetch Relational Data (Tour)
-    let tourName = 'Unknown Tour';
-    const tourId = tripData.tourId;
-    if (tourId) {
-      const tourDoc = await db.collection('tours').doc(tourId).get();
-      if (tourDoc.exists) {
-        tourName = tourDoc.data()?.tourName || 'Unknown Tour';
-      }
-    }
+    // 1. Fetch Relational Data
+    const { tourName, coordinatorName, hotelName } = await fetchTripRelationalData(tripData);
 
     // 2. Calculate 1 month prior to startDate
     const startDate = new Date(tripData.startDate);
@@ -401,8 +444,8 @@ export const onTripCreated = onDocumentCreated('trips/{tripId}', async (event: a
     if (emails.length === 0 && tokens.length === 0) return;
     
     const adminIds = tripData.adminIds || [];
-    const title = 'New Trip Created';
-    const body = `A new trip to ${tripData.destination} (${tripData.code}) has been added.`;
+    const title = `New Trip Created: ${tourName} - ${tripData.destination}`;
+    const body = `Dates: ${tripData.startDate} to ${tripData.endDate}\nCoord: ${coordinatorName}\nHotel: ${hotelName}\nA new trip has been added.`;
 
     // 5. In-App Notifications
     if (adminIds.length > 0) {
@@ -443,6 +486,8 @@ export const onTripCreated = onDocumentCreated('trips/{tripId}', async (event: a
           <li><strong>Destination:</strong> ${tripData.destination}</li>
           <li><strong>Trip Code:</strong> ${tripData.code}</li>
           <li><strong>Dates:</strong> ${tripData.startDate} to ${tripData.endDate}</li>
+          <li><strong>Coordinator:</strong> ${coordinatorName}</li>
+          <li><strong>Hotel:</strong> ${hotelName}</li>
         </ul>
         <p><a href="${tripUrl}">View Trip in Admin Dashboard</a></p>
       `;
