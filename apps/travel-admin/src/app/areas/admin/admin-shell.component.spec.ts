@@ -5,6 +5,7 @@ import { FirebaseAuthService, AdminApiService } from 'auth-api-requests';
 import { FIREBASE_MESSAGING_TOKEN } from 'shared-models';
 import { ThemeService } from 'shared-ui';
 import { RouterTestingModule } from '@angular/router/testing';
+import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { getToken } from 'firebase/messaging';
@@ -141,13 +142,88 @@ describe('AdminShellComponent', () => {
       expect(component.unreadCount()).toBe(1);
     });
 
-    it('should call markNotificationAsRead and navigate on notification click', async () => {
-      const mockRouter = { navigateByUrl: jest.fn() } as any;
-      // Directly invoke to test the logic
-      const unreadNotification = { id: 'n1', title: 'T', body: 'B', link: 'https://admin.example.com/admin/trips/123', read: false, createdAt: null };
+    it('should call markNotificationAsRead on notification click', async () => {
+      const unreadNotification = { id: 'n1', title: 'T', body: 'B', link: window.location.origin + '/admin/trips/123', read: false, createdAt: null };
       await component.onNotificationClick(unreadNotification as any);
 
       expect(mockAdminApi.markNotificationAsRead).toHaveBeenCalledWith('admin123', 'n1');
+    });
+  });
+
+  describe('Notification Routing', () => {
+    let mockRouter: any;
+    beforeEach(() => {
+      mockRouter = TestBed.inject(Router);
+      jest.spyOn(mockRouter, 'navigateByUrl').mockImplementation();
+    });
+
+    it('should navigate to pathname+search+hash when notification link is an absolute URL with matching origin', async () => {
+      const unreadNotification = { id: 'n1', title: 'T', body: 'B', link: window.location.origin + '/admin/trips/123?foo=bar#section', read: true, createdAt: null };
+      await component.onNotificationClick(unreadNotification as any);
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/admin/trips/123?foo=bar#section');
+    });
+
+    it('should not navigate when notification link origin does not match current origin', async () => {
+      const unreadNotification = { id: 'n1', title: 'T', body: 'B', link: 'https://malicious.com/admin/trips/123', read: true, createdAt: null };
+      await component.onNotificationClick(unreadNotification as any);
+      expect(mockRouter.navigateByUrl).not.toHaveBeenCalled();
+    });
+
+    it('should navigate to relative path when notification link is already relative', async () => {
+      const unreadNotification = { id: 'n1', title: 'T', body: 'B', link: '/admin/hotels?id=5', read: true, createdAt: null };
+      await component.onNotificationClick(unreadNotification as any);
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/admin/hotels?id=5');
+    });
+  });
+
+  describe('Silent FCM Re-sync', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should silently re-sync FCM token on init when permission is granted but token is missing', async () => {
+      Object.defineProperty(window, 'Notification', {
+        writable: true,
+        value: {
+          permission: 'granted',
+          requestPermission: jest.fn().mockResolvedValue('granted')
+        }
+      });
+      const mockToken = 'silent-mock-fcm-token';
+      const mockRegistration = {};
+      Object.defineProperty(navigator, 'serviceWorker', {
+        value: { register: jest.fn().mockResolvedValue(mockRegistration) },
+        writable: true
+      });
+      (getToken as jest.Mock).mockResolvedValue(mockToken);
+      
+      fixture = TestBed.createComponent(AdminShellComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      
+      await fixture.whenStable();
+
+      expect(navigator.serviceWorker.register).toHaveBeenCalledWith('/firebase-messaging-sw.js');
+      expect(getToken).toHaveBeenCalled();
+      expect(mockAdminApi.updateFcmToken).toHaveBeenCalledWith('admin123', mockToken);
+    });
+
+    it('should NOT re-sync token if token already exists on the admin profile', async () => {
+      Object.defineProperty(window, 'Notification', {
+        writable: true,
+        value: {
+          permission: 'granted',
+          requestPermission: jest.fn().mockResolvedValue('granted')
+        }
+      });
+      mockAuthService.currentUser.mockReturnValue({ uid: 'admin123', adminProfile: { fcmToken: 'existing-token' } });
+      
+      fixture = TestBed.createComponent(AdminShellComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(getToken).not.toHaveBeenCalled();
     });
   });
 

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, ViewChild, HostListener } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, ViewChild, HostListener, effect } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
@@ -208,6 +208,35 @@ export class AdminShellComponent {
     return (this.notifications() || []).filter(n => !n.read).length;
   });
 
+  constructor() {
+    effect(() => {
+      this.silentlyResyncFcmToken();
+    });
+  }
+
+  private async silentlyResyncFcmToken() {
+    const user = this.authService.currentUser();
+    if (user && this.notificationPermission() === 'granted') {
+      const fcmToken = user.adminProfile?.fcmToken;
+      if (!fcmToken && this.messaging && typeof window !== 'undefined' && 'Notification' in window) {
+        try {
+          const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+          const token = await getToken(this.messaging, {
+            vapidKey: (environment.firebase as any).vapidKey,
+            serviceWorkerRegistration: registration
+          });
+          if (token) {
+            await this.adminApi.updateFcmToken(user.uid as FirestoreId, token);
+            this.hasLocalToken.set(true);
+            console.log('FCM Token silently re-synced.');
+          }
+        } catch (error) {
+          console.error('Failed to silently re-sync FCM token', error);
+        }
+      }
+    }
+  }
+
   async onNotificationClick(n: InAppNotification) {
     const user = this.authService.currentUser();
     if (user && user.uid && !n.read) {
@@ -216,10 +245,19 @@ export class AdminShellComponent {
     if (n.link) {
       try {
         const url = new URL(n.link);
-        this.router.navigateByUrl(url.pathname);
+        if (url.origin === window.location.origin) {
+          const relativePath = url.pathname + url.search + url.hash;
+          this.router.navigateByUrl(relativePath);
+        } else {
+          console.warn('Skipping navigation: cross-origin notification link', n.link);
+        }
       } catch (e) {
         // Fallback if link is not a full URL
-        this.router.navigateByUrl(n.link);
+        if (n.link.startsWith('/')) {
+          this.router.navigateByUrl(n.link);
+        } else {
+          console.warn('Skipping navigation: invalid link format', n.link);
+        }
       }
     }
   }
