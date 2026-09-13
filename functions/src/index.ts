@@ -103,8 +103,7 @@ export const onTripDocumentUploaded = onDocumentUpdated('trips/{tripId}', async 
             notification: { title, body },
             data: { 
               link: tripUrl,
-              url: tripUrl,
-              click_action: "FLUTTER_NOTIFICATION_CLICK"
+              url: tripUrl
             },
             webpush: {
               fcmOptions: { link: tripUrl }
@@ -176,8 +175,7 @@ export const onDocumentStatusChanged = onDocumentUpdated('trips/{tripId}', async
           notification: { title, body },
           data: { 
             link: tripUrl,
-            url: tripUrl,
-            click_action: "FLUTTER_NOTIFICATION_CLICK"
+            url: tripUrl
           },
           webpush: {
             fcmOptions: { link: tripUrl }
@@ -272,8 +270,7 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
           notification: { title, body },
           data: { 
             link: tripUrl,
-            url: tripUrl,
-            click_action: "FLUTTER_NOTIFICATION_CLICK"
+            url: tripUrl
           },
           webpush: { fcmOptions: { link: tripUrl } }
         });
@@ -299,8 +296,7 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
             notification: { title, body },
             data: { 
               link: tripUrl,
-              url: tripUrl,
-              click_action: "FLUTTER_NOTIFICATION_CLICK"
+              url: tripUrl
             },
             webpush: {
               fcmOptions: { link: tripUrl }
@@ -352,8 +348,7 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
             notification: { title, body },
             data: { 
               link: tripUrl,
-              url: tripUrl,
-              click_action: "FLUTTER_NOTIFICATION_CLICK"
+              url: tripUrl
             },
             webpush: {
               fcmOptions: { link: tripUrl }
@@ -421,8 +416,7 @@ export const onTripCreated = onDocumentCreated('trips/{tripId}', async (event: a
         notification: { title, body },
         data: { 
           link: tripUrl,
-          url: tripUrl,
-          click_action: "FLUTTER_NOTIFICATION_CLICK"
+          url: tripUrl
         },
         webpush: {
           fcmOptions: { link: tripUrl }
