@@ -116,6 +116,11 @@ describe('onTripDocumentUploaded', () => {
                 title: 'New Trip Document',
                 body: expect.stringContaining('Mario Rossi')
             }),
+            data: expect.objectContaining({
+                link: expect.stringContaining('/admin/trips/123'),
+                url: expect.stringContaining('/admin/trips/123'),
+                click_action: "FLUTTER_NOTIFICATION_CLICK"
+            }),
             webpush: expect.objectContaining({
                 fcmOptions: {
                     link: expect.stringContaining('/admin/trips/123')
@@ -157,6 +162,11 @@ describe('onDocumentStatusChanged', () => {
             tokens: ['adminToken1'],
             notification: expect.objectContaining({
                 title: 'Payment Completed'
+            }),
+            data: expect.objectContaining({
+                link: expect.stringContaining('/admin/trips/123'),
+                url: expect.stringContaining('/admin/trips/123'),
+                click_action: "FLUTTER_NOTIFICATION_CLICK"
             }),
             webpush: expect.objectContaining({
                 fcmOptions: {
@@ -249,6 +259,11 @@ describe('checkUpcomingTripsCron', () => {
             notification: expect.objectContaining({
                 title: 'URGENT: Missing Documents',
             }),
+            data: expect.objectContaining({
+                link: expect.stringContaining('/admin/trips/trip123'),
+                url: expect.stringContaining('/admin/trips/trip123'),
+                click_action: "FLUTTER_NOTIFICATION_CLICK"
+            }),
         }));
         expect(batchSetMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
             title: 'URGENT: Missing Documents',
@@ -274,6 +289,11 @@ describe('checkUpcomingTripsCron', () => {
             notification: expect.objectContaining({
                 title: 'URGENT: Unpaid Documents',
                 body: expect.stringContaining('Japan'),
+            }),
+            data: expect.objectContaining({
+                link: expect.stringContaining('/admin/trips/trip123'),
+                url: expect.stringContaining('/admin/trips/trip123'),
+                click_action: "FLUTTER_NOTIFICATION_CLICK"
             }),
         }));
         expect(batchSetMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
@@ -321,6 +341,11 @@ describe('checkUpcomingTripsCron', () => {
                 title: 'Hotel Verification Reminder',
                 body: expect.stringContaining('Hotel Booker'),
             }),
+            data: expect.objectContaining({
+                link: expect.stringContaining('/admin/trips/trip123'),
+                url: expect.stringContaining('/admin/trips/trip123'),
+                click_action: "FLUTTER_NOTIFICATION_CLICK"
+            }),
         }));
         expect(batchSetMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
             title: 'Hotel Verification Reminder',
@@ -349,6 +374,77 @@ describe('onTripDeleted', () => {
         expect(deleteFilesMock).toHaveBeenCalledWith({
             prefix: 'trips/123/documents/'
         });
+    });
+});
+describe('deleteOldNotificationsCron', () => {
+    it('should delete notifications older than 30 days and read notifications older than 7 days using batch', async () => {
+        const now = Date.now();
+        const thirtyOneDaysAgo = now - 31 * 24 * 60 * 60 * 1000;
+        const eightDaysAgo = now - 8 * 24 * 60 * 60 * 1000;
+        const twoDaysAgo = now - 2 * 24 * 60 * 60 * 1000;
+        const mockAdminsSnapshot = {
+            docs: [
+                {
+                    ref: {
+                        collection: jest.fn(() => ({
+                            get: jest.fn().mockResolvedValue({
+                                docs: [
+                                    {
+                                        ref: 'docRef1',
+                                        data: () => ({ read: false, createdAt: { toMillis: () => thirtyOneDaysAgo } })
+                                    },
+                                    {
+                                        ref: 'docRef2',
+                                        data: () => ({ read: true, createdAt: { toMillis: () => eightDaysAgo } })
+                                    },
+                                    {
+                                        ref: 'docRef3',
+                                        data: () => ({ read: false, createdAt: { toMillis: () => eightDaysAgo } })
+                                    },
+                                    {
+                                        ref: 'docRef4',
+                                        data: () => ({ read: true, createdAt: { toMillis: () => twoDaysAgo } })
+                                    }
+                                ]
+                            })
+                        }))
+                    }
+                }
+            ]
+        };
+        dbGetMock.mockResolvedValueOnce(mockAdminsSnapshot);
+        await index_1.deleteOldNotificationsCron.run({ data: {} });
+        // docRef1 is > 30 days old. docRef2 is read and > 7 days old. docRef3 is unread and < 30 days old. docRef4 is read and < 7 days old.
+        expect(batchDeleteMock).toHaveBeenCalledTimes(2);
+        expect(batchDeleteMock).toHaveBeenCalledWith('docRef1');
+        expect(batchDeleteMock).toHaveBeenCalledWith('docRef2');
+        expect(batchCommitMock).toHaveBeenCalledTimes(1);
+    });
+    it('should not process batches if no notifications are old enough', async () => {
+        const now = Date.now();
+        const twoDaysAgo = now - 2 * 24 * 60 * 60 * 1000;
+        const mockAdminsSnapshot = {
+            docs: [
+                {
+                    ref: {
+                        collection: jest.fn(() => ({
+                            get: jest.fn().mockResolvedValue({
+                                docs: [
+                                    {
+                                        ref: 'docRef1',
+                                        data: () => ({ read: false, createdAt: { toMillis: () => twoDaysAgo } })
+                                    }
+                                ]
+                            })
+                        }))
+                    }
+                }
+            ]
+        };
+        dbGetMock.mockResolvedValueOnce(mockAdminsSnapshot);
+        await index_1.deleteOldNotificationsCron.run({ data: {} });
+        expect(batchDeleteMock).not.toHaveBeenCalled();
+        expect(batchCommitMock).not.toHaveBeenCalled();
     });
 });
 //# sourceMappingURL=index.spec.js.map
