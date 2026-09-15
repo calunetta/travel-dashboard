@@ -118,7 +118,7 @@ exports.onTripDocumentUploaded = (0, firestore_1.onDocumentUpdated)('trips/{trip
         const addedDocs = afterDocs.filter((ad) => !beforeDocs.some((bd) => bd.id === ad.id));
         if (addedDocs.length > 0) {
             const { tourName, coordinatorName, hotelName } = await fetchTripRelationalData(afterData);
-            let uploaderName = coordinatorName !== 'Unknown Coordinator' ? coordinatorName : 'Unknown Uploader';
+            const uploaderName = coordinatorName !== 'Unknown Coordinator' ? coordinatorName : 'Unknown Uploader';
             const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
             const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
             const { tokens, emails } = await getAssignedAdminContactInfo(afterData);

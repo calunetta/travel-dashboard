@@ -14,6 +14,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 jest.mock('firebase/messaging', () => ({
   getToken: jest.fn(),
+  onMessage: jest.fn(),
 }));
 
 describe('AdminShellComponent', () => {
