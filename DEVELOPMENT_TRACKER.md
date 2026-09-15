@@ -1191,3 +1191,14 @@ Retained all 3 existing indexes (`trips: adminIds+startDate`, `hotels: adminIds+
 2. **Admin Trips Test (`admin-trips.cy.ts`)** — Updated the CSV string to include the correct number of commas matching the new index-8 structure. Fixed assertions looking for `snack-bar-container` (which changed in Material 19 to `mat-mdc-snack-bar-container`) by checking for text presence instead. Handled `mat-label` overlaying input elements by injecting `{ force: true }` in `cy.type()` and `cy.click()`.
 3. **Candidacy Flow Test (`candidacy-flow.cy.ts`)** — Removed legacy `snack-bar-container` selector checks and transitioned to text visibility checks.
 4. **Validation** — The entire `travel-admin-e2e` suite runs and passes (8 tests green).
+
+### ✅ Step 41 - Notification Link Generation & Pipeline Fixes
+
+**Status:** Completed  
+**Date:** 2026-09-15  
+**Commit:** `fix(notifications): resolve pipeline failures, typescript strict access, and double protocol links`
+
+**Key Changes:**
+1. **Cloud Functions (`functions/src/index.ts`)** — Removed `https://` protocol from the `ADMIN_DOMAIN` fallback variable to prevent double-protocol (e.g. `https://https//...`) issues during push notification URL generation.
+2. **App Shell (`admin-shell.component.ts`)** — Resolved TypeScript index-signature strictness by converting dot notation (`payload.data.link`) to bracket notation (`payload.data['link']`). Replaced `||` with the nullish coalescing operator `??` to resolve truthy expression lint warnings.
+3. **Tests (`admin-shell.component.spec.ts`)** — Addressed pipeline test failures (`TypeError: onMessage is not a function`) by fully mocking the `firebase/messaging` `onMessage` export within the Jest mock block. All unit tests, lint checks, and production builds now pass cleanly.
