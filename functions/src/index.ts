@@ -106,7 +106,7 @@ export const onTripDocumentUploaded = onDocumentUpdated('trips/{tripId}', async 
 
       if (addedDocs.length > 0) {
         const { tourName, coordinatorName, hotelName } = await fetchTripRelationalData(afterData);
-        let uploaderName = coordinatorName !== 'Unknown Coordinator' ? coordinatorName : 'Unknown Uploader';
+        const uploaderName = coordinatorName !== 'Unknown Coordinator' ? coordinatorName : 'Unknown Uploader';
 
         const adminDomain = process.env.ADMIN_DOMAIN || 'admin.travelhandling.com';
         const tripUrl = `https://${adminDomain}/admin/trips/${event.params.tripId}`;
@@ -246,7 +246,7 @@ export const checkUpcomingTripsCron = onSchedule('every day 00:00', async (event
     },
   });
 
-  const adminDomain = process.env.ADMIN_DOMAIN || 'https://travel-dashboard-f98a3.web.app';
+  const adminDomain = process.env.ADMIN_DOMAIN || 'travel-dashboard-f98a3.web.app';
 
   for (const doc of tripsSnapshot.docs) {
     const data = doc.data();

@@ -15,7 +15,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { ThemeService } from 'shared-ui';
 import { FirebaseAuthService, AdminApiService } from 'auth-api-requests';
 import { FIREBASE_MESSAGING_TOKEN, FirestoreId, InAppNotification } from 'shared-models';
-import { getToken } from 'firebase/messaging';
+import { getToken, onMessage } from 'firebase/messaging';
 import { environment } from '../../../environments/environment';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 
@@ -121,7 +121,12 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 
           <mat-menu #notificationsMenu="matMenu" class="tha-notification-menu">
             <ng-template matMenuContent>
-              <div class="tha-px-4 tha-py-2 tha-font-bold tha-text-sm" style="margin: 0 10px;border-bottom: 1px solid rgba(128,128,128,0.2);">Notifications</div>
+              <div class="tha-flex tha-items-center tha-justify-between tha-px-4 tha-py-2" style="border-bottom: 1px solid rgba(128,128,128,0.2);">
+                <div class="tha-font-bold tha-text-sm">Notifications</div>
+                <button *ngIf="unreadCount() > 0" mat-button color="primary" (click)="markAllAsRead($event)" style="font-size: 0.75rem; padding: 0 8px; min-width: auto; line-height: 24px; height: 24px;">
+                  Mark all as read
+                </button>
+              </div>
               <div *ngIf="notifications().length === 0" class="tha-p-4 tha-text-muted tha-text-sm">
                 No notifications
               </div>
@@ -212,6 +217,34 @@ export class AdminShellComponent {
     effect(() => {
       this.silentlyResyncFcmToken();
     });
+
+    if (this.messaging) {
+      onMessage(this.messaging, (payload) => {
+        const title = payload.notification?.title || 'New Notification';
+        const body = payload.notification?.body || '';
+        const link = payload.data?.['link'] ?? payload.fcmOptions?.link ?? payload.data?.['url'] ?? '/';
+
+        const snackBarRef = this.snackBar.open(`${title} - ${body}`, 'View', {
+          duration: 6000,
+          horizontalPosition: 'right',
+          verticalPosition: 'bottom'
+        });
+
+        snackBarRef.onAction().subscribe(() => {
+          try {
+            const url = new URL(link, window.location.href);
+            if (url.origin === window.location.origin) {
+              const relativePath = url.pathname + url.search + url.hash;
+              this.router.navigateByUrl(relativePath);
+            } else {
+              window.location.href = link;
+            }
+          } catch (e) {
+            console.warn('Skipping navigation: invalid link format', link);
+          }
+        });
+      });
+    }
   }
 
   private async silentlyResyncFcmToken() {
@@ -255,6 +288,16 @@ export class AdminShellComponent {
         console.warn('Skipping navigation: invalid link format', n.link);
       }
     }
+  }
+
+  async markAllAsRead(event: Event) {
+    event.stopPropagation();
+    const user = this.authService.currentUser();
+    if (!user || !user.uid) return;
+    
+    const unread = this.notifications().filter(n => !n.read);
+    const promises = unread.map(n => this.adminApi.markNotificationAsRead(user.uid as FirestoreId, n.id));
+    await Promise.all(promises);
   }
 
   readonly deferredPrompt = signal<any>(null);

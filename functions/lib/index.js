@@ -231,7 +231,7 @@ exports.checkUpcomingTripsCron = (0, scheduler_1.onSchedule)('every day 00:00', 
             pass: process.env.SMTP_PASS || 'ethereal.pass',
         },
     });
-    const adminDomain = process.env.ADMIN_DOMAIN || 'https://travel-dashboard-f98a3.web.app';
+    const adminDomain = process.env.ADMIN_DOMAIN || 'travel-dashboard-f98a3.web.app';
     for (const doc of tripsSnapshot.docs) {
         const data = doc.data();
         const docs = data.documents || [];
