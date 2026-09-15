@@ -244,20 +244,15 @@ export class AdminShellComponent {
     }
     if (n.link) {
       try {
-        const url = new URL(n.link);
+        const url = new URL(n.link, window.location.href);
         if (url.origin === window.location.origin) {
           const relativePath = url.pathname + url.search + url.hash;
           this.router.navigateByUrl(relativePath);
         } else {
-          console.warn('Skipping navigation: cross-origin notification link', n.link);
+          window.location.href = n.link;
         }
       } catch (e) {
-        // Fallback if link is not a full URL
-        if (n.link.startsWith('/')) {
-          this.router.navigateByUrl(n.link);
-        } else {
-          console.warn('Skipping navigation: invalid link format', n.link);
-        }
+        console.warn('Skipping navigation: invalid link format', n.link);
       }
     }
   }
