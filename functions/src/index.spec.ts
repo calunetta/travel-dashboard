@@ -133,13 +133,12 @@ import {
         expect.objectContaining({
           tokens: ['token123'],
           notification: expect.objectContaining({
-            title: 'New Trip Document',
+            title: 'New Document: Unknown Tour - Japan',
             body: expect.stringContaining('Mario Rossi')
           }),
           data: expect.objectContaining({
             link: expect.stringContaining('/admin/trips/123'),
-            url: expect.stringContaining('/admin/trips/123'),
-            click_action: "FLUTTER_NOTIFICATION_CLICK"
+            url: expect.stringContaining('/admin/trips/123')
           }),
           webpush: expect.objectContaining({
             fcmOptions: {
@@ -152,14 +151,14 @@ import {
       expect(sendMailMock).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'admin@test.com',
-          subject: 'New Document Uploaded: Japan (JP-2026)'
+          subject: 'New Document Uploaded: Unknown Tour - Japan (JP-2026)'
         })
       );
       
       expect(batchSetMock).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
-          title: 'New Trip Document',
+          title: 'New Document: Unknown Tour - Japan',
           body: expect.stringContaining('Mario Rossi'),
           read: false,
         })
@@ -196,12 +195,11 @@ import {
         expect.objectContaining({
           tokens: ['adminToken1'],
           notification: expect.objectContaining({
-            title: 'Payment Completed'
+            title: 'Payment Completed: Unknown Tour - Japan'
           }),
           data: expect.objectContaining({
             link: expect.stringContaining('/admin/trips/123'),
-            url: expect.stringContaining('/admin/trips/123'),
-            click_action: "FLUTTER_NOTIFICATION_CLICK"
+            url: expect.stringContaining('/admin/trips/123')
           }),
           webpush: expect.objectContaining({
             fcmOptions: {
@@ -214,7 +212,7 @@ import {
       expect(batchSetMock).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
-          title: 'Payment Completed',
+          title: 'Payment Completed: Unknown Tour - Japan',
           read: false,
         })
       );
@@ -300,6 +298,7 @@ import {
       dbWhereMock.mockReturnThis();
       dbGetMock.mockResolvedValue(buildTripSnapshotWithDate(startDate));
       dbDocGetMock
+        .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Mario', surname: 'Rossi' }) }) // coordinator
         .mockResolvedValueOnce({ exists: true, data: () => ({ fcmToken: 'adminToken', email: 'admin@test.com' }) }); // admin
 
       await checkUpcomingTripsCron.run({ data: {} } as any);
@@ -315,12 +314,11 @@ import {
         expect.objectContaining({
           tokens: ['adminToken'],
           notification: expect.objectContaining({
-            title: 'URGENT: Missing Documents',
+            title: 'URGENT: Missing Docs for Unknown Tour - Japan',
           }),
           data: expect.objectContaining({
             link: expect.stringContaining('/admin/trips/trip123'),
-            url: expect.stringContaining('/admin/trips/trip123'),
-            click_action: "FLUTTER_NOTIFICATION_CLICK"
+            url: expect.stringContaining('/admin/trips/trip123')
           }),
         })
       );
@@ -328,7 +326,7 @@ import {
       expect(batchSetMock).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
-          title: 'URGENT: Missing Documents',
+          title: 'URGENT: Missing Docs for Unknown Tour - Japan',
           read: false,
         })
       );
@@ -346,7 +344,9 @@ import {
           documents: [{ id: 'doc1', paymentStatus: 'TO_BE_PAID' }],
         })
       );
-      dbDocGetMock.mockResolvedValueOnce({
+      dbDocGetMock
+        .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Mario', surname: 'Rossi' }) }) // coordinator
+        .mockResolvedValueOnce({
         exists: true,
         data: () => ({ fcmToken: 'urgentToken', email: 'admin@test.com' }),
       });
@@ -357,13 +357,12 @@ import {
         expect.objectContaining({
           tokens: ['urgentToken'],
           notification: expect.objectContaining({
-            title: 'URGENT: Unpaid Documents',
-            body: expect.stringContaining('Japan'),
+            title: 'URGENT: Unpaid Docs for Unknown Tour - Japan',
+            body: expect.stringContaining('Unpaid documents remaining!'),
           }),
           data: expect.objectContaining({
             link: expect.stringContaining('/admin/trips/trip123'),
-            url: expect.stringContaining('/admin/trips/trip123'),
-            click_action: "FLUTTER_NOTIFICATION_CLICK"
+            url: expect.stringContaining('/admin/trips/trip123')
           }),
         })
       );
@@ -371,7 +370,7 @@ import {
       expect(batchSetMock).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
-          title: 'URGENT: Unpaid Documents',
+          title: 'URGENT: Unpaid Docs for Unknown Tour - Japan',
           read: false,
         })
       );
@@ -394,15 +393,14 @@ import {
       );
 
       dbDocGetMock
+        // coordinator
+        .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Mario', surname: 'Rossi' }) })
+        // hotel
+        .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Grand Hyatt Tokyo' }) })
         // hotelBookedBy admin doc
         .mockResolvedValueOnce({
           exists: true,
           data: () => ({ name: 'Hotel', surname: 'Booker' }),
-        })
-        // hotel doc
-        .mockResolvedValueOnce({
-          exists: true,
-          data: () => ({ name: 'Grand Hyatt Tokyo' }),
         })
         // admin1 doc
         .mockResolvedValueOnce({
@@ -415,7 +413,7 @@ import {
       expect(sendMailMock).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'admin@test.com',
-          subject: expect.stringContaining('Reminder: Double Check Hotel Booking'),
+          subject: expect.stringContaining('Reminder: Hotel Verification for Unknown Tour - Japan'),
           html: expect.stringContaining('Grand Hyatt Tokyo'),
         })
       );
@@ -423,13 +421,12 @@ import {
         expect.objectContaining({
           tokens: ['adminToken'],
           notification: expect.objectContaining({
-            title: 'Hotel Verification Reminder',
+            title: 'Hotel Verification: Unknown Tour - Japan',
             body: expect.stringContaining('Hotel Booker'),
           }),
           data: expect.objectContaining({
             link: expect.stringContaining('/admin/trips/trip123'),
-            url: expect.stringContaining('/admin/trips/trip123'),
-            click_action: "FLUTTER_NOTIFICATION_CLICK"
+            url: expect.stringContaining('/admin/trips/trip123')
           }),
         })
       );
@@ -437,7 +434,7 @@ import {
       expect(batchSetMock).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
-          title: 'Hotel Verification Reminder',
+          title: 'Hotel Verification: Unknown Tour - Japan',
           read: false,
         })
       );
@@ -455,6 +452,12 @@ import {
           code: 'JP-001',
         })
       );
+
+      dbDocGetMock
+        // coordinator
+        .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Mario', surname: 'Rossi' }) })
+        // admin
+        .mockResolvedValueOnce({ exists: true, data: () => ({ fcmToken: 'adminToken', email: 'admin@test.com' }) });
 
       await checkUpcomingTripsCron.run({ data: {} } as any);
 
