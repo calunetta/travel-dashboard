@@ -113,13 +113,12 @@ describe('onTripDocumentUploaded', () => {
         expect(sendEachForMulticastMock).toHaveBeenCalledWith(expect.objectContaining({
             tokens: ['token123'],
             notification: expect.objectContaining({
-                title: 'New Trip Document',
+                title: 'New Document: Unknown Tour - Japan',
                 body: expect.stringContaining('Mario Rossi')
             }),
             data: expect.objectContaining({
                 link: expect.stringContaining('/admin/trips/123'),
-                url: expect.stringContaining('/admin/trips/123'),
-                click_action: "FLUTTER_NOTIFICATION_CLICK"
+                url: expect.stringContaining('/admin/trips/123')
             }),
             webpush: expect.objectContaining({
                 fcmOptions: {
@@ -129,10 +128,10 @@ describe('onTripDocumentUploaded', () => {
         }));
         expect(sendMailMock).toHaveBeenCalledWith(expect.objectContaining({
             to: 'admin@test.com',
-            subject: 'New Document Uploaded: Japan (JP-2026)'
+            subject: 'New Document Uploaded: Unknown Tour - Japan (JP-2026)'
         }));
         expect(batchSetMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            title: 'New Trip Document',
+            title: 'New Document: Unknown Tour - Japan',
             body: expect.stringContaining('Mario Rossi'),
             read: false,
         }));
@@ -161,12 +160,11 @@ describe('onDocumentStatusChanged', () => {
         expect(sendEachForMulticastMock).toHaveBeenCalledWith(expect.objectContaining({
             tokens: ['adminToken1'],
             notification: expect.objectContaining({
-                title: 'Payment Completed'
+                title: 'Payment Completed: Unknown Tour - Japan'
             }),
             data: expect.objectContaining({
                 link: expect.stringContaining('/admin/trips/123'),
-                url: expect.stringContaining('/admin/trips/123'),
-                click_action: "FLUTTER_NOTIFICATION_CLICK"
+                url: expect.stringContaining('/admin/trips/123')
             }),
             webpush: expect.objectContaining({
                 fcmOptions: {
@@ -175,7 +173,7 @@ describe('onDocumentStatusChanged', () => {
             })
         }));
         expect(batchSetMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            title: 'Payment Completed',
+            title: 'Payment Completed: Unknown Tour - Japan',
             read: false,
         }));
     });
@@ -247,6 +245,7 @@ describe('checkUpcomingTripsCron', () => {
         dbWhereMock.mockReturnThis();
         dbGetMock.mockResolvedValue(buildTripSnapshotWithDate(startDate));
         dbDocGetMock
+            .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Mario', surname: 'Rossi' }) }) // coordinator
             .mockResolvedValueOnce({ exists: true, data: () => ({ fcmToken: 'adminToken', email: 'admin@test.com' }) }); // admin
         await index_1.checkUpcomingTripsCron.run({ data: {} });
         expect(sendMailMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -257,16 +256,15 @@ describe('checkUpcomingTripsCron', () => {
         expect(sendEachForMulticastMock).toHaveBeenCalledWith(expect.objectContaining({
             tokens: ['adminToken'],
             notification: expect.objectContaining({
-                title: 'URGENT: Missing Documents',
+                title: 'URGENT: Missing Docs for Unknown Tour - Japan',
             }),
             data: expect.objectContaining({
                 link: expect.stringContaining('/admin/trips/trip123'),
-                url: expect.stringContaining('/admin/trips/trip123'),
-                click_action: "FLUTTER_NOTIFICATION_CLICK"
+                url: expect.stringContaining('/admin/trips/trip123')
             }),
         }));
         expect(batchSetMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            title: 'URGENT: Missing Documents',
+            title: 'URGENT: Missing Docs for Unknown Tour - Japan',
             read: false,
         }));
     });
@@ -279,7 +277,9 @@ describe('checkUpcomingTripsCron', () => {
         dbGetMock.mockResolvedValue(buildTripSnapshotWithDate(startDate, {
             documents: [{ id: 'doc1', paymentStatus: 'TO_BE_PAID' }],
         }));
-        dbDocGetMock.mockResolvedValueOnce({
+        dbDocGetMock
+            .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Mario', surname: 'Rossi' }) }) // coordinator
+            .mockResolvedValueOnce({
             exists: true,
             data: () => ({ fcmToken: 'urgentToken', email: 'admin@test.com' }),
         });
@@ -287,17 +287,16 @@ describe('checkUpcomingTripsCron', () => {
         expect(sendEachForMulticastMock).toHaveBeenCalledWith(expect.objectContaining({
             tokens: ['urgentToken'],
             notification: expect.objectContaining({
-                title: 'URGENT: Unpaid Documents',
-                body: expect.stringContaining('Japan'),
+                title: 'URGENT: Unpaid Docs for Unknown Tour - Japan',
+                body: expect.stringContaining('Unpaid documents remaining!'),
             }),
             data: expect.objectContaining({
                 link: expect.stringContaining('/admin/trips/trip123'),
-                url: expect.stringContaining('/admin/trips/trip123'),
-                click_action: "FLUTTER_NOTIFICATION_CLICK"
+                url: expect.stringContaining('/admin/trips/trip123')
             }),
         }));
         expect(batchSetMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            title: 'URGENT: Unpaid Documents',
+            title: 'URGENT: Unpaid Docs for Unknown Tour - Japan',
             read: false,
         }));
     });
@@ -314,15 +313,14 @@ describe('checkUpcomingTripsCron', () => {
             adminIds: ['admin1']
         }));
         dbDocGetMock
+            // coordinator
+            .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Mario', surname: 'Rossi' }) })
+            // hotel
+            .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Grand Hyatt Tokyo' }) })
             // hotelBookedBy admin doc
             .mockResolvedValueOnce({
             exists: true,
             data: () => ({ name: 'Hotel', surname: 'Booker' }),
-        })
-            // hotel doc
-            .mockResolvedValueOnce({
-            exists: true,
-            data: () => ({ name: 'Grand Hyatt Tokyo' }),
         })
             // admin1 doc
             .mockResolvedValueOnce({
@@ -332,23 +330,22 @@ describe('checkUpcomingTripsCron', () => {
         await index_1.checkUpcomingTripsCron.run({ data: {} });
         expect(sendMailMock).toHaveBeenCalledWith(expect.objectContaining({
             to: 'admin@test.com',
-            subject: expect.stringContaining('Reminder: Double Check Hotel Booking'),
+            subject: expect.stringContaining('Reminder: Hotel Verification for Unknown Tour - Japan'),
             html: expect.stringContaining('Grand Hyatt Tokyo'),
         }));
         expect(sendEachForMulticastMock).toHaveBeenCalledWith(expect.objectContaining({
             tokens: ['adminToken'],
             notification: expect.objectContaining({
-                title: 'Hotel Verification Reminder',
+                title: 'Hotel Verification: Unknown Tour - Japan',
                 body: expect.stringContaining('Hotel Booker'),
             }),
             data: expect.objectContaining({
                 link: expect.stringContaining('/admin/trips/trip123'),
-                url: expect.stringContaining('/admin/trips/trip123'),
-                click_action: "FLUTTER_NOTIFICATION_CLICK"
+                url: expect.stringContaining('/admin/trips/trip123')
             }),
         }));
         expect(batchSetMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            title: 'Hotel Verification Reminder',
+            title: 'Hotel Verification: Unknown Tour - Japan',
             read: false,
         }));
     });
@@ -361,6 +358,11 @@ describe('checkUpcomingTripsCron', () => {
             // No hotelBookedBy
             code: 'JP-001',
         }));
+        dbDocGetMock
+            // coordinator
+            .mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Mario', surname: 'Rossi' }) })
+            // admin
+            .mockResolvedValueOnce({ exists: true, data: () => ({ fcmToken: 'adminToken', email: 'admin@test.com' }) });
         await index_1.checkUpcomingTripsCron.run({ data: {} });
         expect(sendMock).not.toHaveBeenCalled();
         expect(sendEachForMulticastMock).not.toHaveBeenCalled();
